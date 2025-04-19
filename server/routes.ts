@@ -597,13 +597,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id as number;
       
-      // Validar com Zod
-      const validatedData = insertHouseholdTaskSchema.parse({
+      // Processar datas antes de validar com Zod
+      const taskData = {
         ...req.body,
         createdBy: userId
+      };
+      
+      // Converter strings de data para objetos Date
+      if (typeof taskData.dueDate === 'string') {
+        taskData.dueDate = new Date(taskData.dueDate);
+      }
+      
+      if (typeof taskData.nextDueDate === 'string') {
+        taskData.nextDueDate = new Date(taskData.nextDueDate);
+      }
+      
+      // Remover campos undefined para evitar erros de validação
+      Object.keys(taskData).forEach(key => {
+        if (taskData[key] === undefined) {
+          delete taskData[key];
+        }
       });
       
-      const newTask = await storage.createHouseholdTask(validatedData);
+      const newTask = await storage.createHouseholdTask(taskData);
       res.status(201).json(newTask);
     } catch (error) {
       console.error('Erro ao criar tarefa doméstica:', error);
@@ -634,7 +650,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to update this task" });
       }
       
-      const updatedTask = await storage.updateHouseholdTask(taskId, req.body);
+      // Processar datas antes de atualizar
+      const updates = { ...req.body };
+      
+      // Converter strings de data para objetos Date
+      if (typeof updates.dueDate === 'string') {
+        updates.dueDate = new Date(updates.dueDate);
+      }
+      
+      if (typeof updates.nextDueDate === 'string') {
+        updates.nextDueDate = new Date(updates.nextDueDate);
+      }
+      
+      // Remover campos undefined para evitar erros de validação
+      Object.keys(updates).forEach(key => {
+        if (updates[key] === undefined) {
+          delete updates[key];
+        }
+      });
+      
+      const updatedTask = await storage.updateHouseholdTask(taskId, updates);
       res.json(updatedTask);
     } catch (error) {
       console.error('Erro ao atualizar tarefa doméstica:', error);
