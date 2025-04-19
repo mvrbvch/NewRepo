@@ -1255,6 +1255,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Endpoint para teste de notificação push
+  app.post("/api/notifications/test", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      
+      // Criar uma notificação de teste
+      const notification = await storage.createNotification({
+        userId,
+        title: "Notificação de teste",
+        message: "Esta é uma notificação de teste do sistema NossaRotina!",
+        type: "test",
+        referenceType: null,
+        referenceId: null,
+        metadata: null,
+        isRead: false
+      });
+      
+      // Enviar push para o próprio usuário
+      try {
+        const pushPayload: PushNotificationPayload = {
+          title: "Notificação de teste",
+          body: "Esta é uma notificação de teste do sistema NossaRotina!",
+          data: {
+            type: "test",
+          }
+        };
+        
+        // Enviar push para todos os dispositivos do usuário
+        const sentCount = await sendPushToUser(userId, pushPayload);
+        
+        console.log(`Enviadas ${sentCount} notificações push de teste para o usuário`);
+        
+        res.status(201).json({
+          message: "Test notification sent",
+          notification,
+          pushSent: sentCount > 0
+        });
+      } catch (pushError) {
+        console.error('Erro ao enviar notificação push de teste:', pushError);
+        
+        // Mesmo com falha no push, a notificação foi criada
+        res.status(201).json({
+          message: "Test notification created but push failed",
+          notification,
+          pushSent: false,
+          pushError: pushError instanceof Error ? pushError.message : String(pushError)
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao criar notificação de teste:', error);
+      res.status(500).json({ 
+        message: "Failed to create test notification", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

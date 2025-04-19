@@ -1,6 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
+import NotificationButton from "./notification-button";
 
 interface BottomNavigationProps {
   onCreateEvent: () => void;
@@ -13,6 +15,7 @@ export default function BottomNavigation({
 }: BottomNavigationProps) {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { unreadCount } = usePushNotifications();
   
   return (
     <div className="bg-white border-t flex items-center justify-around p-2 z-10">
@@ -31,21 +34,17 @@ export default function BottomNavigation({
         </Button>
       </Link>
       
-      <Link href="/notifications">
-        <Button 
-          variant="ghost" 
+      <div className="flex flex-col items-center">
+        <NotificationButton 
+          variant="ghost"
+          size="default"
+          showUnreadCount={true}
           className={`flex flex-col items-center py-1 px-3 h-auto ${
             location === '/notifications' ? 'text-primary' : 'text-gray-500'
           }`}
-          asChild
-          onClick={() => onNotificationsClick?.()}
-        >
-          <a>
-            <span className="material-icons text-[22px]">notifications</span>
-            <span className="text-xs mt-1">Notificações</span>
-          </a>
-        </Button>
-      </Link>
+        />
+        <span className="text-xs mt-1 text-gray-500">Notificações</span>
+      </div>
       
       <div className="relative flex justify-center">
         <Button 

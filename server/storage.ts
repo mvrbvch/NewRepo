@@ -7,7 +7,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes } from "crypto";
 import { db } from "./db";
-import { eq, and, or, SQL, inArray } from "drizzle-orm";
+import { eq, and, or, SQL, inArray, desc } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { formatDateSafely } from "./utils";
