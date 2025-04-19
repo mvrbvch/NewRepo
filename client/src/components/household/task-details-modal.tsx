@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2, Trash2, Edit, Check, RefreshCw, BellRing, Send } from "lucide-react";
+import { CalendarIcon, Loader2, Trash2, Edit, Check, RefreshCw, BellRing, Send, User, Calendar } from "lucide-react";
 import { useState } from "react";
 import { 
   AlertDialog,
@@ -117,12 +117,12 @@ export default function TaskDetailsModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] modal-card">
           <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
+            <DialogTitle className="text-title flex items-center gap-2 title-gradient">
               {task.title}
               {task.completed && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="status-completed">
                   <Check className="h-3 w-3 mr-1" /> Concluída
                 </Badge>
               )}
@@ -132,53 +132,58 @@ export default function TaskDetailsModal({
           <div className="space-y-4 py-4">
             {task.description && (
               <div>
-                <h3 className="text-sm font-medium mb-1">Descrição</h3>
-                <p className="text-gray-700">{task.description}</p>
+                <h3 className="text-subtitle mb-1">Descrição</h3>
+                <p className="text-body text-medium">{task.description}</p>
               </div>
             )}
 
-            <div className="flex flex-col gap-3 text-sm">
+            <div className="flex flex-col gap-3 mt-2 p-3 bg-card rounded-md shadow-card">
               <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">Frequência:</span>
-                <span>{getFrequencyText(task.frequency)}</span>
+                <RefreshCw className="h-4 w-4 text-primary" />
+                <span className="font-medium text-dark">Frequência:</span>
+                <span className="text-medium">{getFrequencyText(task.frequency)}</span>
               </div>
 
               {task.dueDate && (
                 <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">Data de vencimento:</span>
-                  <span>{format(new Date(task.dueDate), 'PPP', { locale: ptBR })}</span>
+                  <CalendarIcon className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-dark">Data de vencimento:</span>
+                  <span className="text-medium">{format(new Date(task.dueDate), 'PPP', { locale: ptBR })}</span>
                 </div>
               )}
 
               {task.assignedTo && (
                 <div className="flex items-center gap-2">
-                  <span className="material-icons text-gray-500 text-sm">person</span>
-                  <span className="font-medium">Atribuída a:</span>
-                  <span>{task.assignedTo === user?.id ? 'Você' : 'Seu parceiro'}</span>
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-dark">Atribuída a:</span>
+                  <span className="text-medium">{task.assignedTo === user?.id ? 'Você' : 'Seu parceiro'}</span>
                 </div>
               )}
 
               {task.createdAt && (
                 <div className="flex items-center gap-2">
-                  <span className="material-icons text-gray-500 text-sm">event_available</span>
-                  <span className="font-medium">Criada em:</span>
-                  <span>{format(new Date(task.createdAt), 'PPP', { locale: ptBR })}</span>
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-dark">Criada em:</span>
+                  <span className="text-medium">{format(new Date(task.createdAt), 'PPP', { locale: ptBR })}</span>
                 </div>
               )}
             </div>
 
-            <div className="mt-6 border-t pt-4">
-              <div className="flex items-center gap-2">
+            <div className="mt-5 border-t pt-4">
+              <div className="flex items-center gap-2 p-2 rounded-md hover:bg-muted transition-colors">
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={handleToggleComplete}
                   disabled={updatingStatus || !canEdit}
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-primary"
                 />
-                <span>Marcar como {task.completed ? 'pendente' : 'concluída'}</span>
-                {updatingStatus && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                <span className="text-medium">
+                  Marcar como {' '}
+                  <span className={task.completed ? 'text-red-500' : 'text-green-600 font-medium'}>
+                    {task.completed ? 'pendente' : 'concluída'}
+                  </span>
+                </span>
+                {updatingStatus && <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary" />}
               </div>
             </div>
           </div>
@@ -189,7 +194,7 @@ export default function TaskDetailsModal({
                 variant="destructive"
                 size="sm"
                 onClick={handleDelete}
-                className="mr-auto"
+                className="mr-auto shadow-hover"
               >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Excluir
@@ -202,7 +207,7 @@ export default function TaskDetailsModal({
                 variant="outline" 
                 size="sm" 
                 onClick={handleOpenReminderDialog}
-                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                className="status-active shadow-hover"
               >
                 <BellRing className="h-4 w-4 mr-1" />
                 Lembrar Parceiro
@@ -211,28 +216,32 @@ export default function TaskDetailsModal({
             
             {/* Botão de edição - será implementado futuramente */}
             {canEdit && (
-              <Button variant="outline" size="sm" disabled>
+              <Button variant="outline" size="sm" disabled className="shadow-hover">
                 <Edit className="h-4 w-4 mr-1" />
                 Editar
               </Button>
             )}
-            <Button onClick={onClose}>Fechar</Button>
+            <Button onClick={onClose} className="btn-gradient shadow-hover">Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="modal-card">
           <AlertDialogHeader>
-            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-title text-alert">Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription className="text-body text-medium">
               Esta ação não pode ser desfeita. Isso excluirá permanentemente a
-              tarefa "{task.title}" e todos os dados associados.
+              tarefa <span className="font-medium">"{task.title}"</span> e todos os dados associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogCancel className="shadow-hover">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-red-600 hover:bg-red-700 shadow-hover"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -241,19 +250,19 @@ export default function TaskDetailsModal({
       
       {/* Diálogo para enviar lembrete */}
       <Dialog open={reminderDialogOpen} onOpenChange={(open) => !open && setReminderDialogOpen(false)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] modal-card">
           <DialogHeader>
-            <DialogTitle>Enviar lembrete para seu parceiro</DialogTitle>
+            <DialogTitle className="text-title title-gradient">Enviar lembrete para seu parceiro</DialogTitle>
           </DialogHeader>
           
           <div className="py-4">
-            <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-100">
-              <h3 className="font-medium mb-1">{task.title}</h3>
-              {task.description && <p className="text-sm text-gray-700">{task.description}</p>}
+            <div className="mb-4 p-3 bg-primary-light rounded-md border border-primary-light shadow-card">
+              <h3 className="text-subtitle mb-1">{task.title}</h3>
+              {task.description && <p className="text-small text-medium">{task.description}</p>}
             </div>
             
             <div className="space-y-4">
-              <p className="text-sm text-gray-700">
+              <p className="text-body text-medium">
                 Escreva uma mensagem personalizada para enviar junto com o lembrete dessa tarefa.
                 Seu parceiro receberá um e-mail com os detalhes da tarefa.
               </p>
@@ -271,13 +280,14 @@ export default function TaskDetailsModal({
             <Button
               variant="outline"
               onClick={() => setReminderDialogOpen(false)}
+              className="shadow-hover"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSendReminder}
               disabled={sendingReminder}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-gradient shadow-hover"
             >
               {sendingReminder ? (
                 <>

@@ -64,13 +64,14 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className="flex justify-center mb-2">
-            <img src="/logo.png" alt="Por Nós" className="h-12" />
+          <div className="flex justify-center mb-4">
+            <img src="@assets/logo.png" alt="Por Nós" className="h-20" />
           </div>
-          <p className="text-gray-600">Todo dia é uma nova chance de nos escolher</p>
+          <h1 className="text-2xl font-semibold text-primary mb-2">Por Nós</h1>
+          <p className="text-muted-foreground italic">Todo dia é uma nova chance de nos escolher</p>
         </div>
 
         <Tabs defaultValue="login" className="space-y-6">

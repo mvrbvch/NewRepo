@@ -82,9 +82,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] modal-card">
         <DialogHeader>
-          <DialogTitle>Criar Nova Tarefa</DialogTitle>
+          <DialogTitle className="text-title title-gradient">Criar Nova Tarefa</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -94,9 +94,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Título</FormLabel>
+                  <FormLabel className="text-subtitle">Título</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Lavar louça" {...field} />
+                    <Input placeholder="Ex: Lavar louça" {...field} className="shadow-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,12 +108,13 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição (opcional)</FormLabel>
+                  <FormLabel className="text-subtitle">Descrição (opcional)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Descreva a tarefa em detalhes..."
                       {...field}
                       value={field.value || ""}
+                      className="shadow-input min-h-[80px]"
                     />
                   </FormControl>
                   <FormMessage />
@@ -126,13 +127,13 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               name="frequency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Frequência</FormLabel>
+                  <FormLabel className="text-subtitle">Frequência</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="shadow-input">
                         <SelectValue placeholder="Selecione a frequência" />
                       </SelectTrigger>
                     </FormControl>
@@ -143,7 +144,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                       <SelectItem value="monthly">Mensalmente</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
+                  <FormDescription className="text-small text-medium">
                     Com que frequência esta tarefa deve ser realizada?
                   </FormDescription>
                   <FormMessage />
@@ -157,19 +158,19 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                 name="assignedTo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Atribuir a</FormLabel>
+                    <FormLabel className="text-subtitle">Atribuir a</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       defaultValue={field.value?.toString() || user.id.toString()}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="shadow-input">
                           <SelectValue placeholder="Quem realizará a tarefa?" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value={user.id.toString()}>Eu</SelectItem>
-                        <SelectItem value={user.partnerId.toString()}>Meu Parceiro</SelectItem>
+                        <SelectItem value={user.partnerId?.toString() || ""}>Meu Parceiro</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -183,13 +184,13 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               name="dueDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Data de Vencimento (opcional)</FormLabel>
+                  <FormLabel className="text-subtitle">Data de Vencimento (opcional)</FormLabel>
                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           variant="outline"
-                          className={`w-full pl-3 text-left font-normal ${
+                          className={`w-full pl-3 text-left font-normal shadow-input ${
                             !field.value && "text-muted-foreground"
                           }`}
                         >
@@ -202,7 +203,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 modal-card" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value || undefined}
@@ -216,6 +217,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                       />
                     </PopoverContent>
                   </Popover>
+                  <FormDescription className="text-small text-medium">
+                    Até quando esta tarefa deve ser concluída?
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -227,12 +231,14 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                 variant="outline"
                 onClick={onClose}
                 disabled={createTaskMutation.isPending}
+                className="shadow-hover"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={createTaskMutation.isPending}
+                className="btn-gradient shadow-hover"
               >
                 {createTaskMutation.isPending ? (
                   <>
