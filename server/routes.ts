@@ -4,10 +4,31 @@ import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
+import { pool } from "./db";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Rota de diagnóstico para verificar a conexão com o banco de dados
+  app.get('/api/db-health', async (req: Request, res: Response) => {
+    try {
+      // Testa a conexão com o banco de dados
+      const result = await pool.query('SELECT NOW()');
+      return res.status(200).json({ 
+        status: 'ok', 
+        dbTime: result.rows[0].now,
+        message: 'Banco de dados conectado e funcionando corretamente'
+      });
+    } catch (error) {
+      console.error('Erro na verificação do banco de dados:', error);
+      return res.status(500).json({ 
+        status: 'error', 
+        message: 'Falha na conexão com o banco de dados',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // API Endpoints
   app.get("/api/events", async (req, res) => {

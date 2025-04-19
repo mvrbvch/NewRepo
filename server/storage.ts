@@ -340,15 +340,23 @@ export class DatabaseStorage implements IStorage {
   
   // Função auxiliar para formatar as datas dos eventos
   private formatEventDates(event: Event): Event {
+    // Criar uma cópia do evento para não modificar o original
+    const formattedEvent = { ...event };
+    
     // Converter a data para string ISO se for uma data válida
-    if (event.date instanceof Date) {
-      // Criar uma cópia do evento para não modificar o original
-      return {
-        ...event,
-        date: event.date.toISOString()
-      };
+    if (formattedEvent.date instanceof Date && !isNaN(formattedEvent.date.getTime())) {
+      formattedEvent.date = formattedEvent.date.toISOString();
+    } else if (formattedEvent.date === null) {
+      // Se a data for null, definir uma data padrão (hoje)
+      formattedEvent.date = new Date().toISOString();
     }
-    return event;
+    
+    // Converter recurrenceEnd se for uma data válida
+    if (formattedEvent.recurrenceEnd instanceof Date && !isNaN(formattedEvent.recurrenceEnd.getTime())) {
+      formattedEvent.recurrenceEnd = formattedEvent.recurrenceEnd.toISOString();
+    }
+    
+    return formattedEvent;
   }
   
   async getUserEvents(userId: number): Promise<Event[]> {
@@ -359,11 +367,33 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateEvent(id: number, updates: Partial<Event>): Promise<Event | undefined> {
+    // Para atualizações que envolvem uma data, precisamos garantir que é um objeto Date
+    const processedUpdates: any = { ...updates };
+    
+    // Se a data estiver presente como string, converta para Date
+    if (typeof processedUpdates.date === 'string') {
+      try {
+        processedUpdates.date = new Date(processedUpdates.date);
+      } catch (error) {
+        console.error('Error converting date string to Date:', error);
+      }
+    }
+    
+    // Mesmo para recurrenceEnd
+    if (typeof processedUpdates.recurrenceEnd === 'string') {
+      try {
+        processedUpdates.recurrenceEnd = new Date(processedUpdates.recurrenceEnd);
+      } catch (error) {
+        console.error('Error converting recurrenceEnd string to Date:', error);
+      }
+    }
+    
     const [updatedEvent] = await db.update(events)
-      .set(updates)
+      .set(processedUpdates)
       .where(eq(events.id, id))
       .returning();
-    return updatedEvent;
+    
+    return updatedEvent ? this.formatEventDates(updatedEvent) : undefined;
   }
   
   async deleteEvent(id: number): Promise<boolean> {
