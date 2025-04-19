@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+:root {
+  --morning: 30 100% 55%;    /* #f97316 - orange-500 */
+  --afternoon: 200 100% 50%; /* #0ea5e9 - blue-500 */
+  --night: 265 80% 50%;      /* #6d28d9 - purple-700 */
+  --partner: 330 85% 60%;    /* #ec4899 - pink-500 */
+}
+
+/* Time period styling */
+.event-morning { 
+  border-left: 4px solid hsl(var(--morning)); 
+}
+.event-afternoon { 
+  border-left: 4px solid hsl(var(--afternoon)); 
+}
+.event-night { 
+  border-left: 4px solid hsl(var(--night)); 
+}
+
+/* Partner shared events */
+.event-partner { 
+  background-color: rgba(236, 72, 153, 0.1); 
+}
+
+/* Calendar cell sizing */
+.day-grid-cell { 
+  min-height: 5rem; 
+}
+
+/* Hide scrollbars but allow scrolling */
+.hide-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+.hide-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
