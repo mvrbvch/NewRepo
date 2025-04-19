@@ -14,41 +14,52 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import CreateTaskModal from "@/components/household/create-task-modal";
 import TaskDetailsModal from "@/components/household/task-details-modal";
-import { Loader2, Calendar as CalendarIcon, Check, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Calendar as CalendarIcon,
+  Check,
+  RefreshCw,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function HouseholdTasksPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(null);
+  const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
+    null,
+  );
 
   // Busca todas as tarefas do usuário
   const { data: tasks = [], isLoading } = useQuery<HouseholdTaskType[]>({
-    queryKey: ['/api/tasks'],
+    queryKey: ["/api/tasks"],
   });
 
   // Busca tarefas do parceiro (se existir)
   const { data: partnerTasks = [] } = useQuery<HouseholdTaskType[]>({
-    queryKey: ['/api/partner-tasks'],
+    queryKey: ["/api/partner-tasks"],
     enabled: !!user?.partnerId, // Somente ativa se o usuário tiver um parceiro
   });
 
   // Mutação para marcar tarefa como concluída/pendente
   const toggleCompleteMutation = useMutation({
-    mutationFn: async ({ id, completed }: { id: number; completed: boolean }) => {
-      const response = await apiRequest(
-        "PATCH",
-        `/api/tasks/${id}/complete`,
-        { completed }
-      );
+    mutationFn: async ({
+      id,
+      completed,
+    }: {
+      id: number;
+      completed: boolean;
+    }) => {
+      const response = await apiRequest("PATCH", `/api/tasks/${id}/complete`, {
+        completed,
+      });
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/partner-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
       toast({
         title: "Tarefa atualizada",
         description: "O status da tarefa foi atualizado com sucesso.",
@@ -69,8 +80,8 @@ export default function HouseholdTasksPage() {
       await apiRequest("DELETE", `/api/tasks/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/partner-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
       setSelectedTask(null);
       toast({
         title: "Tarefa excluída",
@@ -89,32 +100,32 @@ export default function HouseholdTasksPage() {
   // Filtrar tarefas baseado na aba ativa e na data selecionada (se aplicável)
   const getFilteredTasks = () => {
     let filteredTasks: HouseholdTaskType[] = [];
-    
+
     switch (activeTab) {
       case "all":
         filteredTasks = [...tasks];
         break;
       case "pending":
-        filteredTasks = tasks.filter(task => !task.completed);
+        filteredTasks = tasks.filter((task) => !task.completed);
         break;
       case "completed":
-        filteredTasks = tasks.filter(task => task.completed);
+        filteredTasks = tasks.filter((task) => task.completed);
         break;
       case "partner":
         filteredTasks = [...partnerTasks];
         break;
     }
-    
+
     // Se uma data estiver selecionada, filtrar por data de vencimento
     if (selectedDate) {
-      const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-      filteredTasks = filteredTasks.filter(task => {
+      const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+      filteredTasks = filteredTasks.filter((task) => {
         if (!task.dueDate) return false;
         const taskDate = new Date(task.dueDate);
-        return format(taskDate, 'yyyy-MM-dd') === selectedDateStr;
+        return format(taskDate, "yyyy-MM-dd") === selectedDateStr;
       });
     }
-    
+
     return filteredTasks;
   };
 
@@ -139,7 +150,7 @@ export default function HouseholdTasksPage() {
   const handleToggleTaskComplete = (task: HouseholdTaskType) => {
     toggleCompleteMutation.mutate({
       id: task.id,
-      completed: !task.completed
+      completed: !task.completed,
     });
   };
 
@@ -149,26 +160,29 @@ export default function HouseholdTasksPage() {
 
   const getFrequencyText = (frequency: string): string => {
     switch (frequency) {
-      case 'once': return 'Uma vez';
-      case 'daily': return 'Diária';
-      case 'weekly': return 'Semanal';
-      case 'monthly': return 'Mensal';
-      default: return frequency;
+      case "once":
+        return "Uma vez";
+      case "daily":
+        return "Diária";
+      case "weekly":
+        return "Semanal";
+      case "monthly":
+        return "Mensal";
+      default:
+        return frequency;
     }
   };
 
   return (
     <div className="h-screen flex flex-col">
       <Header title="Tarefas Domésticas" />
-      
+
       <div className="flex items-center justify-between p-4 bg-gray-50">
         <h2 className="text-xl font-semibold">Minhas Tarefas</h2>
         {selectedDate && (
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-gray-500" />
-            <span>
-              {format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
-            </span>
+            <span>{format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}</span>
             <Button
               variant="ghost"
               size="sm"
@@ -180,7 +194,7 @@ export default function HouseholdTasksPage() {
           </div>
         )}
       </div>
-      
+
       <div className="p-4">
         <Calendar
           mode="single"
@@ -190,15 +204,22 @@ export default function HouseholdTasksPage() {
           locale={ptBR}
         />
       </div>
-      
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="flex-1">
+
+      <Tabs
+        defaultValue="all"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex-1"
+      >
         <TabsList className="grid grid-cols-4 mx-4">
           <TabsTrigger value="all">Todas</TabsTrigger>
           <TabsTrigger value="pending">Pendentes</TabsTrigger>
           <TabsTrigger value="completed">Concluídas</TabsTrigger>
-          <TabsTrigger value="partner" disabled={!user?.partnerId}>Parceiro</TabsTrigger>
+          <TabsTrigger value="partner" disabled={!user?.partnerId}>
+            Parceiro
+          </TabsTrigger>
         </TabsList>
-        
+
         <div className="mt-4 pb-16 overflow-y-auto flex-1">
           {isLoading ? (
             <div className="flex items-center justify-center h-48">
@@ -207,50 +228,54 @@ export default function HouseholdTasksPage() {
           ) : filteredTasks.length > 0 ? (
             <div className="space-y-3 px-4">
               {filteredTasks.map((task) => (
-                <Card 
-                  key={task.id} 
-                  className={`p-4 relative ${task.completed ? 'bg-gray-50' : ''}`}
+                <Card
+                  key={task.id}
+                  className={`p-4 relative ${task.completed ? "bg-gray-50" : ""}`}
                   onClick={() => handleOpenTaskDetails(task)}
                 >
                   <div className="flex items-start gap-3">
-                    <div 
+                    <div
                       className="mt-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleTaskComplete(task);
                       }}
                     >
-                      <Checkbox 
-                        checked={task.completed} 
-                        className="h-5 w-5"
-                      />
+                      <Checkbox checked={task.completed} className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h3 className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
+                        <h3
+                          className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`}
+                        >
                           {task.title}
                         </h3>
-                        {task.frequency !== 'once' && (
+                        {task.frequency !== "once" && (
                           <div className="flex items-center text-xs bg-gray-100 px-2 py-1 rounded-full">
                             <RefreshCw className="h-3 w-3 mr-1" />
                             {getFrequencyText(task.frequency)}
                           </div>
                         )}
                       </div>
-                      
+
                       {task.description && (
-                        <p className={`text-sm mt-1 ${task.completed ? 'text-gray-500' : 'text-gray-700'}`}>
+                        <p
+                          className={`text-sm mt-1 ${task.completed ? "text-gray-500" : "text-gray-700"}`}
+                        >
                           {task.description}
                         </p>
                       )}
-                      
+
                       {task.dueDate && (
                         <div className="mt-2 text-xs flex items-center text-gray-500">
                           <CalendarIcon className="h-3 w-3 mr-1" />
-                          Vence em: {format(new Date(task.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                          Vence em:{" "}
+                          {format(new Date(task.dueDate), "dd/MM/yyyy", {
+                            locale: ptBR,
+                          })}
                         </div>
                       )}
-                      
+
                       {task.completed && (
                         <div className="mt-1 text-xs flex items-center text-green-600">
                           <Check className="h-3 w-3 mr-1" />
@@ -265,8 +290,8 @@ export default function HouseholdTasksPage() {
           ) : (
             <div className="flex flex-col items-center justify-center h-48 text-gray-500">
               <p>Nenhuma tarefa encontrada</p>
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 onClick={handleOpenCreateModal}
                 className="mt-2"
               >
@@ -276,16 +301,16 @@ export default function HouseholdTasksPage() {
           )}
         </div>
       </Tabs>
-      
+
       <BottomNavigation onCreateEvent={handleOpenCreateModal} />
-      
-      <CreateTaskModal 
+
+      <CreateTaskModal
         isOpen={createModalOpen}
         onClose={handleCloseCreateModal}
       />
-      
+
       {selectedTask && (
-        <TaskDetailsModal 
+        <TaskDetailsModal
           task={selectedTask}
           isOpen={!!selectedTask}
           onClose={handleCloseTaskDetails}
