@@ -1,7 +1,7 @@
-import { users, events, eventShares, eventComments, calendarConnections, partnerInvites } from "@shared/schema";
+import { users, events, eventShares, eventComments, calendarConnections, partnerInvites, householdTasks } from "@shared/schema";
 import type { User, InsertUser, Event, InsertEvent, EventShare, InsertEventShare, 
   EventComment, InsertEventComment, CalendarConnection, InsertCalendarConnection, 
-  PartnerInvite, InsertPartnerInvite } from "@shared/schema";
+  PartnerInvite, InsertPartnerInvite, HouseholdTask, InsertHouseholdTask } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes } from "crypto";
@@ -51,6 +51,15 @@ export interface IStorage {
   createPartnerInvite(invite: InsertPartnerInvite): Promise<PartnerInvite>;
   getPartnerInviteByToken(token: string): Promise<PartnerInvite | undefined>;
   updatePartnerInvite(id: number, updates: Partial<PartnerInvite>): Promise<PartnerInvite | undefined>;
+  
+  // Household tasks
+  createHouseholdTask(task: InsertHouseholdTask): Promise<HouseholdTask>;
+  getHouseholdTask(id: number): Promise<HouseholdTask | undefined>;
+  getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]>;
+  getPartnerHouseholdTasks(userId: number): Promise<HouseholdTask[]>;
+  updateHouseholdTask(id: number, updates: Partial<HouseholdTask>): Promise<HouseholdTask | undefined>;
+  deleteHouseholdTask(id: number): Promise<boolean>;
+  markHouseholdTaskAsCompleted(id: number, completed: boolean): Promise<HouseholdTask | undefined>;
   
   // Session store
   sessionStore: SessionStore;

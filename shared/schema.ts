@@ -17,6 +17,7 @@ export const users = pgTable("users", {
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  description: text("description"),
   date: timestamp("date").notNull(),
   startTime: text("start_time").notNull(),
   endTime: text("end_time").notNull(),
@@ -65,6 +66,21 @@ export const partnerInvites = pgTable("partner_invites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Tabela para tarefas domésticas
+export const householdTasks = pgTable("household_tasks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  frequency: text("frequency").notNull().default("once"), // once, daily, weekly, monthly
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  dueDate: timestamp("due_date"),
+  completed: boolean("completed").default(false),
+  nextDueDate: timestamp("next_due_date"),
+  recurrenceRule: text("recurrence_rule"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -75,6 +91,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertEventSchema = createInsertSchema(events).pick({
   title: true,
+  description: true,
   date: true,
   startTime: true,
   endTime: true,
@@ -115,6 +132,18 @@ export const insertPartnerInviteSchema = createInsertSchema(partnerInvites).pick
   token: true,
 });
 
+export const insertHouseholdTaskSchema = createInsertSchema(householdTasks).pick({
+  title: true,
+  description: true,
+  frequency: true,
+  assignedTo: true,
+  createdBy: true,
+  dueDate: true,
+  completed: true,
+  nextDueDate: true,
+  recurrenceRule: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -140,5 +169,12 @@ export type CalendarConnection = Omit<typeof calendarConnections.$inferSelect, '
 
 export type InsertPartnerInvite = z.infer<typeof insertPartnerInviteSchema>;
 export type PartnerInvite = Omit<typeof partnerInvites.$inferSelect, 'createdAt'> & {
+  createdAt: Date | string | null;
+};
+
+export type InsertHouseholdTask = z.infer<typeof insertHouseholdTaskSchema>;
+export type HouseholdTask = Omit<typeof householdTasks.$inferSelect, 'dueDate' | 'nextDueDate' | 'createdAt'> & {
+  dueDate: Date | string | null;
+  nextDueDate: Date | string | null;
   createdAt: Date | string | null;
 };
