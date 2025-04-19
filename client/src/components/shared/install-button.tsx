@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -18,30 +18,34 @@ declare global {
 export function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const { toast } = useToast();
+
+  // Função para mostrar toast de instalação concluída
+  const showInstalledToast = useCallback(() => {
+    toast({
+      title: "Aplicativo instalado",
+      description: "Por Nós foi instalado com sucesso no seu dispositivo.",
+    });
+  }, [toast]);
+
+  // Manipulador para o evento appinstalled
+  const handleAppInstalled = useCallback(() => {
+    setIsInstalled(true);
+    setDeferredPrompt(null);
+    showInstalledToast();
+  }, [showInstalledToast]);
+
+  // Manipulador para o evento beforeinstallprompt
+  const handleBeforeInstallPrompt = useCallback((e: BeforeInstallPromptEvent) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+  }, []);
 
   useEffect(() => {
     // Verificar se já está instalado
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
     }
-
-    // Capturar o evento beforeinstallprompt para exibir o botão
-    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
-      // Impedir o comportamento padrão do navegador
-      e.preventDefault();
-      // Armazenar o evento para uso posterior
-      setDeferredPrompt(e);
-    };
-
-    // Tratar o evento appinstalled quando o app é instalado
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-      toast({
-        title: "Aplicativo instalado",
-        description: "Por Nós foi instalado com sucesso no seu dispositivo.",
-      });
-    };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt as EventListener);
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -50,9 +54,9 @@ export function InstallButton() {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt as EventListener);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, []); // Removemos o toast das dependências
+  }, [handleBeforeInstallPrompt, handleAppInstalled]);
 
-  const handleInstallClick = async () => {
+  const handleInstallClick = useCallback(async () => {
     if (!deferredPrompt) {
       return;
     }
@@ -86,7 +90,7 @@ export function InstallButton() {
         variant: "destructive",
       });
     }
-  };
+  }, [deferredPrompt, toast]);
 
   // Não mostrar nada se já estiver instalado ou não estiver disponível
   if (isInstalled || !deferredPrompt) {

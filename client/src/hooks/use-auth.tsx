@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { insertUserSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { UserType } from "@/lib/types";
 import { z } from "zod";
 
@@ -43,11 +43,11 @@ export const AuthContext = createContext<AuthContextType>({
     mutate: () => {},
     mutateAsync: async () => ({
       id: 0,
-      name: '',
-      username: '',
-      email: '',
-      partnerStatus: 'none',
-      onboardingComplete: false
+      name: "",
+      username: "",
+      email: "",
+      partnerStatus: "none",
+      onboardingComplete: false,
     }),
     data: undefined,
     error: null,
@@ -56,23 +56,23 @@ export const AuthContext = createContext<AuthContextType>({
     isSuccess: false,
     failureCount: 0,
     failureReason: null,
-    status: 'idle',
+    status: "idle",
     variables: undefined,
     isIdle: true,
     submittedAt: 0,
     reset: () => {},
     context: undefined,
-    isPaused: false
+    isPaused: false,
   },
   registerMutation: {
     mutate: () => {},
     mutateAsync: async () => ({
       id: 0,
-      name: '',
-      username: '',
-      email: '',
-      partnerStatus: 'none',
-      onboardingComplete: false
+      name: "",
+      username: "",
+      email: "",
+      partnerStatus: "none",
+      onboardingComplete: false,
     }),
     data: undefined,
     error: null,
@@ -81,13 +81,13 @@ export const AuthContext = createContext<AuthContextType>({
     isSuccess: false,
     failureCount: 0,
     failureReason: null,
-    status: 'idle',
+    status: "idle",
     variables: undefined,
     isIdle: true,
     submittedAt: 0,
     reset: () => {},
     context: undefined,
-    isPaused: false
+    isPaused: false,
   },
   logoutMutation: {
     mutate: () => {},
@@ -99,13 +99,13 @@ export const AuthContext = createContext<AuthContextType>({
     isSuccess: false,
     failureCount: 0,
     failureReason: null,
-    status: 'idle',
+    status: "idle",
     variables: undefined,
     isIdle: true,
     submittedAt: 0,
     reset: () => {},
     context: undefined,
-    isPaused: false
+    isPaused: false,
   },
 });
 
@@ -113,7 +113,7 @@ export const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Substituir useToast() pelo toast importado diretamente
   // Isso evita chamar hooks dentro de outros hooks
-  
+
   const {
     data: user,
     error,
@@ -125,15 +125,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await fetch(queryKey[0] as string, {
           credentials: "include",
         });
-        
+
         if (res.status === 401) {
           return null;
         }
-        
+
         if (!res.ok) {
           throw new Error(`Error: ${res.status}`);
         }
-        
+
         const userData = await res.json();
         return userData as UserType; // Garantir o tipo esperado
       } catch (error) {
@@ -141,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
   });
+  const { toast } = useToast();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
