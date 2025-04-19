@@ -546,7 +546,7 @@ export class DatabaseStorage implements IStorage {
     const userNotifications = await db.select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
-      .orderBy(notifications.createdAt).desc();
+      .orderBy(desc(notifications.createdAt));
     
     return userNotifications.map(notification => ({
       ...notification,
