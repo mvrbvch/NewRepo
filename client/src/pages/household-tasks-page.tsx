@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { HouseholdTaskType, UserType } from "@/lib/types";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getQueryFn } from "@/lib/queryClient";
 import Header from "@/components/shared/header";
 import BottomNavigation from "@/components/shared/bottom-navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { format, isToday, isThisWeek, isThisMonth, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import CreateTaskModal from "@/components/household/create-task-modal";
@@ -19,6 +19,8 @@ import {
   Calendar as CalendarIcon,
   Check,
   RefreshCw,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -97,7 +99,7 @@ export default function HouseholdTasksPage() {
     },
   });
 
-  // Filtrar tarefas baseado na aba ativa e na data selecionada (se aplicável)
+  // Filtrar tarefas baseado na aba ativa
   const getFilteredTasks = () => {
     let filteredTasks: HouseholdTaskType[] = [];
 
@@ -116,17 +118,44 @@ export default function HouseholdTasksPage() {
         break;
     }
 
-    // Se uma data estiver selecionada, filtrar por data de vencimento
-    if (selectedDate) {
-      const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-      filteredTasks = filteredTasks.filter((task) => {
-        if (!task.dueDate) return false;
-        const taskDate = new Date(task.dueDate);
-        return format(taskDate, "yyyy-MM-dd") === selectedDateStr;
-      });
-    }
+    // Ordenar tarefas: primeiro as pendentes com data de vencimento próxima, depois as concluídas
+    return filteredTasks.sort((a, b) => {
+      // Se uma tarefa está completa e a outra não, a pendente vem primeiro
+      if (a.completed && !b.completed) return 1;
+      if (!a.completed && b.completed) return -1;
 
-    return filteredTasks;
+      // Se ambas têm o mesmo status de conclusão, ordenar por data de vencimento
+      if (a.dueDate && b.dueDate) {
+        const dateA = new Date(a.dueDate);
+        const dateB = new Date(b.dueDate);
+        return dateA.getTime() - dateB.getTime();
+      }
+
+      // Se apenas uma tem data de vencimento, ela vem primeiro
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+
+      // Se nenhuma tem data de vencimento, manter a ordem original
+      return 0;
+    });
+  };
+  
+  // Função auxiliar para formatação amigável de datas
+  const getFormattedDueDate = (dueDate: string | Date) => {
+    const date = new Date(dueDate);
+    const today = new Date();
+    
+    if (isToday(date)) {
+      return "Hoje";
+    } else if (isToday(addDays(date, -1))) {
+      return "Amanhã";
+    } else if (isBefore(date, today)) {
+      return `Atrasada: ${format(date, "dd/MM/yyyy", { locale: ptBR })}`;
+    } else if (isThisWeek(date, { weekStartsOn: 1 })) {
+      return format(date, "EEEE", { locale: ptBR });
+    } else {
+      return format(date, "dd/MM/yyyy", { locale: ptBR });
+    }
   };
 
   const filteredTasks = getFilteredTasks();
@@ -179,30 +208,14 @@ export default function HouseholdTasksPage() {
 
       <div className="flex items-center justify-between p-4 bg-gray-50">
         <h2 className="text-xl font-semibold">Minhas Tarefas</h2>
-        {selectedDate && (
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-gray-500" />
-            <span>{format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedDate(undefined)}
-              className="h-8"
-            >
-              Limpar
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={setSelectedDate}
-          className="rounded-md border w-full"
-          locale={ptBR}
-        />
+        <Button 
+          onClick={handleOpenCreateModal}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <span className="text-lg">+</span> Nova Tarefa
+        </Button>
       </div>
 
       <Tabs
@@ -267,19 +280,29 @@ export default function HouseholdTasksPage() {
                       )}
 
                       {task.dueDate && (
-                        <div className="mt-2 text-xs flex items-center text-gray-500">
+                        <div className="mt-2 text-xs flex items-center">
                           <CalendarIcon className="h-3 w-3 mr-1" />
-                          Vence em:{" "}
-                          {format(new Date(task.dueDate), "dd/MM/yyyy", {
-                            locale: ptBR,
-                          })}
+                          {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
+                            <Badge variant="destructive" className="px-1 py-0 h-4 flex items-center gap-1">
+                              <AlertCircle size={10} />
+                              <span>{getFormattedDueDate(task.dueDate)}</span>
+                            </Badge>
+                          ) : (
+                            <span className={`${task.completed ? "text-gray-500" : "text-gray-700"}`}>
+                              {getFormattedDueDate(task.dueDate)}
+                            </span>
+                          )}
                         </div>
                       )}
 
-                      {task.completed && (
+                      {task.completed ? (
                         <div className="mt-1 text-xs flex items-center text-green-600">
                           <Check className="h-3 w-3 mr-1" />
                           Concluída
+                        </div>
+                      ) : task.assignedTo && task.assignedTo === user?.partnerId && (
+                        <div className="mt-1 text-xs flex items-center text-blue-600">
+                          Atribuída ao parceiro
                         </div>
                       )}
                     </div>
