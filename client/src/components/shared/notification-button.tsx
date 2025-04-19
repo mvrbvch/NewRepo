@@ -141,9 +141,9 @@ export default function NotificationButton({ className, ...props }: ButtonProps)
               
               {subscriptionStatus === PushSubscriptionStatus.NOT_SUPPORTED && (
                 <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 rounded-md">
-                  <p className="font-medium">Seu navegador não suporta notificações push</p>
+                  <p className="font-medium">Notificações push indisponíveis</p>
                   <p className="text-xs mt-1">
-                    Tente usar um navegador moderno como Chrome, Firefox, Edge ou Safari.
+                    As notificações push podem não estar disponíveis neste ambiente devido a restrições do navegador ou limitações do servidor. No modo PWA instalado em um dispositivo móvel, elas funcionarão normalmente.
                   </p>
                 </div>
               )}
