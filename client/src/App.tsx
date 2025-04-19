@@ -1,40 +1,30 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page";
-import AuthPage from "@/pages/auth-page";
-import OnboardingPage from "@/pages/onboarding-page";
-import PartnerInvitePage from "@/pages/partner-invite-page";
-import HouseholdTasksPage from "@/pages/household-tasks-page";
-import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "./hooks/use-auth";
+import { useState } from "react";
 
-// Versão simplificada para evitar problemas de hooks
-function Router() {
-  return (
-    <Switch>
-      <ProtectedRoute path="/" component={HomePage} />
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
-      <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
-      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
-      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-// Versão simplificada do App para resolver problemas de hooks
+// Versão extremamente simplificada para diagnosticar problemas de hooks
 function App() {
+  const [message] = useState("Aplicação Por Nós - Versão Diagnóstica");
+  
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Toaster />
-        <Router />
-      </AuthProvider>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full p-6 bg-card rounded-lg shadow-lg border border-border">
+        <h1 className="text-2xl font-bold text-foreground mb-6 text-center">
+          {message}
+        </h1>
+        <p className="text-muted-foreground mb-4 text-center">
+          Esta é uma versão simplificada para diagnosticar problemas com hooks React.
+        </p>
+        <div className="flex justify-center">
+          <button
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+            onClick={() => {
+              alert("O sistema de hooks React está funcionando!");
+            }}
+          >
+            Testar Hooks
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
