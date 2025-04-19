@@ -11,7 +11,6 @@ import { sendEmail, generateTaskReminderEmail, generatePartnerInviteEmail } from
 import { sendPushToUser, PushNotificationPayload } from "./pushNotifications";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
-import { registerWebAuthnRoutes } from "./webauthn-routes";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {
@@ -114,9 +113,6 @@ function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date):
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
-  
-  // Registrar rotas de autenticação biométrica WebAuthn
-  registerWebAuthnRoutes(app);
   
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get('/api/db-health', async (req: Request, res: Response) => {

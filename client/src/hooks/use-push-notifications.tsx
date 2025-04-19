@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Definição da interface PushSubscriptionJSON que está faltando
@@ -34,7 +34,6 @@ const PushNotificationsContext = createContext<PushNotificationsContextType | nu
 
 // Provedor do contexto
 export function PushNotificationsProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<PushSubscriptionStatus>(
     PushSubscriptionStatus.NOT_SUPPORTED

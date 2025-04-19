@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -18,7 +18,6 @@ declare global {
 export function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Verificar se já está instalado
@@ -44,14 +43,14 @@ export function InstallButton() {
       });
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt as EventListener);
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt as EventListener);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, [toast]);
+  }, []); // Removemos o toast das dependências
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {

@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { insertUserSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { UserType } from "@/lib/types";
 import { z } from "zod";
 
@@ -34,16 +34,91 @@ const registerSchema = z.object({
 
 type RegisterData = z.infer<typeof registerSchema>;
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+// Criar o contexto com um valor padrão seguro
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: false,
+  error: null,
+  loginMutation: {
+    mutate: () => {},
+    mutateAsync: async () => ({
+      id: 0,
+      name: '',
+      username: '',
+      email: '',
+      partnerStatus: 'none',
+      onboardingComplete: false
+    }),
+    data: undefined,
+    error: null,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    failureCount: 0,
+    failureReason: null,
+    status: 'idle',
+    variables: undefined,
+    isIdle: true,
+    submittedAt: 0,
+    reset: () => {},
+    context: undefined,
+    isPaused: false
+  },
+  registerMutation: {
+    mutate: () => {},
+    mutateAsync: async () => ({
+      id: 0,
+      name: '',
+      username: '',
+      email: '',
+      partnerStatus: 'none',
+      onboardingComplete: false
+    }),
+    data: undefined,
+    error: null,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    failureCount: 0,
+    failureReason: null,
+    status: 'idle',
+    variables: undefined,
+    isIdle: true,
+    submittedAt: 0,
+    reset: () => {},
+    context: undefined,
+    isPaused: false
+  },
+  logoutMutation: {
+    mutate: () => {},
+    mutateAsync: async () => {},
+    data: undefined,
+    error: null,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    failureCount: 0,
+    failureReason: null,
+    status: 'idle',
+    variables: undefined,
+    isIdle: true,
+    submittedAt: 0,
+    reset: () => {},
+    context: undefined,
+    isPaused: false
+  },
+});
 
+// Simplified AuthProvider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
+  // Substituir useToast() pelo toast importado diretamente
+  // Isso evita chamar hooks dentro de outros hooks
   
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<UserType | null>({
+  } = useQuery<UserType | null, Error, UserType | null>({
     queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
@@ -59,7 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(`Error: ${res.status}`);
         }
         
-        return await res.json();
+        const userData = await res.json();
+        return userData as UserType; // Garantir o tipo esperado
       } catch (error) {
         return null;
       }
@@ -131,9 +207,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isLoading,
-        error,
+        user: user ?? null, // Garantir que user nunca é undefined
+        isLoading: isLoading,
+        error: error as Error | null,
         loginMutation,
         registerMutation,
         logoutMutation,
@@ -146,8 +222,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
   return context;
 }
