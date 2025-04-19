@@ -1,5 +1,17 @@
 import { storage } from "./storage";
 import { UserDevice } from "@shared/schema";
+import webpush from 'web-push';
+
+// Configurar as chaves VAPID para Web Push
+const vapidPublicKey = 'BDd3_hVL9bzn8xbpNV-0JecHiVhvQqMMn6SrTHce-cW6ogFLkP_rF9FKPkEVX-O-0FM-sgGh5cqEHVKgE3Ury_A';
+const vapidPrivateKey = 'WuX3vIWI_QNsK93rdUj7yxX1v7yH4fMV5Y8X7ZJD14A';
+
+// Configurar Web Push
+webpush.setVapidDetails(
+  'mailto:contato@pornos.app', // Email de contato (não enviará emails reais)
+  vapidPublicKey,
+  vapidPrivateKey
+);
 
 // Possíveis plataformas de destino para notificações push
 export enum PushTargetPlatform {
@@ -108,16 +120,84 @@ export async function sendPushToUser(userId: number, payload: PushNotificationPa
  */
 async function sendWebPushNotification(device: UserDevice, payload: PushNotificationPayload): Promise<boolean> {
   try {
-    // TODO: Implementar integração com a Web Push API
-    // Esta é uma implementação simulada
-    console.log(`[SIMULADO] Enviando notificação web push para o dispositivo ${device.id}`);
+    if (!device.deviceToken) {
+      console.error('Token de dispositivo não encontrado');
+      return false;
+    }
+
+    // Parse o token do dispositivo (PushSubscription serializado)
+    let subscription: webpush.PushSubscription;
+    try {
+      subscription = JSON.parse(device.deviceToken);
+      
+      // Verificar se o token é válido
+      if (!subscription.endpoint || !subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
+        console.error('Token de push inválido:', subscription);
+        return false;
+      }
+    } catch (parseError) {
+      console.error('Erro ao analisar token de dispositivo:', parseError);
+      return false;
+    }
+
+    // Preparar payload para Web Push
+    const webPushPayload = {
+      title: payload.title,
+      body: payload.body,
+      icon: payload.icon || '/icons/icon-192x192.png',
+      badge: payload.badge || '/icons/icon-192x192.png',
+      tag: payload.tag || 'default',
+      data: {
+        ...payload.data || {},
+        referenceType: payload.referenceType,
+        referenceId: payload.referenceId
+      },
+      actions: payload.actions || [],
+      requireInteraction: payload.requireInteraction || false,
+      renotify: payload.renotify || false,
+      silent: payload.silent || false
+    };
+
+    // Configurar opções para Web Push
+    const options: webpush.RequestOptions = {
+      TTL: 60 * 60, // Time to live: 1 hora
+      vapidDetails: {
+        subject: 'mailto:contato@pornos.app',
+        publicKey: vapidPublicKey,
+        privateKey: vapidPrivateKey
+      },
+      contentEncoding: 'aes128gcm' // Usar a codificação mais moderna
+    };
+
+    console.log(`Enviando notificação web push para o dispositivo ${device.id}`);
     console.log(`Título: ${payload.title}`);
     console.log(`Corpo: ${payload.body}`);
-    
-    // Notificação enviada com sucesso (simulado)
-    return true;
+
+    // Enviar a notificação
+    const result = await webpush.sendNotification(
+      subscription,
+      JSON.stringify(webPushPayload),
+      options
+    );
+
+    console.log('Notificação web push enviada com sucesso:', result.statusCode);
+    return result.statusCode >= 200 && result.statusCode < 300;
   } catch (error) {
     console.error('Erro ao enviar notificação web push:', error);
+    
+    // Se o erro for 404 ou 410, a inscrição está inválida e deve ser removida
+    if (error instanceof webpush.WebPushError) {
+      if (error.statusCode === 404 || error.statusCode === 410) {
+        console.log(`Assinatura expirada para o dispositivo ${device.id}, marcando para remoção`);
+        try {
+          // Atualizar o dispositivo para desativar push
+          await storage.updateUserDevice(device.id, { pushEnabled: false });
+        } catch (updateError) {
+          console.error('Erro ao desativar push para dispositivo expirado:', updateError);
+        }
+      }
+    }
+    
     return false;
   }
 }

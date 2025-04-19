@@ -154,7 +154,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   // Registrar um novo dispositivo no backend
   const registerDeviceMutation = useMutation({
     mutationFn: async (subscription: PushSubscriptionJSON) => {
-      const response = await apiRequest("POST", "/api/devices/register", {
+      const response = await apiRequest("POST", "/api/devices", {
         deviceToken: JSON.stringify(subscription),
         deviceType: "web",
         deviceName: navigator.userAgent,
@@ -170,9 +170,18 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   // Remover um dispositivo no backend
   const unregisterDeviceMutation = useMutation({
     mutationFn: async (subscription: PushSubscriptionJSON) => {
-      const response = await apiRequest("POST", "/api/devices/unregister", {
-        deviceToken: JSON.stringify(subscription),
-      });
+      // Primeiro precisamos encontrar o ID do dispositivo com base no token
+      const deviceTokenStr = JSON.stringify(subscription);
+      const devicesResponse = await apiRequest("GET", "/api/devices");
+      const devices = await devicesResponse.json();
+      const device = devices.find((d: any) => d.deviceToken === deviceTokenStr);
+      
+      if (!device) {
+        throw new Error("Dispositivo não encontrado");
+      }
+      
+      // Agora podemos excluir o dispositivo pelo ID
+      const response = await apiRequest("DELETE", `/api/devices/${device.id}`);
       return response.json();
     },
     onSuccess: () => {
