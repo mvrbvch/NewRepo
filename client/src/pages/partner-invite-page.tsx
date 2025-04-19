@@ -3,10 +3,11 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useParams, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { randomBytes } from "crypto";
 
 export default function PartnerInvitePage() {
   const { user } = useAuth();
@@ -26,8 +27,9 @@ export default function PartnerInvitePage() {
   const [inviteError, setInviteError] = useState("");
   
   // Fetch invite details if token is present
-  useState(() => {
+  useEffect(() => {
     if (token) {
+      setIsLoadingInvite(true);
       fetch(`/api/partner/invite/${token}`)
         .then(res => {
           if (!res.ok) throw new Error("Convite não encontrado ou expirado");
@@ -42,7 +44,7 @@ export default function PartnerInvitePage() {
           setIsLoadingInvite(false);
         });
     }
-  });
+  }, [token]);
   
   const inviteMutation = useMutation({
     mutationFn: async (data: { email?: string; phoneNumber?: string }) => {

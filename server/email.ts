@@ -50,6 +50,58 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 /**
  * Gera um e-mail para lembrar o parceiro sobre uma tarefa doméstica
  */
+/**
+ * Gera um email para convidar alguém para ser parceiro no aplicativo
+ */
+export function generatePartnerInviteEmail(
+  recipientEmail: string,
+  inviterName: string,
+  inviteToken: string
+): { html: string; text: string } {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const inviteUrl = `${baseUrl}/accept-invite/${inviteToken}`;
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #4f46e5;">Convite para Parceria no NossaRotina</h1>
+      <p>Olá,</p>
+      <p><strong>${inviterName}</strong> está convidando você para ser parceiro(a) no aplicativo NossaRotina!</p>
+      <p>O NossaRotina é um aplicativo para casais gerenciarem eventos, tarefas domésticas e sua rotina juntos.</p>
+      
+      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; margin: 24px 0;">
+        <p style="margin-top: 0; color: #4b5563;">Para aceitar o convite, clique no botão abaixo:</p>
+      </div>
+      
+      <a href="${inviteUrl}" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 16px;">Aceitar Convite</a>
+      
+      <p style="margin-top: 24px; color: #4b5563;">Ou acesse este link: <a href="${inviteUrl}" style="color: #4f46e5;">${inviteUrl}</a></p>
+      
+      <p style="margin-top: 32px; font-size: 0.875rem; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+        Se você não conhece ${inviterName} ou acredita que este convite foi enviado por engano, pode simplesmente ignorá-lo.
+      </p>
+    </div>
+  `;
+  
+  const text = `
+Convite para Parceria no NossaRotina
+
+Olá,
+
+${inviterName} está convidando você para ser parceiro(a) no aplicativo NossaRotina!
+
+O NossaRotina é um aplicativo para casais gerenciarem eventos, tarefas domésticas e sua rotina juntos.
+
+Para aceitar o convite, acesse este link: ${inviteUrl}
+
+Se você não conhece ${inviterName} ou acredita que este convite foi enviado por engano, pode simplesmente ignorá-lo.
+  `;
+  
+  return { html, text };
+}
+
+/**
+ * Gera um e-mail para lembrar o parceiro sobre uma tarefa doméstica
+ */
 export function generateTaskReminderEmail(
   partnerName: string,
   senderName: string,
