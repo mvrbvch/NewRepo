@@ -866,9 +866,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Your partner doesn't have an email address" });
       }
       
+      // Para fins de teste, usamos o endereço de e-mail de teste da Resend
+      // Isso evita erros de validação com endereços example.com
+      const testEmail = "delivered@resend.dev";
+      console.log(`Usando endereço de teste em vez de ${partner.email}: ${testEmail}`);
+      
+      // Sobrescrever o email do parceiro para o endereço de teste
+      const partnerWithTestEmail = {
+        ...partner,
+        email: testEmail
+      };
+      
       // Gerar e enviar o e-mail
       const { html, text } = generateTaskReminderEmail(
-        partner.name,
+        partnerWithTestEmail.name,
         currentUser.name,
         task.title,
         task.description,
@@ -877,7 +888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       const emailSent = await sendEmail({
-        to: partner.email,
+        to: testEmail, // Este endereço é válido para testes na Resend
         subject: `Lembrete de teste: ${task.title}`,
         html,
         text
