@@ -1,7 +1,8 @@
-import { users, events, eventShares, eventComments, calendarConnections, partnerInvites, householdTasks } from "@shared/schema";
+import { users, events, eventShares, eventComments, calendarConnections, partnerInvites, householdTasks, userDevices, notifications } from "@shared/schema";
 import type { User, InsertUser, Event, InsertEvent, EventShare, InsertEventShare, 
   EventComment, InsertEventComment, CalendarConnection, InsertCalendarConnection, 
-  PartnerInvite, InsertPartnerInvite, HouseholdTask, InsertHouseholdTask } from "@shared/schema";
+  PartnerInvite, InsertPartnerInvite, HouseholdTask, InsertHouseholdTask,
+  UserDevice, InsertUserDevice, Notification, InsertNotification } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes } from "crypto";

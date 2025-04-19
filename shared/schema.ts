@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -81,6 +81,32 @@ export const householdTasks = pgTable("household_tasks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Tabela para dispositivos registrados para push notifications
+export const userDevices = pgTable("user_devices", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  deviceToken: text("device_token").notNull().unique(),
+  deviceType: text("device_type").notNull(), // ios, android, web
+  deviceName: text("device_name"),
+  pushEnabled: boolean("push_enabled").default(true),
+  lastUsed: timestamp("last_used").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para notificações 
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // event, task, message, system, etc.
+  referenceType: text("reference_type"), // event, task, message, etc.
+  referenceId: integer("reference_id"), 
+  metadata: jsonb("metadata"), // dados adicionais em formato JSON
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -144,6 +170,25 @@ export const insertHouseholdTaskSchema = createInsertSchema(householdTasks).pick
   recurrenceRule: true,
 });
 
+export const insertUserDeviceSchema = createInsertSchema(userDevices).pick({
+  userId: true,
+  deviceToken: true,
+  deviceType: true,
+  deviceName: true,
+  pushEnabled: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).pick({
+  userId: true,
+  title: true,
+  message: true,
+  type: true,
+  referenceType: true,
+  referenceId: true,
+  metadata: true,
+  isRead: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -176,5 +221,16 @@ export type InsertHouseholdTask = z.infer<typeof insertHouseholdTaskSchema>;
 export type HouseholdTask = Omit<typeof householdTasks.$inferSelect, 'dueDate' | 'nextDueDate' | 'createdAt'> & {
   dueDate: Date | string | null;
   nextDueDate: Date | string | null;
+  createdAt: Date | string | null;
+};
+
+export type InsertUserDevice = z.infer<typeof insertUserDeviceSchema>;
+export type UserDevice = Omit<typeof userDevices.$inferSelect, 'lastUsed' | 'createdAt'> & {
+  lastUsed: Date | string | null;
+  createdAt: Date | string | null;
+};
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = Omit<typeof notifications.$inferSelect, 'createdAt'> & {
   createdAt: Date | string | null;
 };

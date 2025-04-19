@@ -4,9 +4,13 @@ import { useAuth } from "@/hooks/use-auth";
 
 interface BottomNavigationProps {
   onCreateEvent: () => void;
+  onNotificationsClick?: () => void;
 }
 
-export default function BottomNavigation({ onCreateEvent }: BottomNavigationProps) {
+export default function BottomNavigation({ 
+  onCreateEvent, 
+  onNotificationsClick 
+}: BottomNavigationProps) {
   const [location] = useLocation();
   const { user } = useAuth();
   
@@ -27,17 +31,18 @@ export default function BottomNavigation({ onCreateEvent }: BottomNavigationProp
         </Button>
       </Link>
       
-      <Link href={user?.partnerId ? "/" : "/invite-partner"}>
+      <Link href="/notifications">
         <Button 
           variant="ghost" 
           className={`flex flex-col items-center py-1 px-3 h-auto ${
-            location === '/invite-partner' ? 'text-primary' : 'text-gray-500'
+            location === '/notifications' ? 'text-primary' : 'text-gray-500'
           }`}
           asChild
+          onClick={() => onNotificationsClick?.()}
         >
           <a>
-            <span className="material-icons text-[22px]">people</span>
-            <span className="text-xs mt-1">Compartilhar</span>
+            <span className="material-icons text-[22px]">notifications</span>
+            <span className="text-xs mt-1">Notificações</span>
           </a>
         </Button>
       </Link>
@@ -65,15 +70,6 @@ export default function BottomNavigation({ onCreateEvent }: BottomNavigationProp
           </a>
         </Button>
       </Link>
-      
-      <Button 
-        variant="ghost" 
-        className="flex flex-col items-center py-1 px-3 h-auto text-gray-500"
-        disabled
-      >
-        <span className="material-icons text-[22px]">settings</span>
-        <span className="text-xs mt-1">Ajustes</span>
-      </Button>
     </div>
   );
 }
