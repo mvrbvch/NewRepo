@@ -1,11 +1,13 @@
 {
-  "name": "Por Nós",
+  "name": "Por Nós - Calendário para Casais",
   "short_name": "Por Nós",
-  "description": "Todo dia é uma nova chance de nos escolher.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
+  "description": "Todo dia é uma nova chance de nos escolher",
   "theme_color": "#f15a59",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -18,6 +20,27 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "splash_pages": null,
+  "categories": ["lifestyle", "social", "productivity"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Calendário",
+      "short_name": "Calendário",
+      "description": "Ver calendário compartilhado",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tarefas domésticas",
+      "short_name": "Tarefas",
+      "description": "Gerenciar tarefas domésticas",
+      "url": "/tasks",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

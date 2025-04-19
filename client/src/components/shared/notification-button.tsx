@@ -1,176 +1,179 @@
 import { useState } from "react";
-import { Bell, BellRing, BellOff, Loader2 } from "lucide-react";
-import { 
-  Button,
-  ButtonProps 
-} from "@/components/ui/button";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
+import { Button, ButtonProps } from "@/components/ui/button";
+import { Bell } from "lucide-react";
+import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
-import { usePushNotifications, PermissionStatus } from "@/hooks/use-push-notifications";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface NotificationButtonProps extends ButtonProps {
-  showUnreadCount?: boolean;
-  variant?: "default" | "ghost" | "outline";
-  size?: "default" | "sm" | "lg" | "icon";
-}
-
-export default function NotificationButton({
-  showUnreadCount = true,
-  variant = "ghost",
-  size = "icon",
-  ...props
-}: NotificationButtonProps) {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const { 
-    isRegistered, 
-    isRegistering, 
-    registerDevice, 
-    unregisterDevice, 
-    permissionStatus,
-    unreadCount,
+export default function NotificationButton({ className, ...props }: ButtonProps) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const {
+    subscriptionStatus,
+    subscribe,
+    unsubscribe,
+    isPending,
   } = usePushNotifications();
 
-  const handleEnableNotifications = async () => {
-    await registerDevice();
-    setDialogOpen(false);
+  // Função para exibir o status em português
+  const getStatusText = () => {
+    switch (subscriptionStatus) {
+      case PushSubscriptionStatus.SUBSCRIBED:
+        return "Ativo";
+      case PushSubscriptionStatus.DENIED:
+        return "Bloqueado";
+      case PushSubscriptionStatus.NOT_SUPPORTED:
+        return "Não suportado";
+      default:
+        return "Desativado";
+    }
   };
 
-  const handleDisableNotifications = async () => {
-    await unregisterDevice();
-    setDialogOpen(false);
+  // Badge indicadora de status
+  const getStatusBadge = () => {
+    let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
+    
+    switch (subscriptionStatus) {
+      case PushSubscriptionStatus.SUBSCRIBED:
+        variant = "default";
+        break;
+      case PushSubscriptionStatus.DENIED:
+        variant = "destructive";
+        break;
+      case PushSubscriptionStatus.NOT_SUPPORTED:
+        variant = "secondary";
+        break;
+      default:
+        variant = "outline";
+    }
+    
+    return (
+      <Badge variant={variant} className="ml-2">
+        {getStatusText()}
+      </Badge>
+    );
   };
 
-  const getIcon = () => {
-    if (isRegistering) {
-      return <Loader2 className="h-5 w-5 animate-spin" />;
+  // Função chamada quando o usuário decide alterar o status
+  const handleToggleSubscription = async () => {
+    if (subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED) {
+      await unsubscribe();
+    } else if (
+      subscriptionStatus === PushSubscriptionStatus.NOT_SUBSCRIBED
+    ) {
+      await subscribe();
     }
-
-    if (isRegistered) {
-      return <BellRing className="h-5 w-5" />;
-    }
-
-    if (permissionStatus === PermissionStatus.DENIED) {
-      return <BellOff className="h-5 w-5" />;
-    }
-
-    return <Bell className="h-5 w-5" />;
   };
 
-  const getTooltipText = () => {
-    if (isRegistering) {
-      return "Registrando dispositivo...";
+  // Texto do botão de ação
+  const getActionButtonText = () => {
+    if (isPending) return "Processando...";
+    
+    if (subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED) {
+      return "Desativar Notificações";
+    } else if (subscriptionStatus === PushSubscriptionStatus.NOT_SUBSCRIBED) {
+      return "Ativar Notificações";
+    } else if (subscriptionStatus === PushSubscriptionStatus.DENIED) {
+      return "Notificações Bloqueadas";
+    } else {
+      return "Notificações Não Suportadas";
     }
-
-    if (isRegistered) {
-      return "Notificações ativadas";
-    }
-
-    if (permissionStatus === PermissionStatus.DENIED) {
-      return "Notificações bloqueadas pelo navegador";
-    }
-
-    return "Ativar notificações";
   };
-  
+
   return (
     <>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant={variant} size={size} {...props} className="relative">
-                  {getIcon()}
-                  {showUnreadCount && unreadCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
-                    >
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </Button>
-              </DialogTrigger>
+      <Button 
+        variant="ghost" 
+        size="icon"
+        className={cn("relative", className)}
+        onClick={() => setIsDialogOpen(true)}
+        {...props}
+      >
+        <Bell className="h-5 w-5" />
+        {subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED && (
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </span>
+        )}
+      </Button>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              Notificações Push {getStatusBadge()}
+            </DialogTitle>
+            <DialogDescription>
+              Receba alertas sobre tarefas domésticas e eventos importantes do seu relacionamento.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="text-sm space-y-4">
+              <p>
+                As notificações permitem que você e seu parceiro comuniquem-se sobre:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Lembretes de tarefas domésticas</li>
+                <li>Eventos importantes no calendário</li>
+                <li>Mensagens diretas do seu parceiro</li>
+              </ul>
               
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Notificações</DialogTitle>
-                  <DialogDescription>
-                    {permissionStatus === PermissionStatus.DENIED ? (
-                      "Você bloqueou as notificações neste site. Para receber notificações, você precisa alterar as configurações de permissão no seu navegador."
-                    ) : (
-                      "Receba notificações importantes sobre suas tarefas e eventos compartilhados com seu parceiro."
-                    )}
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid gap-4 py-4">
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-sm font-medium">Status atual</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isRegistered 
-                        ? "Você está recebendo notificações neste dispositivo."
-                        : permissionStatus === PermissionStatus.DENIED
-                          ? "Notificações bloqueadas pelo navegador."
-                          : permissionStatus === PermissionStatus.UNSUPPORTED
-                            ? "Seu navegador não suporta notificações."
-                            : "Você não está recebendo notificações neste dispositivo."}
-                    </p>
-                  </div>
+              {subscriptionStatus === PushSubscriptionStatus.DENIED && (
+                <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-md">
+                  <p className="font-medium">Notificações bloqueadas pelo navegador</p>
+                  <p className="text-xs mt-1">
+                    Para ativar: acesse as configurações do seu navegador, 
+                    encontre as permissões deste site e permita notificações.
+                  </p>
                 </div>
-                
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancelar</Button>
-                  </DialogClose>
-                  
-                  {isRegistered ? (
-                    <Button variant="destructive" onClick={handleDisableNotifications} disabled={isRegistering}>
-                      {isRegistering ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Aguarde
-                        </>
-                      ) : (
-                        "Desativar notificações"
-                      )}
-                    </Button>
-                  ) : permissionStatus !== PermissionStatus.DENIED && permissionStatus !== PermissionStatus.UNSUPPORTED && (
-                    <Button onClick={handleEnableNotifications} disabled={isRegistering}>
-                      {isRegistering ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Ativando
-                        </>
-                      ) : (
-                        "Ativar notificações"
-                      )}
-                    </Button>
-                  )}
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{getTooltipText()}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+              )}
+              
+              {subscriptionStatus === PushSubscriptionStatus.NOT_SUPPORTED && (
+                <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 rounded-md">
+                  <p className="font-medium">Seu navegador não suporta notificações push</p>
+                  <p className="text-xs mt-1">
+                    Tente usar um navegador moderno como Chrome, Firefox, Edge ou Safari.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter className="sm:justify-between">
+            <DialogClose asChild>
+              <Button variant="outline" size="sm">
+                Fechar
+              </Button>
+            </DialogClose>
+            
+            {(subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED || 
+              subscriptionStatus === PushSubscriptionStatus.NOT_SUBSCRIBED) && (
+              <Button 
+                onClick={handleToggleSubscription}
+                disabled={isPending || 
+                  (subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED && 
+                   subscriptionStatus !== PushSubscriptionStatus.NOT_SUBSCRIBED)}
+                variant={subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED ? "outline" : "default"}
+                size="sm"
+              >
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {getActionButtonText()}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

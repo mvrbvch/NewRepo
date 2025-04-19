@@ -15,7 +15,7 @@ export default function BottomNavigation({
 }: BottomNavigationProps) {
   const [location] = useLocation();
   const { user } = useAuth();
-  const { unreadCount } = usePushNotifications();
+  const { subscriptionStatus } = usePushNotifications();
   
   return (
     <div className="bg-white border-t flex items-center justify-around p-2 z-10">
@@ -38,7 +38,7 @@ export default function BottomNavigation({
         <NotificationButton 
           variant="ghost"
           size="default"
-          showUnreadCount={true}
+
           className={`flex flex-col items-center py-1 px-3 h-auto ${
             location === '/notifications' ? 'text-primary' : 'text-gray-500'
           }`}

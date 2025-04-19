@@ -1,130 +1,184 @@
-// Versão do cache
+// Nome do cache para armazenar arquivos offline
 const CACHE_NAME = 'por-nos-v1';
 
-// Arquivos para armazenar em cache
-const urlsToCache = [
+// Lista de URLs para pré-cachear (recursos estáticos principais)
+const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/logo.png',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/manifest.json'
+  '/icons/icon-512x512.png'
 ];
 
-// Instala o service worker
+// Instalar o Service Worker e pré-cachear os recursos estáticos
 self.addEventListener('install', event => {
+  console.log('[Service Worker] Instalação');
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache aberto');
-        return cache.addAll(urlsToCache);
+        console.log('[Service Worker] Pré-cacheando recursos');
+        return cache.addAll(ASSETS_TO_CACHE);
+      })
+      .then(() => {
+        // Force o service worker a ativar imediatamente
+        return self.skipWaiting();
       })
   );
 });
 
-// Ativa o service worker
+// Limpar caches antigos quando o service worker for ativado
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+  console.log('[Service Worker] Ativação');
+  
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
+        cacheNames.filter(cacheName => {
+          return cacheName !== CACHE_NAME;
+        }).map(cacheName => {
+          console.log('[Service Worker] Removendo cache antigo:', cacheName);
+          return caches.delete(cacheName);
         })
       );
+    }).then(() => {
+      // Tome controle de todas as páginas imediatamente
+      return self.clients.claim();
     })
   );
 });
 
-// Intercepta requisições e serve do cache se disponível
+// Estratégia de cache e rede para requisições
 self.addEventListener('fetch', event => {
+  // Ignora requisições de API e análise
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('analytics') ||
+      event.request.url.includes('socket.io')) {
+    return;
+  }
+  
+  // Para requisições de navegação (HTML), sempre vá para a rede primeiro
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // Se não conseguir acessar a rede, tente o cache
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // Para outras requisições, tente o cache primeiro, com fallback para a rede
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        // Retorna do cache se encontrado
-        if (response) {
-          return response;
+      .then(cachedResponse => {
+        // Retorne do cache se existir, caso contrário busque da rede
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        
-        // Clone a requisição
-        const fetchRequest = event.request.clone();
-        
-        // Faz a requisição e armazena em cache se for um GET
-        return fetch(fetchRequest).then(response => {
-          // Verifica se recebemos uma resposta válida
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone a resposta
-          const responseToCache = response.clone();
-          
-          // Armazena em cache
-          if (event.request.method === 'GET') {
+
+        return fetch(event.request)
+          .then(response => {
+            // Não cache se não for uma resposta válida ou não for GET
+            if (!response || response.status !== 200 || response.type !== 'basic' || event.request.method !== 'GET') {
+              return response;
+            }
+
+            // Clone a resposta porque o body só pode ser consumido uma vez
+            let responseToCache = response.clone();
+
+            // Armazene em cache para uso futuro offline
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
               });
-          }
-          
-          return response;
-        });
+
+            return response;
+          })
+          .catch(error => {
+            console.error('[Service Worker] Erro de rede:', error);
+            
+            // Para imagens, podemos fornecer uma imagem de fallback
+            if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg)$/)) {
+              return caches.match('/icons/icon-192x192.png');
+            }
+            
+            // Para outros recursos, retornamos uma resposta de erro
+            return new Response('Offline - Conteúdo não disponível', {
+              status: 503,
+              statusText: 'Serviço indisponível'
+            });
+          });
       })
   );
 });
 
-// Recebe mensagens do cliente
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-// Escuta eventos de push para notificações
+// Lidar com notificações push
 self.addEventListener('push', event => {
-  if (!event.data) return;
-  
+  console.log('[Service Worker] Notificação push recebida', event);
+
+  let payload;
   try {
-    const data = event.data.json();
-    
-    const options = {
-      body: data.body || 'Nova notificação',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-192x192.png',
-      data: data.data || {},
-      vibrate: [100, 50, 100],
-      actions: data.actions || []
+    payload = event.data.json();
+  } catch (e) {
+    payload = {
+      title: 'Por Nós',
+      body: event.data ? event.data.text() : 'Notificação sem detalhes',
+      icon: '/icons/icon-192x192.png'
     };
-    
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'Por Nós', options)
-    );
-  } catch (error) {
-    console.error('Erro ao processar notificação push:', error);
   }
+
+  const options = {
+    body: payload.body || 'Notificação do Por Nós',
+    icon: payload.icon || '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    data: payload.data || {},
+    actions: payload.actions || [],
+    vibrate: [100, 50, 100],
+    tag: payload.tag || 'default',
+    requireInteraction: payload.requireInteraction || false
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'Por Nós', options)
+  );
 });
 
 // Lidar com cliques em notificações
 self.addEventListener('notificationclick', event => {
+  console.log('[Service Worker] Clique em notificação', event);
+  
   event.notification.close();
+
+  const payload = event.notification.data;
+  const action = event.action;
   
-  const urlToOpen = new URL('/', self.location.origin).href;
+  let url = '/';
   
+  // Se for uma notificação de tarefa, redirecionar para a página de tarefas
+  if (payload && payload.referenceType === 'task') {
+    url = '/tasks';
+  }
+  // Se for uma notificação de evento, redirecionar para a página do calendário
+  else if (payload && payload.referenceType === 'event') {
+    url = '/';
+  }
+  
+  // Verificar se já temos uma janela aberta e navegar para a URL
   event.waitUntil(
-    clients.matchAll({ type: 'window' })
-      .then(windowClients => {
-        // Tentar encontrar uma janela/aba já aberta para focar
-        for (let client of windowClients) {
-          if (client.url === urlToOpen && 'focus' in client) {
+    clients.matchAll({type: 'window'})
+      .then(clientList => {
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            client.navigate(url);
             return client.focus();
           }
         }
-        
-        // Se não encontrar, abrir uma nova
+        // Se não tiver uma janela aberta, abra uma nova
         if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+          return clients.openWindow(url);
         }
       })
   );

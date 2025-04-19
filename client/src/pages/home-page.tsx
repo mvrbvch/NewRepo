@@ -17,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
 
 export default function HomePage() {
   const [view, setView] = useState<'day' | 'week' | 'month'>('day');
@@ -25,7 +25,7 @@ export default function HomePage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const { toast } = useToast();
-  const { isRegistered, registerDevice } = usePushNotifications();
+  const { subscriptionStatus } = usePushNotifications();
   
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
@@ -214,13 +214,12 @@ export default function HomePage() {
           variant="outline"
           className="flex items-center gap-2 bg-white shadow-md"
           onClick={() => {
-            if (!isRegistered) {
+            if (subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED) {
               toast({
-                title: 'Notificações não registradas',
-                description: 'Você precisa permitir notificações primeiro',
+                title: 'Notificações não ativadas',
+                description: 'Você precisa ativar as notificações primeiro',
                 variant: 'destructive',
               });
-              registerDevice();
             } else {
               testNotificationMutation.mutate();
             }

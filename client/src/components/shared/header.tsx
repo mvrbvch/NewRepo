@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import InstallButton from "@/components/pwa/install-button";
+import NotificationButton from "@/components/shared/notification-button";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
@@ -41,9 +43,12 @@ export default function Header() {
       </div>
 
       <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="icon" className="text-gray-600">
-          <span className="material-icons">notifications</span>
-        </Button>
+        <InstallButton />
+        <NotificationButton 
+          variant="ghost" 
+          size="icon" 
+          className="text-gray-600"
+        />
 
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <DropdownMenuTrigger asChild>
