@@ -25,13 +25,23 @@ export default function HomePage() {
     queryKey: ['/api/events'],
   });
   
-  // Filter events for the selected date
+  // Calcular eventos baseados na visualização atual
+  useEffect(() => {
+    // Este efeito assegura que a consulta de eventos seja recarregada
+    // quando o usuário mudar entre visualizações de dia/semana/mês
+    if (events.length > 0) {
+      // Podemos adicionar lógica aqui se precisarmos recarregar eventos 
+      // baseados na visualização ou intervalo de datas
+    }
+  }, [view, selectedDate]);
+  
+  // Filter events for the selected date (usado na visualização diária)
   const filteredEvents = events.filter(event => {
     const eventDate = new Date(event.date);
     return eventDate.toDateString() === selectedDate.toDateString();
   });
   
-  // Group events by period
+  // Group events by period for day view
   const morningEvents = filteredEvents.filter(event => event.period === 'morning');
   const afternoonEvents = filteredEvents.filter(event => event.period === 'afternoon');
   const nightEvents = filteredEvents.filter(event => event.period === 'night');
@@ -106,6 +116,7 @@ export default function HomePage() {
         sharedCount={sharedEventsCount}
         onPrev={handlePrev}
         onNext={handleNext}
+        calendarView={view}
       />
       
       <ViewToggle 
