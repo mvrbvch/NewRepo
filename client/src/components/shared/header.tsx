@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import InstallButton from "@/components/pwa/install-button";
 import NotificationButton from "@/components/shared/notification-button";
+import IOSInstallGuide from "@/components/shared/ios-install-guide";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
@@ -44,6 +45,7 @@ export default function Header() {
 
       <div className="flex items-center space-x-3">
         <InstallButton />
+        <IOSInstallGuide />
         <NotificationButton 
           variant="ghost" 
           size="icon" 

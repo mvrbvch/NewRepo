@@ -9,6 +9,8 @@ import { Event, insertHouseholdTaskSchema, insertUserDeviceSchema, insertNotific
 import { addDays, addMonths, addWeeks, isAfter, isBefore, parseISO } from "date-fns";
 import { sendEmail, generateTaskReminderEmail, generatePartnerInviteEmail } from "./email";
 import { sendPushToUser, PushNotificationPayload } from "./pushNotifications";
+import { WebSocketServer } from "ws";
+import { log } from "./vite";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {
@@ -1318,5 +1320,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Configurar servidor WebSocket para diagnóstico
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws'
+  });
+
+  console.log('Servidor WebSocket configurado em /ws');
+  
+  wss.on('connection', (ws) => {
+    console.log('Nova conexão WebSocket estabelecida');
+    
+    ws.on('message', (message) => {
+      console.log('Mensagem recebida:', message.toString());
+      ws.send('Mensagem recebida com sucesso! Servidor WebSocket funcionando.');
+    });
+    
+    ws.on('close', () => {
+      console.log('Conexão WebSocket fechada');
+    });
+    
+    ws.on('error', (error) => {
+      console.error('Erro na conexão WebSocket:', error);
+    });
+    
+    // Enviar mensagem de boas-vindas
+    ws.send('Conexão WebSocket estabelecida com sucesso!');
+  });
+  
   return httpServer;
 }

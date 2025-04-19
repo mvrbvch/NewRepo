@@ -48,6 +48,8 @@ export default function InstallButton() {
       setDeferredPrompt(e);
       // Mostra o botão de instalação
       setIsInstallable(true);
+      
+      console.log("BeforeInstallPrompt capturado", e);
     };
 
     // Quando o app é instalado
@@ -56,6 +58,8 @@ export default function InstallButton() {
       setIsInstallable(false);
       setIsInstalled(true);
       setDeferredPrompt(null);
+      
+      console.log("Aplicativo instalado");
       
       // Mostra um toast de sucesso
       toast({
@@ -68,6 +72,13 @@ export default function InstallButton() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Log para debug
+    console.log("Estado atual do app:", { 
+      isIOS, 
+      isStandalone, 
+      promptSupported: 'BeforeInstallPromptEvent' in window 
+    });
+
     // Remove os event listeners quando o componente é desmontado
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -78,56 +89,73 @@ export default function InstallButton() {
   // Função para disparar a instalação do PWA
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
+      console.log("Evento deferredPrompt não disponível");
+      
+      toast({
+        title: "Instalação não disponível",
+        description: "Seu navegador não suporta instalação direta do aplicativo no momento.",
+        variant: "destructive"
+      });
+      
       return;
     }
 
-    // Mostra o prompt de instalação
-    deferredPrompt.prompt();
-
-    // Espera pela escolha do usuário
-    const { outcome } = await deferredPrompt.userChoice;
+    console.log("Mostrando prompt de instalação");
     
-    // O prompt só pode ser usado uma vez, então limpa a referência
-    setDeferredPrompt(null);
+    try {
+      // Mostra o prompt de instalação
+      deferredPrompt.prompt();
 
-    if (outcome === 'accepted') {
+      // Espera pela escolha do usuário
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log("Resultado da instalação:", outcome);
+      
+      // O prompt só pode ser usado uma vez, então limpa a referência
+      setDeferredPrompt(null);
+
+      if (outcome === 'accepted') {
+        toast({
+          title: "Instalando...",
+          description: "O aplicativo está sendo instalado."
+        });
+      } else {
+        // O usuário recusou a instalação
+        toast({
+          title: "Instalação cancelada",
+          description: "Você pode instalar o aplicativo mais tarde.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro durante instalação:", error);
       toast({
-        title: "Instalando...",
-        description: "O aplicativo está sendo instalado."
-      });
-    } else {
-      // O usuário recusou a instalação
-      toast({
-        title: "Instalação cancelada",
-        description: "Você pode instalar o aplicativo mais tarde.",
+        title: "Erro na instalação",
+        description: "Ocorreu um erro ao tentar instalar o aplicativo.",
         variant: "destructive"
       });
     }
   };
 
-  // Mostra as instruções de instalação para iOS
-  const showIOSInstructions = () => {
-    toast({
-      title: "Instalação no iOS",
-      description: "Toque no ícone 'Compartilhar' e depois em 'Adicionar à Tela de Início'",
-      duration: 8000,
-    });
-  };
-
-  // Se o aplicativo já está instalado ou não pode ser instalado, não exibe o botão
+  // Se o aplicativo já está instalado ou não pode ser instalado em navegadores não-iOS, não exibe o botão
   if (isInstalled || (!isInstallable && !isIOSDevice)) {
     return null;
   }
 
+  // Em dispositivos iOS, delegamos a exibição para o componente IOSInstallGuide
+  if (isIOSDevice) {
+    return null; // Não mostra este botão em iOS, usamos o IOSInstallGuide em vez disso
+  }
+
+  // Botão de instalação para outros navegadores
   return (
     <Button
       variant="outline"
       size="sm"
-      className="gap-1 hidden md:flex"
-      onClick={isIOSDevice ? showIOSInstructions : handleInstallClick}
+      className="gap-1 md:flex"
+      onClick={handleInstallClick}
     >
       <Download className="h-4 w-4" />
-      <span>{isIOSDevice ? "Adicionar à Tela" : "Instalar App"}</span>
+      <span>Instalar App</span>
     </Button>
   );
 }

@@ -2,18 +2,25 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
     <title>Por Nós</title>
     <meta name="description" content="Todo dia é uma nova chance de nos escolher." />
+    
+    <!-- Favicon e ícones -->
     <link rel="icon" href="/icons/icon-192x192.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#f15a59" />
     
-    <!-- PWA Support -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- Metatags para iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Por Nós" />
+    
+    <!-- Ícone específico para iOS -->
+    <link rel="apple-touch-startup-image" href="/icons/apple-touch-icon.png" />
+    
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json" />
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -25,8 +32,10 @@
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration - Temporariamente desativado para diagnóstico -->
     <script>
+      // Comentado temporariamente para resolver problemas de conexão
+      /*
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
@@ -36,6 +45,17 @@
             .catch(error => {
               console.log('Falha ao registrar Service Worker:', error);
             });
+        });
+      }
+      */
+      
+      // Verificar se existe um service worker registrado e desativá-lo
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker desregistrado para diagnóstico');
+          }
         });
       }
     </script>

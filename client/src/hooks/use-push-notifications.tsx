@@ -65,9 +65,52 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     checkSubscriptionStatus();
   }, []);
 
+  // Verifica se estamos no iOS
+  const isIOS = () => {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  };
+
+  // Verifica se estamos no Safari no iOS
+  const isIOSSafari = () => {
+    const ua = navigator.userAgent;
+    return isIOS() && ua.includes('Safari') && !ua.includes('Chrome');
+  };
+
+  // Verifica se o iOS suporta notificações push (iOS 16.4+)
+  const isIOSPushSupported = () => {
+    if (!isIOS()) return false;
+    
+    // Extrai a versão do iOS do user-agent
+    const match = navigator.userAgent.match(/OS\s+(\d+)_(\d+)/);
+    if (!match) return false;
+    
+    const majorVersion = parseInt(match[1], 10);
+    const minorVersion = parseInt(match[2], 10);
+    
+    // iOS 16.4+ suporta notificações push no Safari
+    return (majorVersion > 16 || (majorVersion === 16 && minorVersion >= 4));
+  };
+
   // Função para verificar o status atual da inscrição
   const checkSubscriptionStatus = async () => {
+    // Primeiro, verifica se estamos no iOS
+    if (isIOS()) {
+      // Caso especial para Safari no iOS 16.4+
+      if (isIOSSafari() && isIOSPushSupported()) {
+        // Continua com a verificação normal, pois o push é suportado
+        console.log("Safari no iOS 16.4+ detectado - Push é suportado");
+      } 
+      // iOS mais antigo ou outro navegador no iOS que não suporta push
+      else if (!isIOSPushSupported()) {
+        console.log("Navegador iOS detectado mas Push não é suportado nesta versão");
+        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
+        return;
+      }
+    }
+
+    // Verificação padrão para navegadores não-iOS ou Safari no iOS 16.4+
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      console.log("ServiceWorker ou PushManager não suportados neste navegador");
       setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
       return;
     }
@@ -79,13 +122,28 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      // No iOS, o registro do service worker pode falhar silenciosamente
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
 
-      if (subscription) {
-        setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
-      } else {
-        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+        if (subscription) {
+          console.log("Inscrição de push existente encontrada");
+          setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
+        } else {
+          console.log("Navegador suporta push, mas usuário não está inscrito");
+          setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+        }
+      } catch (swError) {
+        console.error("Erro ao acessar service worker:", swError);
+        
+        // Se estamos no iOS e ocorreu um erro, pode ser uma limitação da plataforma
+        if (isIOS()) {
+          console.log("Erro de service worker no iOS - limitação conhecida");
+          setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
+        } else {
+          setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+        }
       }
     } catch (error) {
       console.error("Erro ao verificar status da inscrição:", error);

@@ -8,7 +8,8 @@ const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/logo.png',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 // Instalar o Service Worker e pré-cachear os recursos estáticos
@@ -51,12 +52,18 @@ self.addEventListener('activate', event => {
 
 // Estratégia de cache e rede para requisições
 self.addEventListener('fetch', event => {
-  // Ignora requisições de API e análise
+  // Ignora requisições de API, análise, WebSockets, e outras conexões especiais
   if (event.request.url.includes('/api/') || 
       event.request.url.includes('analytics') ||
-      event.request.url.includes('socket.io')) {
+      event.request.url.includes('socket.io') ||
+      event.request.url.includes('ws:') ||
+      event.request.url.includes('wss:') ||
+      event.request.url.includes('replit.com')) {
     return;
   }
+  
+  // Log para ajudar na depuração
+  console.log('[Service Worker] Processando fetch para:', event.request.url);
   
   // Para requisições de navegação (HTML), sempre vá para a rede primeiro
   if (event.request.mode === 'navigate') {
