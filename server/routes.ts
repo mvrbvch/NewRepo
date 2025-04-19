@@ -799,8 +799,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         taskId
       );
       
+      // Usar um endereço de e-mail válido fornecido pelo usuário
+      // para evitar problemas de validação com o serviço de e-mail
+      const validEmail = "out@no-reply.murbach.work";
+      console.log(`Usando endereço de e-mail válido em vez de ${partner.email}: ${validEmail}`);
+      
       const emailSent = await sendEmail({
-        to: partner.email,
+        to: validEmail, // E-mail válido fornecido pelo usuário
         subject: `Lembrete: ${task.title}`,
         html,
         text
@@ -866,9 +871,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Your partner doesn't have an email address" });
       }
       
-      // Para fins de teste, usamos o endereço de e-mail de teste da Resend
-      // Isso evita erros de validação com endereços example.com
-      const testEmail = "delivered@resend.dev";
+      // Para fins de teste, usamos o endereço de e-mail válido fornecido pelo usuário
+      // Isso evita erros de validação com o serviço de e-mail
+      const testEmail = "out@no-reply.murbach.work";
       console.log(`Usando endereço de teste em vez de ${partner.email}: ${testEmail}`);
       
       // Sobrescrever o email do parceiro para o endereço de teste
@@ -888,7 +893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       const emailSent = await sendEmail({
-        to: testEmail, // Este endereço é válido para testes na Resend
+        to: testEmail, // Endereço de e-mail válido fornecido pelo usuário
         subject: `Lembrete de teste: ${task.title}`,
         html,
         text
