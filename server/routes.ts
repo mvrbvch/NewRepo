@@ -7,7 +7,7 @@ import { z } from "zod";
 import { pool } from "./db";
 import { Event, insertHouseholdTaskSchema } from "@shared/schema";
 import { addDays, addMonths, addWeeks, isAfter, isBefore, parseISO } from "date-fns";
-import { sendEmail, generateTaskReminderEmail } from "./email";
+import { sendEmail, generateTaskReminderEmail, generatePartnerInviteEmail } from "./email";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {
@@ -361,6 +361,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const inviterId = req.user?.id as number;
+      const inviter = await storage.getUser(inviterId);
+      
+      if (!inviter) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
       // Generate a unique token for the invite
       const token = randomBytes(20).toString('hex');
@@ -372,8 +377,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token
       });
       
-      // In a real application, you would send an email or SMS here
-      // For now, just return the token and details
+      // Enviar email de convite se o email foi fornecido
+      if (email) {
+        try {
+          const { html, text } = generatePartnerInviteEmail(
+            email,
+            inviter.name,
+            token
+          );
+          
+          // No ambiente de teste do Resend, só podemos enviar emails para o endereço autorizado
+          // Esta é uma limitação da API gratuita do Resend
+          const validEmail = "out@no-reply.murbach.work"; // Email do usuário registrado no Resend
+          console.log(`Usando endereço autorizado pelo Resend em vez de ${email}: ${validEmail}`);
+          
+          const emailSent = await sendEmail({
+            to: validEmail, // Usando o email autorizado para respeitar as limitações da API
+            subject: `Convite para parceria no NossaRotina de ${inviter.name}`,
+            html,
+            text
+          });
+          
+          console.log(`Email de convite ${emailSent ? 'enviado com sucesso' : 'falhou ao enviar'}`);
+        } catch (emailError) {
+          console.error('Erro ao enviar email de convite:', emailError);
+          // Continuamos mesmo se o email falhar, pois o link ainda pode ser compartilhado manualmente
+        }
+      }
       
       res.status(201).json({
         message: "Invite sent successfully",
@@ -381,6 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inviteToken: token
       });
     } catch (error) {
+      console.error('Erro ao criar convite:', error);
       res.status(500).json({ message: "Failed to send invite" });
     }
   });

@@ -48,9 +48,6 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 // Templates de e-mail
 
 /**
- * Gera um e-mail para lembrar o parceiro sobre uma tarefa doméstica
- */
-/**
  * Gera um email para convidar alguém para ser parceiro no aplicativo
  */
 export function generatePartnerInviteEmail(
