@@ -7,6 +7,7 @@ import { z } from "zod";
 import { pool } from "./db";
 import { Event, insertHouseholdTaskSchema } from "@shared/schema";
 import { addDays, addMonths, addWeeks, isAfter, isBefore, parseISO } from "date-fns";
+import { sendEmail, generateTaskReminderEmail } from "./email";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {

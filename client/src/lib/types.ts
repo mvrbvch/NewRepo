@@ -63,3 +63,17 @@ export interface DateSelection {
   date: Date;
   view: 'day' | 'week' | 'month';
 }
+
+export interface HouseholdTaskType {
+  id: number;
+  title: string;
+  description: string | null;
+  frequency: 'once' | 'daily' | 'weekly' | 'monthly';
+  assignedTo: number | null;
+  createdBy: number;
+  dueDate: string | Date | null;
+  completed: boolean;
+  nextDueDate: string | Date | null;
+  recurrenceRule: string | null;
+  createdAt: string | Date | null;
+}
