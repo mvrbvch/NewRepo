@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2, Trash2, Edit, Check, RefreshCw } from "lucide-react";
+import { CalendarIcon, Loader2, Trash2, Edit, Check, RefreshCw, BellRing, Send } from "lucide-react";
 import { useState } from "react";
 import { 
   AlertDialog,
@@ -41,6 +42,35 @@ export default function TaskDetailsModal({
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState('');
+  const [sendingReminder, setSendingReminder] = useState(false);
+  
+  // Mutation para enviar lembrete
+  const sendReminderMutation = useMutation({
+    mutationFn: async ({ taskId, message }: { taskId: number; message: string }) => {
+      const response = await apiRequest("POST", `/api/tasks/${taskId}/remind`, { message });
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Lembrete enviado",
+        description: "O lembrete foi enviado com sucesso para seu parceiro.",
+      });
+      setReminderDialogOpen(false);
+      setReminderMessage('');
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao enviar lembrete",
+        description: "Não foi possível enviar o lembrete. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setSendingReminder(false);
+    }
+  });
 
   const handleDelete = () => {
     setDeleteDialogOpen(true);
@@ -56,6 +86,18 @@ export default function TaskDetailsModal({
     onToggleComplete(task);
     // Simular um pequeno atraso para feedback visual
     setTimeout(() => setUpdatingStatus(false), 500);
+  };
+  
+  const handleOpenReminderDialog = () => {
+    setReminderDialogOpen(true);
+  };
+  
+  const handleSendReminder = () => {
+    setSendingReminder(true);
+    sendReminderMutation.mutate({
+      taskId: task.id,
+      message: reminderMessage
+    });
   };
 
   const getFrequencyText = (frequency: string): string => {
@@ -153,6 +195,20 @@ export default function TaskDetailsModal({
                 Excluir
               </Button>
             )}
+            
+            {/* Botão para enviar lembrete ao parceiro */}
+            {user?.partnerId && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleOpenReminderDialog}
+                className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+              >
+                <BellRing className="h-4 w-4 mr-1" />
+                Lembrar Parceiro
+              </Button>
+            )}
+            
             {/* Botão de edição - será implementado futuramente */}
             {canEdit && (
               <Button variant="outline" size="sm" disabled>

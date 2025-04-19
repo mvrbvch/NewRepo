@@ -799,10 +799,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         taskId
       );
       
-      // Para fins de teste, usamos o endereço de e-mail do próprio usuário para 
-      // respeitar as limitações da API de teste do Resend
-      const validEmail = "matheus.murbach@gmail.com";
-      console.log(`Usando endereço de e-mail válido em vez de ${partner.email}: ${validEmail}`);
+      // No ambiente de teste do Resend, só podemos enviar emails para o próprio email do usuário registrado
+      // Esta é uma limitação da API gratuita do Resend
+      const validEmail = "matheus.murbach@gmail.com"; // Email do usuário registrado no Resend
+      console.log(`Usando endereço autorizado pelo Resend em vez de ${partner.email}: ${validEmail}`);
       
       const emailSent = await sendEmail({
         to: validEmail, // Usando o email do próprio usuário para respeitar as limitações da API de teste do Resend
@@ -871,10 +871,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Your partner doesn't have an email address" });
       }
       
-      // Para fins de teste, usamos o endereço de e-mail do próprio usuário para 
-      // respeitar as limitações da API de teste do Resend
-      const testEmail = "matheus.murbach@gmail.com";
-      console.log(`Usando endereço de teste em vez de ${partner.email}: ${testEmail}`);
+      // No ambiente de teste do Resend, só podemos enviar emails para o próprio email do usuário registrado
+      // Esta é uma limitação da API gratuita do Resend
+      const testEmail = "matheus.murbach@gmail.com"; // Email do usuário registrado no Resend
+      console.log(`Usando endereço autorizado pelo Resend em vez de ${partner.email}: ${testEmail}`);
       
       // Sobrescrever o email do parceiro para o endereço de teste
       const partnerWithTestEmail = {

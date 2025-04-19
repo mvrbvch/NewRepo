@@ -18,7 +18,9 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const { to, subject, html, text } = options;
-    const from = options.from || 'out@no-reply.murbach.work'; // Usar o domínio verificado ou o remetente padrão do Resend
+    // No ambiente de teste do Resend, é obrigatório usar o endereço 'onboarding@resend.dev' como remetente
+    // pois este é o único domínio autorizado para a conta gratuita
+    const from = options.from || 'onboarding@resend.dev';
     
     console.log(`Enviando e-mail para ${to} com assunto "${subject}"`);
     
