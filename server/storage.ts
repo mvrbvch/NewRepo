@@ -501,7 +501,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getEvent(id: number): Promise<Event | undefined> {
-    const [event] = await db.select().from(events).where(eq(events.id, id));
+    const [event] = await db.select({
+      id: events.id,
+      title: events.title,
+      description: events.description,
+      date: events.date,
+      startTime: events.startTime,
+      endTime: events.endTime,
+      location: events.location,
+      emoji: events.emoji,
+      period: events.period,
+      recurrence: events.recurrence,
+      recurrenceEnd: events.recurrenceEnd,
+      recurrenceRule: events.recurrenceRule,
+      createdBy: events.createdBy
+    }).from(events).where(eq(events.id, id));
+    
     return event ? this.formatEventDates(event) : undefined;
   }
   
@@ -574,7 +589,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserEvents(userId: number): Promise<Event[]> {
-    const userEvents = await db.select().from(events).where(eq(events.createdBy, userId));
+    // Selecionando explicitamente os campos para evitar problemas com novas colunas
+    const userEvents = await db.select({
+      id: events.id,
+      title: events.title,
+      description: events.description,
+      date: events.date,
+      startTime: events.startTime,
+      endTime: events.endTime,
+      location: events.location,
+      emoji: events.emoji,
+      period: events.period,
+      recurrence: events.recurrence,
+      recurrenceEnd: events.recurrenceEnd,
+      recurrenceRule: events.recurrenceRule,
+      createdBy: events.createdBy
+    }).from(events).where(eq(events.createdBy, userId));
     
     // Formatar as datas dos eventos antes de retorná-los
     return userEvents.map(event => this.formatEventDates(event));
@@ -645,9 +675,25 @@ export class DatabaseStorage implements IStorage {
     // Get events one by one since we have type issues with the inArray operator
     const sharedEvents: Event[] = [];
     for (const share of shares) {
-      const event = await this.getEvent(share.eventId);
+      // Usando um select explícito para cada evento para evitar problemas com novas colunas
+      const [event] = await db.select({
+        id: events.id,
+        title: events.title,
+        description: events.description,
+        date: events.date,
+        startTime: events.startTime,
+        endTime: events.endTime,
+        location: events.location,
+        emoji: events.emoji,
+        period: events.period,
+        recurrence: events.recurrence,
+        recurrenceEnd: events.recurrenceEnd,
+        recurrenceRule: events.recurrenceRule,
+        createdBy: events.createdBy
+      }).from(events).where(eq(events.id, share.eventId));
+      
       if (event) {
-        sharedEvents.push(event);
+        sharedEvents.push(this.formatEventDates(event));
       }
     }
     
