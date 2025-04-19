@@ -1,60 +1,13 @@
-import * as React from "react";
-
-// Definição de estado mínima que você mencionou que estava funcionando
-interface State {
-  count: number;
-}
-
-const memoryState: State = {
-  count: 0
-};
-
+// Versão mínima para diagnóstico
 function App() {
-  const [state, setState] = React.useState<State>(memoryState);
-  
-  function incrementCounter() {
-    setState(prevState => ({
-      ...prevState,
-      count: prevState.count + 1
-    }));
-  }
-  
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      padding: '16px'
-    }}>
-      <div style={{
-        maxWidth: '400px',
-        padding: '24px',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          marginBottom: '16px'
-        }}>Por Nós - Teste de Estado</h1>
-        <p style={{ marginBottom: '16px' }}>
-          Contador: {state.count}
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
+        <h1 className="mb-4 text-2xl font-bold">Por Nós - Diagnóstico</h1>
+        <p className="mb-4">
+          Esta é uma versão mínima para diagnóstico da aplicação.
         </p>
-        <button 
-          onClick={incrementCounter}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Incrementar
-        </button>
+        <p>Teste de Tailwind CSS.</p>
       </div>
     </div>
   );
