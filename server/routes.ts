@@ -11,6 +11,14 @@ import { sendEmail, generateTaskReminderEmail, generatePartnerInviteEmail } from
 import { sendPushToUser, PushNotificationPayload } from "./pushNotifications";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
+import { 
+  generateWebAuthnRegistrationOptions, 
+  verifyWebAuthnRegistration,
+  generateWebAuthnAuthenticationOptions,
+  verifyWebAuthnAuthentication,
+  getUserWebAuthnCredentials,
+  removeWebAuthnCredential
+} from "./webauthn";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {

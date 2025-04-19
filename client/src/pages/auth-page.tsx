@@ -6,7 +6,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
 import { useLocation } from "wouter";
 
@@ -48,7 +55,7 @@ export default function AuthPage() {
       phoneNumber: "",
     },
   });
-  
+
   // Redirect if already logged in - moved after all hooks are called
   if (user) {
     navigate("/");
@@ -68,10 +75,13 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <img src="@assets/logo.png" alt="Por Nós" className="h-20" />
+            <img src="./logo.png" alt="Por Nós" className="h-20" />
           </div>
-          <h1 className="text-2xl font-semibold text-primary mb-2">Por Nós</h1>
-          <p className="text-muted-foreground italic">Todo dia é uma nova chance de nos escolher</p>
+          <small className="text-muted-foreground px-10 block">
+            Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas
+            pequenas tarefas do cotidiano. Vamos juntos transformar a rotina em
+            uma jornada de crescimento e amor.
+          </small>
         </div>
 
         <Tabs defaultValue="login" className="space-y-6">
@@ -84,7 +94,10 @@ export default function AuthPage() {
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onSubmitLogin)} className="space-y-4">
+                  <form
+                    onSubmit={loginForm.handleSubmit(onSubmitLogin)}
+                    className="space-y-4"
+                  >
                     <FormField
                       control={loginForm.control}
                       name="username"
@@ -92,7 +105,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email ou Nome de Usuário</FormLabel>
                           <FormControl>
-                            <Input placeholder="seu@email.com" {...field} />
+                            <Input
+                              type="email"
+                              placeholder="seu@email.com"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -106,15 +123,19 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Senha</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="********" {...field} />
+                            <Input
+                              type="password"
+                              placeholder="********"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full"
                       disabled={loginMutation.isPending}
                     >
@@ -122,28 +143,6 @@ export default function AuthPage() {
                     </Button>
                   </form>
                 </Form>
-                
-                <div className="relative flex items-center my-6">
-                  <div className="flex-grow border-t border-gray-300"></div>
-                  <span className="flex-shrink mx-3 text-gray-500 text-sm">ou</span>
-                  <div className="flex-grow border-t border-gray-300"></div>
-                </div>
-                
-                <div className="space-y-3">
-                  <Button variant="outline" className="w-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="black" className="mr-2">
-                      <path d="M12 2C6.477 2 2 6.477 2 12c0 5.523 4.477 10 10 10s10-4.477 10-10c0-5.523-4.477-10-10-10zm0 1.5c4.694 0 8.5 3.806 8.5 8.5 0 4.694-3.806 8.5-8.5 8.5-4.694 0-8.5-3.806-8.5-8.5 0-4.694 3.806-8.5 8.5-8.5zM9.215 16.215c-.303.303-.79.303-1.093 0l-2.46-2.46c-.303-.303-.303-.79 0-1.093l.547-.547c.303-.303.79-.303 1.093 0L9 13.811l5.698-5.698c.303-.303.79-.303 1.093 0l.547.547c.303.303.303.79 0 1.093l-7.123 7.122z"/>
-                    </svg>
-                    Continuar com Apple
-                  </Button>
-                  
-                  <Button variant="outline" className="w-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#4285F4" className="mr-2">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5.46 8.12-1.1 4.22c-.15.54-.63.92-1.19.92H8.83c-.56 0-1.04-.38-1.19-.92l-1.1-4.22C6.46 9.55 6.83 9 7.4 9h9.2c.57 0 .94.55.86 1.12z"/>
-                    </svg>
-                    Continuar com Google
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -152,7 +151,10 @@ export default function AuthPage() {
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onSubmitRegister)} className="space-y-4">
+                  <form
+                    onSubmit={registerForm.handleSubmit(onSubmitRegister)}
+                    className="space-y-4"
+                  >
                     <FormField
                       control={registerForm.control}
                       name="name"
@@ -174,7 +176,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="seu@email.com" {...field} />
+                            <Input
+                              type="email"
+                              placeholder="seu@email.com"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -202,7 +208,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Senha</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="********" {...field} />
+                            <Input
+                              type="password"
+                              placeholder="********"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -223,12 +233,14 @@ export default function AuthPage() {
                       )}
                     />
 
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full"
                       disabled={registerMutation.isPending}
                     >
-                      {registerMutation.isPending ? "Cadastrando..." : "Cadastrar"}
+                      {registerMutation.isPending
+                        ? "Cadastrando..."
+                        : "Cadastrar"}
                     </Button>
                   </form>
                 </Form>
@@ -238,7 +250,15 @@ export default function AuthPage() {
         </Tabs>
 
         <p className="text-sm text-center text-gray-500 mt-6">
-          Ao continuar, você concorda com nossos <a href="#" className="text-primary">Termos de Serviço</a> e <a href="#" className="text-primary">Política de Privacidade</a>.
+          Ao continuar, você concorda com nossos{" "}
+          <a href="#" className="text-primary">
+            Termos de Serviço
+          </a>{" "}
+          e{" "}
+          <a href="#" className="text-primary">
+            Política de Privacidade
+          </a>
+          .
         </p>
       </div>
     </div>

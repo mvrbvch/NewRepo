@@ -107,6 +107,31 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Tabela para armazenar desafios de autenticação WebAuthn
+export const webAuthnChallenges = pgTable("webauthn_challenges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  challenge: text("challenge").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para armazenar credenciais biométricas WebAuthn
+export const webAuthnCredentials = pgTable("webauthn_credentials", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: integer("counter").notNull().default(0),
+  credentialDeviceType: text("credential_device_type").notNull(), // platform (Touch ID/Face ID) ou cross-platform (security key)
+  credentialBackedUp: boolean("credential_backed_up").default(false),
+  transports: text("transports"), // array de transportes suportados (internal, usb, nfc, ble)
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsed: timestamp("last_used"),
+  authenticatorAttachment: text("authenticator_attachment"), // platform, cross-platform
+  deviceName: text("device_name"), // nome amigável do dispositivo
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -233,4 +258,35 @@ export type UserDevice = Omit<typeof userDevices.$inferSelect, 'lastUsed' | 'cre
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = Omit<typeof notifications.$inferSelect, 'createdAt'> & {
   createdAt: Date | string | null;
+};
+
+// WebAuthn schemas
+export const insertWebAuthnChallengeSchema = createInsertSchema(webAuthnChallenges).pick({
+  userId: true,
+  challenge: true,
+  expiresAt: true,
+});
+
+export const insertWebAuthnCredentialSchema = createInsertSchema(webAuthnCredentials).pick({
+  userId: true,
+  credentialId: true,
+  publicKey: true,
+  counter: true,
+  credentialDeviceType: true,
+  credentialBackedUp: true,
+  transports: true,
+  authenticatorAttachment: true,
+  deviceName: true,
+});
+
+export type InsertWebAuthnChallenge = z.infer<typeof insertWebAuthnChallengeSchema>;
+export type WebAuthnChallenge = Omit<typeof webAuthnChallenges.$inferSelect, 'createdAt' | 'expiresAt'> & {
+  createdAt: Date | string | null;
+  expiresAt: Date | string;
+};
+
+export type InsertWebAuthnCredential = z.infer<typeof insertWebAuthnCredentialSchema>;
+export type WebAuthnCredential = Omit<typeof webAuthnCredentials.$inferSelect, 'createdAt' | 'lastUsed'> & {
+  createdAt: Date | string | null;
+  lastUsed: Date | string | null;
 };
