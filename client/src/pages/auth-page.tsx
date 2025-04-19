@@ -1,28 +1,50 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
 import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-// Componente de formulário de login - DEFINIDO FORA DO COMPONENTE AUTHPAGE
-const LoginForm = ({ loginMutation }: { loginMutation: any }) => {
-  const [formData, setFormData] = useState({
+// Página de autenticação principal
+export default function AuthPage() {
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const { user, isLoading, loginMutation, registerMutation } = useAuth();
+  const [, navigate] = useLocation();
+  
+  // Estado local para os formulários
+  const [loginFormData, setLoginFormData] = useState({
     username: "",
     password: "",
   });
-  const { toast } = useToast();
+
+  const [registerFormData, setRegisterFormData] = useState({
+    username: "",
+    password: "",
+    name: "",
+    email: "",
+    phoneNumber: "",
+  });
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Redirecionar se já estiver logado
+  useEffect(() => {
+    if (!isLoading && user) {
+      setTimeout(() => {
+        navigate("/");
+      }, 0);
+    }
+  }, [user, isLoading, navigate]);
+  
+  // Handlers para login
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setLoginFormData((prev) => ({ ...prev, [name]: value }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validação básica
-    if (!formData.username || !formData.password) {
+    if (!loginFormData.username || !loginFormData.password) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos.",
@@ -32,69 +54,16 @@ const LoginForm = ({ loginMutation }: { loginMutation: any }) => {
     }
     
     // Enviar requisição de login
-    loginMutation.mutate(formData);
+    loginMutation.mutate(loginFormData);
   };
-  
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Usuário
-        </label>
-        <input
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Senha
-        </label>
-        <input
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <button
-        type="submit"
-        disabled={loginMutation.isPending}
-        className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary flex justify-center"
-      >
-        {loginMutation.isPending ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          "Entrar"
-        )}
-      </button>
-    </form>
-  );
-};
 
-// Componente de formulário de registro - DEFINIDO FORA DO COMPONENTE AUTHPAGE
-const RegisterForm = ({ registerMutation }: { registerMutation: any }) => {
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    name: "",
-    email: "",
-    phoneNumber: "",
-  });
-  const { toast } = useToast();
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handlers para registro
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setRegisterFormData((prev) => ({ ...prev, [name]: value }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
@@ -107,10 +76,10 @@ const RegisterForm = ({ registerMutation }: { registerMutation: any }) => {
         phoneNumber: z.string().optional(),
       });
       
-      schema.parse(formData);
+      schema.parse(registerFormData);
       
       // Enviar requisição de registro
-      registerMutation.mutate(formData);
+      registerMutation.mutate(registerFormData);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errorMessages = error.errors.map((err) => err.message).join(", ");
@@ -123,105 +92,6 @@ const RegisterForm = ({ registerMutation }: { registerMutation: any }) => {
     }
   };
   
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Nome completo
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Celular (opcional)
-        </label>
-        <input
-          type="text"
-          name="phoneNumber"
-          value={formData.phoneNumber}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Usuário
-        </label>
-        <input
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Senha
-        </label>
-        <input
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-        />
-      </div>
-      
-      <button
-        type="submit"
-        disabled={registerMutation.isPending}
-        className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary flex justify-center"
-      >
-        {registerMutation.isPending ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          "Cadastrar"
-        )}
-      </button>
-    </form>
-  );
-};
-
-// Página de autenticação principal
-export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
-  const [, navigate] = useLocation();
-  
-  // Redirecionar se já estiver logado (com verificação adicional)
-  useEffect(() => {
-    // Só tenta redirecionar se não estiver carregando e o usuário existir
-    if (!isLoading && user) {
-      // Usa setTimeout para evitar o erro de atualização durante renderização
-      setTimeout(() => {
-        navigate("/");
-      }, 0);
-    }
-  }, [user, isLoading, navigate]);
-  
   // Se estiver carregando, mostrar loader
   if (isLoading) {
     return (
@@ -231,6 +101,7 @@ export default function AuthPage() {
     );
   }
   
+  // Renderiza a página
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Formulário (lado esquerdo) */}
@@ -266,14 +137,134 @@ export default function AuthPage() {
             </button>
           </div>
           
-          {/* Formulário ativo - passando mutations como props */}
-          <div className="space-y-6">
-            {activeTab === "login" ? (
-              <LoginForm loginMutation={loginMutation} />
-            ) : (
-              <RegisterForm registerMutation={registerMutation} />
-            )}
-          </div>
+          {/* Formulário de login */}
+          {activeTab === "login" && (
+            <div className="space-y-6">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Usuário
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={loginFormData.username}
+                    onChange={handleLoginChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Senha
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={loginFormData.password}
+                    onChange={handleLoginChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={loginMutation.isPending}
+                  className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary flex justify-center"
+                >
+                  {loginMutation.isPending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    "Entrar"
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
+          
+          {/* Formulário de registro */}
+          {activeTab === "register" && (
+            <div className="space-y-6">
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Nome completo
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={registerFormData.name}
+                    onChange={handleRegisterChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={registerFormData.email}
+                    onChange={handleRegisterChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Celular (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    name="phoneNumber"
+                    value={registerFormData.phoneNumber}
+                    onChange={handleRegisterChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Usuário
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={registerFormData.username}
+                    onChange={handleRegisterChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Senha
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={registerFormData.password}
+                    onChange={handleRegisterChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={registerMutation.isPending}
+                  className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary flex justify-center"
+                >
+                  {registerMutation.isPending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    "Cadastrar"
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
       

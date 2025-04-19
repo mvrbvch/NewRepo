@@ -1,6 +1,3 @@
-// ESTE ARQUIVO ATUA APENAS COMO ALIAS
-// O código real foi movido para providers/auth-provider.tsx
-
 import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -8,8 +5,8 @@ import { toast } from "@/hooks/use-toast";
 import { UserType } from "@/lib/types";
 import { z } from "zod";
 
-// Tipos
-export type AuthContextType = {
+// Tipos para o contexto de autenticação
+type AuthContextType = {
   user: UserType | null;
   isLoading: boolean;
   error: Error | null;
@@ -18,21 +15,26 @@ export type AuthContextType = {
   logoutMutation: UseMutationResult<void, Error, void>;
 };
 
+// Tipo para os dados de login
 export type LoginData = {
   username: string;
   password: string;
 };
 
-export type RegisterData = {
-  username: string;
-  password: string;
-  name: string;
-  email: string;
-  phoneNumber?: string;
-};
+// Validação de registro com Zod
+const registerSchema = z.object({
+  username: z.string().min(3, "Username deve ter pelo menos 3 caracteres"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Por favor, informe um email válido"),
+  phoneNumber: z.string().optional(),
+});
+
+// Tipo para os dados de registro
+export type RegisterData = z.infer<typeof registerSchema>;
 
 // Criação do contexto
-export const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 // Provedor do contexto
 export function AuthProvider({ children }: { children: ReactNode }) {

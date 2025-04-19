@@ -10,12 +10,10 @@ import OnboardingPage from "@/pages/onboarding-page";
 import HouseholdTasksPage from "@/pages/household-tasks-page";
 import PartnerInvitePage from "@/pages/partner-invite-page";
 
-// Provedores personalizados
-import { AuthProvider } from "@/providers/auth-provider";
+// Importação dos novos componentes de contexto
+import { AuthProvider } from "@/contexts/auth-context";
+import { ProtectedRoute } from "@/contexts/protected-route";
 import { PushNotificationsProvider } from "@/providers/push-notifications-provider";
-
-// Componentes de proteção de rota
-import { ProtectedRoute } from "@/lib/protected-route";
 
 // Aplicação principal
 function App() {
@@ -61,21 +59,21 @@ function App() {
     <AuthProvider>
       <PushNotificationsProvider>
         <div className="min-h-screen bg-background flex flex-col">
-          <AppRouter />
+          <AppRoutes />
         </div>
       </PushNotificationsProvider>
     </AuthProvider>
   );
 }
 
-// Router separado para facilitar manutenção
-function AppRouter() {
+// Router com ProtectedRoute
+function AppRoutes() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/partner-invite/:token" component={PartnerInvitePage} />
       <ProtectedRoute path="/onboarding" component={OnboardingPage} />
-      <ProtectedRoute path="/household-tasks" component={HouseholdTasksPage} />
+      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
       <ProtectedRoute path="/" component={HomePage} />
       <Route component={NotFound} />
     </Switch>
