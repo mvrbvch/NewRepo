@@ -314,14 +314,64 @@ export class DatabaseStorage implements IStorage {
 
   // Event methods
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    // Para garantir que a data seja válida
+    let eventDate = new Date();
+    
+    if (insertEvent.date) {
+      if (insertEvent.date instanceof Date) {
+        if (!isNaN(insertEvent.date.getTime())) {
+          eventDate = insertEvent.date;
+        } else {
+          console.error('Data inválida recebida como objeto Date:', insertEvent.date);
+        }
+      } else if (typeof insertEvent.date === 'string') {
+        try {
+          const parsedDate = new Date(insertEvent.date);
+          if (!isNaN(parsedDate.getTime())) {
+            eventDate = parsedDate;
+          } else {
+            console.error('Data inválida recebida como string:', insertEvent.date);
+          }
+        } catch (err) {
+          console.error('Erro ao converter string para data:', err);
+        }
+      }
+    }
+    
+    // Processar a data de término da recorrência se existir
+    let recurrenceEndDate: Date | null = null;
+    if (insertEvent.recurrenceEnd) {
+      if (insertEvent.recurrenceEnd instanceof Date) {
+        if (!isNaN(insertEvent.recurrenceEnd.getTime())) {
+          recurrenceEndDate = insertEvent.recurrenceEnd;
+        }
+      } else if (typeof insertEvent.recurrenceEnd === 'string') {
+        try {
+          const parsedDate = new Date(insertEvent.recurrenceEnd);
+          if (!isNaN(parsedDate.getTime())) {
+            recurrenceEndDate = parsedDate;
+          }
+        } catch (err) {
+          console.error('Erro ao converter string de recorrenceEnd para data:', err);
+        }
+      }
+    }
+    
+    // Gerar regra de recorrência se necessário
+    let recurrenceRule = insertEvent.recurrenceRule;
+    if (insertEvent.recurrence && insertEvent.recurrence !== 'never' && !recurrenceRule) {
+      recurrenceRule = this.generateRecurrenceRule(insertEvent.recurrence, recurrenceEndDate);
+    }
+    
     // Garantir que os campos opcionais sejam null quando não fornecidos
     const eventData = {
       ...insertEvent,
+      date: eventDate,
       location: insertEvent.location || null,
       emoji: insertEvent.emoji || null,
       recurrence: insertEvent.recurrence || 'never',
-      recurrenceEnd: insertEvent.recurrenceEnd || null,
-      recurrenceRule: insertEvent.recurrenceRule || null
+      recurrenceEnd: recurrenceEndDate,
+      recurrenceRule: recurrenceRule
     };
     
     console.log('Creating event with data:', eventData);
@@ -330,7 +380,39 @@ export class DatabaseStorage implements IStorage {
       .values(eventData)
       .returning();
     
-    return event;
+    // Formatar a data antes de retornar
+    return this.formatEventDates(event);
+  }
+  
+  // Método para gerar regra de recorrência baseada na frequência escolhida
+  private generateRecurrenceRule(recurrence: string, endDate: Date | null): string {
+    let rule = '';
+    
+    switch (recurrence) {
+      case 'daily':
+        rule = 'FREQ=DAILY';
+        break;
+      case 'weekly':
+        rule = 'FREQ=WEEKLY';
+        break;
+      case 'monthly':
+        rule = 'FREQ=MONTHLY';
+        break;
+      case 'custom':
+        // Definição padrão para custom, pode ser sobrescrita com regras específicas
+        rule = 'FREQ=DAILY';
+        break;
+      default:
+        return '';
+    }
+    
+    // Adicionar data de término se especificada
+    if (endDate && !isNaN(endDate.getTime())) {
+      const formattedDate = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      rule += `;UNTIL=${formattedDate}`;
+    }
+    
+    return rule;
   }
   
   async getEvent(id: number): Promise<Event | undefined> {

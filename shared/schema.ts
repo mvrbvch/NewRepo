@@ -121,6 +121,8 @@ export type User = typeof users.$inferSelect;
 export type InsertEvent = z.infer<typeof insertEventSchema>;
 export type Event = Omit<typeof events.$inferSelect, 'date'> & {
   date: Date | string;
+  isRecurring?: boolean; // Indica se esta é uma instância de um evento recorrente
+  originalDate?: Date | string; // Data original do evento recorrente
 };
 
 export type InsertEventShare = z.infer<typeof insertEventShareSchema>;

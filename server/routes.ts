@@ -5,6 +5,106 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { pool } from "./db";
+import { Event } from "@shared/schema";
+import { addDays, addMonths, addWeeks, isAfter, isBefore, parseISO } from "date-fns";
+
+// Função para expandir eventos recorrentes em múltiplas instâncias
+function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {
+  const result: Event[] = [];
+  
+  for (const event of events) {
+    // Eventos sem recorrência são adicionados diretamente
+    if (!event.recurrence || event.recurrence === 'never') {
+      result.push(event);
+      continue;
+    }
+    
+    // Para eventos recorrentes, precisamos gerar instâncias adicionais
+    // Primeiro, adicione a instância original
+    result.push(event);
+    
+    // Se não tem regra de recorrência, pule
+    if (!event.recurrenceRule) {
+      continue;
+    }
+    
+    // Parse a data do evento
+    let eventDate: Date;
+    if (typeof event.date === 'string') {
+      try {
+        eventDate = parseISO(event.date);
+      } catch {
+        continue; // Pula se não conseguir converter a data
+      }
+    } else if (event.date instanceof Date) {
+      eventDate = event.date;
+    } else {
+      continue; // Pula se não tiver data
+    }
+    
+    // Se a data está após o período de visualização, pule
+    if (isAfter(eventDate, endDate)) {
+      continue;
+    }
+    
+    // Parse a data final da recorrência
+    let recurrenceEndDate: Date | null = null;
+    if (event.recurrenceEnd) {
+      if (typeof event.recurrenceEnd === 'string') {
+        try {
+          recurrenceEndDate = parseISO(event.recurrenceEnd);
+        } catch {
+          // Se não conseguir converter, deixa null
+        }
+      } else if (event.recurrenceEnd instanceof Date) {
+        recurrenceEndDate = event.recurrenceEnd;
+      }
+    }
+    
+    // Limite pelo período de visualização ou pela data de fim da recorrência
+    const finalEndDate = recurrenceEndDate && isBefore(recurrenceEndDate, endDate) 
+      ? recurrenceEndDate 
+      : endDate;
+    
+    // Extrair a frequência da regra de recorrência
+    const freqMatch = event.recurrenceRule.match(/FREQ=([A-Z]+)/);
+    if (!freqMatch) continue;
+    
+    const freq = freqMatch[1];
+    let currentDate = eventDate;
+    
+    // Gerar instâncias baseadas na frequência
+    while (isBefore(currentDate, finalEndDate)) {
+      if (freq === 'DAILY') {
+        currentDate = addDays(currentDate, 1);
+      } else if (freq === 'WEEKLY') {
+        currentDate = addWeeks(currentDate, 1);
+      } else if (freq === 'MONTHLY') {
+        currentDate = addMonths(currentDate, 1);
+      } else {
+        break; // Frequência desconhecida
+      }
+      
+      // Se a data está fora do período, pule
+      if (isAfter(currentDate, finalEndDate)) {
+        break;
+      }
+      
+      // Adicionar nova instância do evento recorrente
+      const recurringInstance: Event = {
+        ...event,
+        date: currentDate.toISOString(),
+        id: event.id, // ID da instância original
+        isRecurring: true, // Marcar como instância de recorrência
+        originalDate: event.date // Guardar a data original para referência
+      };
+      
+      result.push(recurringInstance);
+    }
+  }
+  
+  return result;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -42,10 +142,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sharedEvents = await storage.getSharedEvents(userId);
       
       // Combine user's own events and events shared with them
-      const allEvents = [...userEvents, ...sharedEvents];
+      let allEvents = [...userEvents, ...sharedEvents];
       
-      res.json(allEvents);
+      // Processar eventos recorrentes
+      // O período de visualização padrão é 3 meses a partir de hoje
+      const startDate = new Date(); // hoje
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 3); // 3 meses depois
+      
+      // Expandir eventos recorrentes para o período de visualização
+      const expandedEvents = expandRecurringEvents(allEvents, startDate, endDate);
+      
+      res.json(expandedEvents);
     } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
       res.status(500).json({ message: "Failed to fetch events" });
     }
   });
