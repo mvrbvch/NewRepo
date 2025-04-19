@@ -72,6 +72,7 @@ export class MemStorage implements IStorage {
   private eventCommentsMap: Map<number, EventComment>;
   private calendarConnectionsMap: Map<number, CalendarConnection>;
   private partnerInvitesMap: Map<number, PartnerInvite>;
+  private householdTasksMap: Map<number, HouseholdTask>;
   
   private userIdCounter: number;
   private eventIdCounter: number;
@@ -79,6 +80,7 @@ export class MemStorage implements IStorage {
   private eventCommentIdCounter: number;
   private calendarConnectionIdCounter: number;
   private partnerInviteIdCounter: number;
+  private householdTaskIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -89,6 +91,7 @@ export class MemStorage implements IStorage {
     this.eventCommentsMap = new Map();
     this.calendarConnectionsMap = new Map();
     this.partnerInvitesMap = new Map();
+    this.householdTasksMap = new Map();
     
     this.userIdCounter = 1;
     this.eventIdCounter = 1;
@@ -96,6 +99,7 @@ export class MemStorage implements IStorage {
     this.eventCommentIdCounter = 1;
     this.calendarConnectionIdCounter = 1;
     this.partnerInviteIdCounter = 1;
+    this.householdTaskIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
@@ -273,6 +277,78 @@ export class MemStorage implements IStorage {
     const updatedInvite = { ...invite, ...updates };
     this.partnerInvitesMap.set(id, updatedInvite);
     return updatedInvite;
+  }
+
+  // Household tasks methods
+  async createHouseholdTask(insertTask: InsertHouseholdTask): Promise<HouseholdTask> {
+    const id = this.householdTaskIdCounter++;
+    const task: HouseholdTask = {
+      ...insertTask,
+      id,
+      completed: insertTask.completed || false,
+      createdAt: new Date(),
+      dueDate: insertTask.dueDate || null,
+      nextDueDate: insertTask.nextDueDate || null
+    };
+    this.householdTasksMap.set(id, task);
+    return task;
+  }
+  
+  async getHouseholdTask(id: number): Promise<HouseholdTask | undefined> {
+    return this.householdTasksMap.get(id);
+  }
+  
+  async getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
+    return Array.from(this.householdTasksMap.values()).filter(
+      (task) => task.assignedTo === userId || task.createdBy === userId
+    );
+  }
+  
+  async getPartnerHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
+    // Primeiro, encontre o usuário
+    const user = this.usersMap.get(userId);
+    if (!user || !user.partnerId) return [];
+    
+    // Retorne as tarefas atribuídas ao parceiro
+    return Array.from(this.householdTasksMap.values()).filter(
+      (task) => task.assignedTo === user.partnerId || task.createdBy === user.partnerId
+    );
+  }
+  
+  async updateHouseholdTask(id: number, updates: Partial<HouseholdTask>): Promise<HouseholdTask | undefined> {
+    const task = this.householdTasksMap.get(id);
+    if (!task) return undefined;
+    
+    const updatedTask = { ...task, ...updates };
+    this.householdTasksMap.set(id, updatedTask);
+    return updatedTask;
+  }
+  
+  async deleteHouseholdTask(id: number): Promise<boolean> {
+    return this.householdTasksMap.delete(id);
+  }
+  
+  async markHouseholdTaskAsCompleted(id: number, completed: boolean): Promise<HouseholdTask | undefined> {
+    const task = this.householdTasksMap.get(id);
+    if (!task) return undefined;
+    
+    // Se a tarefa for recorrente, atualizar a próxima data de vencimento
+    let nextDueDate = task.nextDueDate;
+    if (completed && task.frequency !== 'once') {
+      const currentDate = new Date();
+      
+      if (task.frequency === 'daily') {
+        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+      } else if (task.frequency === 'weekly') {
+        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
+      } else if (task.frequency === 'monthly') {
+        nextDueDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+      }
+    }
+    
+    const updatedTask = { ...task, completed, nextDueDate };
+    this.householdTasksMap.set(id, updatedTask);
+    return updatedTask;
   }
 }
 
@@ -674,6 +750,204 @@ export class DatabaseStorage implements IStorage {
       .where(eq(partnerInvites.id, id))
       .returning();
     return updatedInvite;
+  }
+
+  // Household tasks methods
+  async createHouseholdTask(insertTask: InsertHouseholdTask): Promise<HouseholdTask> {
+    // Processa as datas antes de inserir
+    let dueDate: Date | null = null;
+    if (insertTask.dueDate) {
+      if (insertTask.dueDate instanceof Date) {
+        dueDate = insertTask.dueDate;
+      } else if (typeof insertTask.dueDate === 'string') {
+        dueDate = new Date(insertTask.dueDate);
+      }
+    }
+
+    let nextDueDate: Date | null = null;
+    if (insertTask.nextDueDate) {
+      if (insertTask.nextDueDate instanceof Date) {
+        nextDueDate = insertTask.nextDueDate;
+      } else if (typeof insertTask.nextDueDate === 'string') {
+        nextDueDate = new Date(insertTask.nextDueDate);
+      }
+    }
+
+    const taskData = {
+      ...insertTask,
+      dueDate,
+      nextDueDate,
+      completed: insertTask.completed || false,
+    };
+
+    const [task] = await db.insert(householdTasks)
+      .values(taskData)
+      .returning();
+    
+    return this.formatHouseholdTaskDates(task);
+  }
+  
+  // Função auxiliar para formatar as datas das tarefas
+  private formatHouseholdTaskDates(task: any): HouseholdTask {
+    const formattedTask = { ...task };
+    
+    // Formatar dueDate
+    if (formattedTask.dueDate) {
+      if (formattedTask.dueDate instanceof Date) {
+        formattedTask.dueDate = formattedTask.dueDate.toISOString();
+      } else if (typeof formattedTask.dueDate === 'string') {
+        try {
+          if (formattedTask.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedTask.dueDate = `${formattedTask.dueDate}T00:00:00Z`;
+          }
+          const tempDate = new Date(formattedTask.dueDate);
+          if (isNaN(tempDate.getTime())) {
+            formattedTask.dueDate = null;
+          }
+        } catch (err) {
+          console.error('Erro ao validar dueDate:', err);
+          formattedTask.dueDate = null;
+        }
+      }
+    }
+    
+    // Formatar nextDueDate
+    if (formattedTask.nextDueDate) {
+      if (formattedTask.nextDueDate instanceof Date) {
+        formattedTask.nextDueDate = formattedTask.nextDueDate.toISOString();
+      } else if (typeof formattedTask.nextDueDate === 'string') {
+        try {
+          if (formattedTask.nextDueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedTask.nextDueDate = `${formattedTask.nextDueDate}T00:00:00Z`;
+          }
+          const tempDate = new Date(formattedTask.nextDueDate);
+          if (isNaN(tempDate.getTime())) {
+            formattedTask.nextDueDate = null;
+          }
+        } catch (err) {
+          console.error('Erro ao validar nextDueDate:', err);
+          formattedTask.nextDueDate = null;
+        }
+      }
+    }
+    
+    // Formatar createdAt
+    if (formattedTask.createdAt) {
+      if (formattedTask.createdAt instanceof Date) {
+        formattedTask.createdAt = formattedTask.createdAt.toISOString();
+      } else if (typeof formattedTask.createdAt === 'string') {
+        try {
+          if (formattedTask.createdAt.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedTask.createdAt = `${formattedTask.createdAt}T00:00:00Z`;
+          }
+          const tempDate = new Date(formattedTask.createdAt);
+          if (isNaN(tempDate.getTime())) {
+            formattedTask.createdAt = null;
+          }
+        } catch (err) {
+          console.error('Erro ao validar createdAt:', err);
+          formattedTask.createdAt = null;
+        }
+      }
+    }
+    
+    return formattedTask;
+  }
+  
+  async getHouseholdTask(id: number): Promise<HouseholdTask | undefined> {
+    const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
+    return task ? this.formatHouseholdTaskDates(task) : undefined;
+  }
+  
+  async getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
+    const tasks = await db.select().from(householdTasks).where(
+      or(
+        eq(householdTasks.assignedTo, userId),
+        eq(householdTasks.createdBy, userId)
+      )
+    );
+    
+    return tasks.map(task => this.formatHouseholdTaskDates(task));
+  }
+  
+  async getPartnerHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
+    // Primeiro, encontrar o usuário e seu parceiro
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user || !user.partnerId) return [];
+    
+    // Obter as tarefas do parceiro
+    const tasks = await db.select().from(householdTasks).where(
+      or(
+        eq(householdTasks.assignedTo, user.partnerId),
+        eq(householdTasks.createdBy, user.partnerId)
+      )
+    );
+    
+    return tasks.map(task => this.formatHouseholdTaskDates(task));
+  }
+  
+  async updateHouseholdTask(id: number, updates: Partial<HouseholdTask>): Promise<HouseholdTask | undefined> {
+    // Processar datas se estiverem sendo atualizadas
+    const processedUpdates: any = { ...updates };
+    
+    if (typeof processedUpdates.dueDate === 'string') {
+      try {
+        processedUpdates.dueDate = new Date(processedUpdates.dueDate);
+      } catch (err) {
+        console.error('Erro ao converter dueDate para Date:', err);
+      }
+    }
+    
+    if (typeof processedUpdates.nextDueDate === 'string') {
+      try {
+        processedUpdates.nextDueDate = new Date(processedUpdates.nextDueDate);
+      } catch (err) {
+        console.error('Erro ao converter nextDueDate para Date:', err);
+      }
+    }
+    
+    const [updatedTask] = await db.update(householdTasks)
+      .set(processedUpdates)
+      .where(eq(householdTasks.id, id))
+      .returning();
+    
+    return updatedTask ? this.formatHouseholdTaskDates(updatedTask) : undefined;
+  }
+  
+  async deleteHouseholdTask(id: number): Promise<boolean> {
+    const result = await db.delete(householdTasks)
+      .where(eq(householdTasks.id, id))
+      .returning({ id: householdTasks.id });
+    
+    return result.length > 0;
+  }
+  
+  async markHouseholdTaskAsCompleted(id: number, completed: boolean): Promise<HouseholdTask | undefined> {
+    // Obter a tarefa atual
+    const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
+    if (!task) return undefined;
+    
+    // Calcular a próxima data de vencimento se for recorrente e estiver sendo marcada como concluída
+    let nextDueDate = task.nextDueDate;
+    if (completed && task.frequency !== 'once') {
+      const currentDate = new Date();
+      
+      if (task.frequency === 'daily') {
+        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+      } else if (task.frequency === 'weekly') {
+        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
+      } else if (task.frequency === 'monthly') {
+        nextDueDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+      }
+    }
+    
+    // Atualizar a tarefa
+    const [updatedTask] = await db.update(householdTasks)
+      .set({ completed, nextDueDate })
+      .where(eq(householdTasks.id, id))
+      .returning();
+    
+    return updatedTask ? this.formatHouseholdTaskDates(updatedTask) : undefined;
   }
 }
 

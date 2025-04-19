@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { pool } from "./db";
-import { Event } from "@shared/schema";
+import { Event, insertHouseholdTaskSchema } from "@shared/schema";
 import { addDays, addMonths, addWeeks, isAfter, isBefore, parseISO } from "date-fns";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
@@ -520,6 +520,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to connect calendar" });
+    }
+  });
+
+  // Household Tasks API
+  // GET - Obter tarefas do usuário
+  app.get("/api/tasks", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const tasks = await storage.getUserHouseholdTasks(userId);
+      res.json(tasks);
+    } catch (error) {
+      console.error('Erro ao buscar tarefas domésticas:', error);
+      res.status(500).json({ message: "Failed to fetch household tasks" });
+    }
+  });
+
+  // GET - Obter tarefas do parceiro
+  app.get("/api/tasks/partner", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const partnerTasks = await storage.getPartnerHouseholdTasks(userId);
+      res.json(partnerTasks);
+    } catch (error) {
+      console.error('Erro ao buscar tarefas do parceiro:', error);
+      res.status(500).json({ message: "Failed to fetch partner's household tasks" });
+    }
+  });
+
+  // GET - Obter tarefa específica
+  app.get("/api/tasks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getHouseholdTask(taskId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Verificar se o usuário tem acesso à tarefa
+      const userId = req.user?.id as number;
+      const user = await storage.getUser(userId);
+      
+      if (task.createdBy !== userId && task.assignedTo !== userId) {
+        // Verificar se é uma tarefa do parceiro
+        if (!user?.partnerId || (task.createdBy !== user.partnerId && task.assignedTo !== user.partnerId)) {
+          return res.status(403).json({ message: "You don't have permission to access this task" });
+        }
+      }
+      
+      res.json(task);
+    } catch (error) {
+      console.error('Erro ao buscar tarefa específica:', error);
+      res.status(500).json({ message: "Failed to fetch task details" });
+    }
+  });
+
+  // POST - Criar nova tarefa
+  app.post("/api/tasks", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      
+      // Validar com Zod
+      const validatedData = insertHouseholdTaskSchema.parse({
+        ...req.body,
+        createdBy: userId
+      });
+      
+      const newTask = await storage.createHouseholdTask(validatedData);
+      res.status(201).json(newTask);
+    } catch (error) {
+      console.error('Erro ao criar tarefa doméstica:', error);
+      res.status(500).json({ 
+        message: "Failed to create household task",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // PUT - Atualizar tarefa
+  app.put("/api/tasks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getHouseholdTask(taskId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Verificar se o usuário tem permissão para editar
+      const userId = req.user?.id as number;
+      if (task.createdBy !== userId && task.assignedTo !== userId) {
+        return res.status(403).json({ message: "You don't have permission to update this task" });
+      }
+      
+      const updatedTask = await storage.updateHouseholdTask(taskId, req.body);
+      res.json(updatedTask);
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa doméstica:', error);
+      res.status(500).json({ message: "Failed to update household task" });
+    }
+  });
+
+  // DELETE - Excluir tarefa
+  app.delete("/api/tasks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getHouseholdTask(taskId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Apenas o criador pode excluir uma tarefa
+      const userId = req.user?.id as number;
+      if (task.createdBy !== userId) {
+        return res.status(403).json({ message: "Only the task creator can delete this task" });
+      }
+      
+      const deleted = await storage.deleteHouseholdTask(taskId);
+      
+      if (deleted) {
+        res.status(204).send();
+      } else {
+        res.status(500).json({ message: "Failed to delete task" });
+      }
+    } catch (error) {
+      console.error('Erro ao excluir tarefa doméstica:', error);
+      res.status(500).json({ message: "Failed to delete household task" });
+    }
+  });
+
+  // PATCH - Marcar tarefa como completa ou incompleta
+  app.patch("/api/tasks/:id/complete", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = parseInt(req.params.id);
+      const { completed } = req.body;
+      
+      if (typeof completed !== 'boolean') {
+        return res.status(400).json({ message: "completed field must be a boolean" });
+      }
+      
+      const task = await storage.getHouseholdTask(taskId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Verificar se o usuário tem permissão para atualizar
+      const userId = req.user?.id as number;
+      if (task.createdBy !== userId && task.assignedTo !== userId) {
+        const user = await storage.getUser(userId);
+        if (!user?.partnerId || (task.createdBy !== user.partnerId && task.assignedTo !== user.partnerId)) {
+          return res.status(403).json({ message: "You don't have permission to update this task" });
+        }
+      }
+      
+      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, completed);
+      res.json(updatedTask);
+    } catch (error) {
+      console.error('Erro ao atualizar status da tarefa:', error);
+      res.status(500).json({ message: "Failed to update task completion status" });
     }
   });
 
