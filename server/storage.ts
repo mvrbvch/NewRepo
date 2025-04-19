@@ -1069,23 +1069,34 @@ export class DatabaseStorage implements IStorage {
       const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
       if (!task) return undefined;
       
-      // Calcular a próxima data de vencimento se for recorrente e estiver sendo marcada como concluída
-      let nextDueDate = task.nextDueDate;
+      // Objeto com os campos a serem atualizados
+      const updateData: any = { completed };
+      
+      // Caso esteja marcando como concluída e é uma tarefa recorrente
       if (completed && task.frequency !== 'once') {
         const currentDate = new Date();
         
+        // Calcular próxima data de vencimento com base na frequência
         if (task.frequency === 'daily') {
-          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+          updateData.nextDueDate = new Date(new Date().setDate(currentDate.getDate() + 1));
         } else if (task.frequency === 'weekly') {
-          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
+          updateData.nextDueDate = new Date(new Date().setDate(currentDate.getDate() + 7));
         } else if (task.frequency === 'monthly') {
-          nextDueDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+          updateData.nextDueDate = new Date(new Date().setMonth(currentDate.getMonth() + 1));
         }
+      } 
+      // Caso esteja desmarcando (voltando a incompleta)
+      else if (!completed) {
+        // Se a tarefa tiver uma próxima data programada, reseta-a para null
+        // isso evita que tarefas recorrentes gerem múltiplas instâncias quando desmarcadas
+        updateData.nextDueDate = null;
       }
+      
+      console.log('Atualizando status da tarefa:', { id, completed, updateData });
       
       // Atualizar a tarefa
       const [updatedTask] = await db.update(householdTasks)
-        .set({ completed, nextDueDate })
+        .set(updateData)
         .where(eq(householdTasks.id, id))
         .returning();
       
