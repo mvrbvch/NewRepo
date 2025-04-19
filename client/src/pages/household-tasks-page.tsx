@@ -206,13 +206,13 @@ export default function HouseholdTasksPage() {
     <div className="h-screen flex flex-col">
       <Header title="Tarefas Domésticas" />
 
-      <div className="flex items-center justify-between p-4 bg-gray-50">
-        <h2 className="text-xl font-semibold">Minhas Tarefas</h2>
+      <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
+        <h2 className="text-xl font-semibold text-primary-dark">Minhas Tarefas</h2>
         <Button 
           onClick={handleOpenCreateModal}
-          variant="outline"
+          variant="default"
           size="sm"
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 bg-primary-dark hover:bg-primary text-white transition-colors"
         >
           <span className="text-lg">+</span> Nova Tarefa
         </Button>
@@ -224,11 +224,30 @@ export default function HouseholdTasksPage() {
         onValueChange={setActiveTab}
         className="flex-1"
       >
-        <TabsList className="grid grid-cols-4 mx-4">
-          <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="pending">Pendentes</TabsTrigger>
-          <TabsTrigger value="completed">Concluídas</TabsTrigger>
-          <TabsTrigger value="partner" disabled={!user?.partnerId}>
+        <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-2">
+          <TabsTrigger 
+            value="all" 
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+          >
+            Todas
+          </TabsTrigger>
+          <TabsTrigger 
+            value="pending"
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+          >
+            Pendentes
+          </TabsTrigger>
+          <TabsTrigger 
+            value="completed"
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+          >
+            Concluídas
+          </TabsTrigger>
+          <TabsTrigger 
+            value="partner" 
+            disabled={!user?.partnerId}
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
+          >
             Parceiro
           </TabsTrigger>
         </TabsList>
@@ -243,7 +262,7 @@ export default function HouseholdTasksPage() {
               {filteredTasks.map((task) => (
                 <Card
                   key={task.id}
-                  className={`p-4 relative ${task.completed ? "bg-gray-50" : ""}`}
+                  className={`p-4 relative ${task.completed ? "bg-gray-50" : "bg-white hover:bg-primary-light"} border ${task.completed ? "" : "border-primary-light"} shadow-sm hover:shadow transition-all`}
                   onClick={() => handleOpenTaskDetails(task)}
                 >
                   <div className="flex items-start gap-3">
@@ -254,17 +273,20 @@ export default function HouseholdTasksPage() {
                         handleToggleTaskComplete(task);
                       }}
                     >
-                      <Checkbox checked={task.completed} className="h-5 w-5" />
+                      <Checkbox 
+                        checked={task.completed} 
+                        className={`h-5 w-5 ${!task.completed ? "border-primary" : ""}`} 
+                      />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h3
-                          className={`font-medium ${task.completed ? "line-through text-gray-500" : ""}`}
+                          className={`font-medium ${task.completed ? "line-through text-gray-500" : "text-dark"}`}
                         >
                           {task.title}
                         </h3>
                         {task.frequency !== "once" && (
-                          <div className="flex items-center text-xs bg-gray-100 px-2 py-1 rounded-full">
+                          <div className="flex items-center text-xs bg-primary-light text-primary-dark px-2 py-1 rounded-full">
                             <RefreshCw className="h-3 w-3 mr-1" />
                             {getFrequencyText(task.frequency)}
                           </div>
@@ -273,7 +295,7 @@ export default function HouseholdTasksPage() {
 
                       {task.description && (
                         <p
-                          className={`text-sm mt-1 ${task.completed ? "text-gray-500" : "text-gray-700"}`}
+                          className={`text-sm mt-1 ${task.completed ? "text-gray-500" : "text-medium"}`}
                         >
                           {task.description}
                         </p>
@@ -283,12 +305,12 @@ export default function HouseholdTasksPage() {
                         <div className="mt-2 text-xs flex items-center">
                           <CalendarIcon className="h-3 w-3 mr-1" />
                           {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
-                            <Badge variant="destructive" className="px-1 py-0 h-4 flex items-center gap-1">
-                              <AlertCircle size={10} />
+                            <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
+                              <AlertCircle size={12} />
                               <span>{getFormattedDueDate(task.dueDate)}</span>
                             </Badge>
                           ) : (
-                            <span className={`${task.completed ? "text-gray-500" : "text-gray-700"}`}>
+                            <span className={`${task.completed ? "text-gray-500" : "text-dark font-medium"} bg-gray-100 px-2 py-0.5 rounded-full`}>
                               {getFormattedDueDate(task.dueDate)}
                             </span>
                           )}
@@ -296,12 +318,12 @@ export default function HouseholdTasksPage() {
                       )}
 
                       {task.completed ? (
-                        <div className="mt-1 text-xs flex items-center text-green-600">
+                        <div className="mt-2 text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full w-fit">
                           <Check className="h-3 w-3 mr-1" />
                           Concluída
                         </div>
                       ) : task.assignedTo && task.assignedTo === user?.partnerId && (
-                        <div className="mt-1 text-xs flex items-center text-blue-600">
+                        <div className="mt-2 text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full w-fit">
                           Atribuída ao parceiro
                         </div>
                       )}

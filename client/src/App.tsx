@@ -11,7 +11,6 @@ import PartnerInvitePage from "@/pages/partner-invite-page";
 import HouseholdTasksPage from "@/pages/household-tasks-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
-import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 
 function Router() {
   return (
@@ -31,12 +30,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <PushNotificationsProvider>
           <TooltipProvider>
             <Toaster />
             <Router />
           </TooltipProvider>
-        </PushNotificationsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

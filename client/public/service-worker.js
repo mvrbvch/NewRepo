@@ -86,13 +86,22 @@ self.addEventListener('fetch', event => {
               return response;
             }
 
+            // Não tente armazenar em cache URLs de chrome-extension
+            if (event.request.url.startsWith('chrome-extension://')) {
+              return response;
+            }
+
             // Clone a resposta porque o body só pode ser consumido uma vez
             let responseToCache = response.clone();
 
             // Armazene em cache para uso futuro offline
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(event.request, responseToCache);
+                try {
+                  cache.put(event.request, responseToCache);
+                } catch (error) {
+                  console.error('[Service Worker] Erro ao armazenar em cache:', error);
+                }
               });
 
             return response;

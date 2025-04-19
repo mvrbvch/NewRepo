@@ -3,6 +3,16 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
+// Definição da interface PushSubscriptionJSON que está faltando
+interface PushSubscriptionJSON {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 export enum PushSubscriptionStatus {
   NOT_SUPPORTED = "not_supported",
   DENIED = "denied",

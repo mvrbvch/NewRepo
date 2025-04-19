@@ -13,26 +13,36 @@
 }
 
 :root {
-  --morning: 30 100% 55%;    /* #f97316 - orange-500 */
-  --afternoon: 200 100% 50%; /* #0ea5e9 - blue-500 */
-  --night: 265 80% 50%;      /* #6d28d9 - purple-700 */
-  --partner: 330 85% 60%;    /* #ec4899 - pink-500 */
+  --primary: 359 81% 65%;     /* #f15a59 - Cor principal do logo */
+  --primary-dark: 359 85% 45%; /* #d32f2f - Tom mais escuro para contraste */
+  --primary-light: 359 81% 85%; /* #ffa7a7 - Tom mais claro para fundos e bordas */
+  --morning: 16 95% 55%;      /* #ee5533 - Tom mais contrastante para manhã */
+  --afternoon: 200 95% 40%;   /* #0b7cb3 - Azul mais escuro para melhor contraste */
+  --night: 290 70% 40%;       /* #7922c7 - Roxo mais escuro para noite */
+  --partner: 359 81% 75%;     /* #ff7f7f - Tom mais claro da cor principal */
+  --text-dark: 220 15% 20%;   /* #2a303c - Texto escuro para alto contraste */
+  --text-medium: 220 15% 40%; /* #586174 - Texto médio para descrições */
+  --text-light: 220 15% 95%;  /* #f5f7fa - Texto claro para fundos escuros */
 }
 
 /* Time period styling */
 .event-morning { 
-  border-left: 4px solid hsl(var(--morning)); 
+  border-left: 4px solid hsl(var(--morning));
+  box-shadow: 0 0 2px rgba(238, 85, 51, 0.3);
 }
 .event-afternoon { 
   border-left: 4px solid hsl(var(--afternoon)); 
+  box-shadow: 0 0 2px rgba(11, 124, 179, 0.3);
 }
 .event-night { 
   border-left: 4px solid hsl(var(--night)); 
+  box-shadow: 0 0 2px rgba(121, 34, 199, 0.3);
 }
 
 /* Partner shared events */
 .event-partner { 
-  background-color: rgba(236, 72, 153, 0.1); 
+  background-color: hsla(var(--partner), 0.15);
+  border: 1px solid hsla(var(--partner), 0.3);
 }
 
 /* Calendar cell sizing */
@@ -47,4 +57,50 @@
 .hide-scrollbar { 
   -ms-overflow-style: none; 
   scrollbar-width: none; 
+}
+
+/* Classes de estilo relacionadas ao novo tema */
+.bg-primary-light {
+  background-color: hsla(var(--primary-light), 0.3);
+}
+
+.bg-primary-dark {
+  background-color: hsl(var(--primary-dark));
+  color: hsl(var(--text-light));
+}
+
+.text-primary-gradient {
+  background: linear-gradient(90deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-dark {
+  color: hsl(var(--text-dark));
+}
+
+.text-medium {
+  color: hsl(var(--text-medium));
+}
+
+.text-light {
+  color: hsl(var(--text-light));
+}
+
+.border-primary-light {
+  border-color: hsla(var(--primary-light), 0.5);
+}
+
+.border-primary {
+  border-color: hsl(var(--primary));
+}
+
+.border-primary-dark {
+  border-color: hsl(var(--primary-dark));
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary-dark)) 0%, hsl(var(--primary)) 100%);
+  color: white;
 }

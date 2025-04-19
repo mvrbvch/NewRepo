@@ -65,10 +65,10 @@ export default function DateNavigation({
   }
   
   return (
-    <div className="px-4 py-3 bg-white border-b flex items-center justify-between">
+    <div className="px-4 py-3 bg-primary-light border-b border-primary-light flex items-center justify-between">
       <div>
-        <h2 className="text-lg font-semibold">{displayDate}</h2>
-        <div className="flex items-center text-sm text-gray-500">
+        <h2 className="text-lg font-semibold text-primary-dark">{displayDate}</h2>
+        <div className="flex items-center text-sm text-medium">
           <span>
             {eventCount} evento{eventCount !== 1 ? 's' : ''}
           </span>
@@ -76,7 +76,7 @@ export default function DateNavigation({
             <>
               <span className="mx-1">•</span>
               <span className="flex items-center">
-                <span className="material-icons text-sm text-secondary mr-1">favorite</span>
+                <span className="material-icons text-sm text-primary mr-1">favorite</span>
                 <span>
                   {sharedCount} compartilhado{sharedCount !== 1 ? 's' : ''}
                 </span>
@@ -86,11 +86,21 @@ export default function DateNavigation({
         </div>
       </div>
       
-      <div className="flex">
-        <Button variant="ghost" size="icon" onClick={onPrev}>
+      <div className="flex space-x-1">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onPrev}
+          className="text-primary-dark hover:bg-white hover:text-primary"
+        >
           <span className="material-icons">chevron_left</span>
         </Button>
-        <Button variant="ghost" size="icon" onClick={onNext}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onNext}
+          className="text-primary-dark hover:bg-white hover:text-primary"
+        >
           <span className="material-icons">chevron_right</span>
         </Button>
       </div>

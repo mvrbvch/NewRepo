@@ -33,28 +33,28 @@ export default function Header() {
     : "U";
 
   return (
-    <header className="px-4 py-3 flex items-center justify-between border-b bg-white">
+    <header className="px-4 py-3 flex items-center justify-between border-b bg-primary-dark shadow-md text-white">
       <div className="flex items-center">
         <Link href="/">
           <a className="flex items-center">
-            <img src="/logo.png" alt="Por Nós" className="h-8 mr-2" />
+            <img src="/logo.png" alt="Por Nós" className="h-8 drop-shadow-sm" />
           </a>
         </Link>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3">
         <InstallButton />
         <NotificationButton 
           variant="ghost" 
           size="icon" 
-          className="text-gray-600"
+          className="text-white hover:text-white/90 hover:bg-primary/80" 
         />
 
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="w-8 h-8 rounded-full p-0 overflow-hidden bg-primary text-white"
+              className="w-8 h-8 rounded-full p-0 overflow-hidden bg-gradient-primary text-white hover:opacity-90 transition-opacity"
             >
               {userInitials}
             </Button>
@@ -66,14 +66,14 @@ export default function Header() {
 
             <DropdownMenuGroup>
               <DropdownMenuItem className="cursor-pointer">
-                <span className="material-icons mr-2 text-gray-500 text-sm">
+                <span className="material-icons mr-2 text-primary/80 text-sm">
                   person
                 </span>
                 <span>Perfil</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem className="cursor-pointer">
-                <span className="material-icons mr-2 text-gray-500 text-sm">
+                <span className="material-icons mr-2 text-primary/80 text-sm">
                   settings
                 </span>
                 <span>Configurações</span>
@@ -83,7 +83,7 @@ export default function Header() {
                 <Link href="/invite-partner">
                   <DropdownMenuItem className="cursor-pointer" asChild>
                     <a>
-                      <span className="material-icons mr-2 text-gray-500 text-sm">
+                      <span className="material-icons mr-2 text-primary/80 text-sm">
                         people
                       </span>
                       <span>Convidar parceiro</span>

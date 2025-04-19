@@ -67,8 +67,10 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-primary mb-2">NossaRotina</h1>
-          <p className="text-gray-600">Organize sua rotina compartilhada</p>
+          <div className="flex justify-center mb-2">
+            <img src="/logo.png" alt="Por Nós" className="h-12" />
+          </div>
+          <p className="text-gray-600">Todo dia é uma nova chance de nos escolher</p>
         </div>
 
         <Tabs defaultValue="login" className="space-y-6">

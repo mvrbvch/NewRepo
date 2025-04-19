@@ -207,7 +207,7 @@ export default function HomePage() {
         />
       )}
       
-      {/* Botão de teste de notificação - apenas em desenvolvimento */}
+      {/* Botão de teste de notificação */}
       <div className="fixed bottom-20 right-4 z-50">
         <Button
           size="sm"

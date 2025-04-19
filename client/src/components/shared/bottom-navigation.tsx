@@ -18,12 +18,12 @@ export default function BottomNavigation({
   const { subscriptionStatus } = usePushNotifications();
   
   return (
-    <div className="bg-white border-t flex items-center justify-around p-2 z-10">
+    <div className="bg-white border-t border-gray-200 flex items-center justify-around p-2 z-10 shadow-sm">
       <Link href="/">
         <Button 
           variant="ghost" 
           className={`flex flex-col items-center py-1 px-3 h-auto ${
-            location === '/' ? 'text-primary' : 'text-gray-500'
+            location === '/' ? 'text-primary-dark font-medium' : 'text-dark'
           }`}
           asChild
         >
@@ -38,17 +38,16 @@ export default function BottomNavigation({
         <NotificationButton 
           variant="ghost"
           size="default"
-
           className={`flex flex-col items-center py-1 px-3 h-auto ${
-            location === '/notifications' ? 'text-primary' : 'text-gray-500'
+            location === '/notifications' ? 'text-primary-dark' : 'text-dark'
           }`}
         />
-        <span className="text-xs mt-1 text-gray-500">Notificações</span>
+        <span className="text-xs mt-1 text-medium font-medium">Notificações</span>
       </div>
       
       <div className="relative flex justify-center">
         <Button 
-          className="absolute -top-6 bg-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+          className="absolute -top-6 bg-gradient-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md hover:shadow-lg transition-shadow"
           onClick={onCreateEvent}
         >
           <span className="material-icons">add</span>
@@ -59,7 +58,7 @@ export default function BottomNavigation({
         <Button 
           variant="ghost" 
           className={`flex flex-col items-center py-1 px-3 h-auto ${
-            location === '/tasks' ? 'text-primary' : 'text-gray-500'
+            location === '/tasks' ? 'text-primary-dark font-medium' : 'text-dark'
           }`}
           asChild
         >
