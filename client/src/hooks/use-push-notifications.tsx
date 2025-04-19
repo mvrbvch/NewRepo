@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -34,26 +34,6 @@ const PushNotificationsContext = createContext<PushNotificationsContextType | nu
 
 // Provedor do contexto
 export function PushNotificationsProvider({ children }: { children: ReactNode }) {
-  const hookValue = usePushNotificationsHook();
-  
-  return (
-    <PushNotificationsContext.Provider value={hookValue}>
-      {children}
-    </PushNotificationsContext.Provider>
-  );
-}
-
-// Hook para usar o contexto
-export function usePushNotifications() {
-  const context = useContext(PushNotificationsContext);
-  if (!context) {
-    throw new Error("usePushNotifications deve ser usado dentro de um PushNotificationsProvider");
-  }
-  return context;
-}
-
-// Implementação real do hook, usado pelo provedor
-function usePushNotificationsHook(): PushNotificationsContextType {
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<PushSubscriptionStatus>(
@@ -65,18 +45,18 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     checkSubscriptionStatus();
   }, []);
 
-  // Verifica se estamos no iOS
+  // Verificar se estamos no iOS
   const isIOS = () => {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   };
 
-  // Verifica se estamos no Safari no iOS
+  // Verificar se estamos no Safari no iOS
   const isIOSSafari = () => {
     const ua = navigator.userAgent;
     return isIOS() && ua.includes('Safari') && !ua.includes('Chrome');
   };
 
-  // Verifica se o iOS suporta notificações push (iOS 16.4+)
+  // Verificar se o iOS suporta notificações push (iOS 16.4+)
   const isIOSPushSupported = () => {
     if (!isIOS()) return false;
     
@@ -228,7 +208,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
       });
 
       // Registrar a inscrição no servidor
-      await registerDeviceMutation.mutateAsync(subscription.toJSON());
+      await registerDeviceMutation.mutateAsync(subscription.toJSON() as any);
 
       // Atualizar o estado
       setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
@@ -262,7 +242,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
       if (subscription) {
         // Cancelar a inscrição no servidor
-        await unregisterDeviceMutation.mutateAsync(subscription.toJSON());
+        await unregisterDeviceMutation.mutateAsync(subscription.toJSON() as any);
         
         // Cancelar a inscrição no navegador
         await subscription.unsubscribe();
@@ -292,7 +272,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
       const response = await apiRequest("POST", "/api/notifications/test");
       const result = await response.json();
       
-      if (result.success) {
+      if (result.pushSent) {
         toast({
           title: "Notificação de teste enviada",
           description: "Verifique se você recebeu a notificação.",
@@ -314,13 +294,28 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     }
   };
 
-  return {
-    subscriptionStatus,
-    isPending,
-    subscribe,
-    unsubscribe,
-    testNotification,
-  };
+  return (
+    <PushNotificationsContext.Provider
+      value={{
+        subscriptionStatus,
+        isPending,
+        subscribe,
+        unsubscribe,
+        testNotification,
+      }}
+    >
+      {children}
+    </PushNotificationsContext.Provider>
+  );
+}
+
+// Hook para usar o contexto
+export function usePushNotifications() {
+  const context = useContext(PushNotificationsContext);
+  if (!context) {
+    throw new Error("usePushNotifications deve ser usado dentro de um PushNotificationsProvider");
+  }
+  return context;
 }
 
 // Função auxiliar para converter chave VAPID para o formato correto

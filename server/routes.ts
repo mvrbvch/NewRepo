@@ -1271,11 +1271,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id as number;
       
+      console.log("Iniciando teste de notificação para usuário", userId);
+      
       // Criar uma notificação de teste
       const notification = await storage.createNotification({
         userId,
         title: "Notificação de teste",
-        message: "Esta é uma notificação de teste do sistema NossaRotina!",
+        message: "Esta é uma notificação de teste do aplicativo Por Nós!",
         type: "test",
         referenceType: null,
         referenceId: null,
@@ -1283,14 +1285,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false
       });
       
+      console.log("Notificação criada no banco de dados:", notification);
+      
       // Enviar push para o próprio usuário
       try {
+        // Verificar os dispositivos registrados do usuário
+        const devices = await storage.getUserDevices(userId);
+        console.log(`Usuário tem ${devices.length} dispositivo(s) registrado(s):`);
+        devices.forEach((device, index) => {
+          console.log(`- Dispositivo #${index+1}: ${device.deviceName} (${device.deviceType}), pushEnabled: ${device.pushEnabled}`);
+        });
+        
         const pushPayload: PushNotificationPayload = {
           title: "Notificação de teste",
-          body: "Esta é uma notificação de teste do sistema NossaRotina!",
+          body: "Esta é uma notificação de teste do aplicativo Por Nós!",
+          icon: "/icons/icon-192x192.png",
+          badge: "/icons/icon-192x192.png",
           data: {
             type: "test",
-          }
+            time: new Date().toISOString()
+          },
+          requireInteraction: true
         };
         
         // Enviar push para todos os dispositivos do usuário
