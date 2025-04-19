@@ -2,41 +2,50 @@ import { useAuth } from "@/providers/auth-provider";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 
-export function ProtectedRoute({
+// Componente wrapper que verifica autenticação
+function ProtectedRouteRenderer({
   path,
-  component: Component,
+  component: Component
 }: {
   path: string;
   component: () => React.JSX.Element;
 }) {
   const { user, isLoading } = useAuth();
 
+  // Enquanto carrega, mostra um loader
   if (isLoading) {
     return (
-      <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Route>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
+  // Se não estiver autenticado, redireciona para login
   if (!user) {
-    return (
-      <Route path={path}>
-        <Redirect to="/auth" />
-      </Route>
-    );
+    return <Redirect to="/auth" />;
   }
 
-  // If user is authenticated but hasn't completed onboarding and isn't on the onboarding page
+  // Se estiver autenticado mas não concluiu onboarding e não está na página de onboarding
   if (user && !user.onboardingComplete && path !== "/onboarding") {
-    return (
-      <Route path={path}>
-        <Redirect to="/onboarding" />
-      </Route>
-    );
+    return <Redirect to="/onboarding" />;
   }
 
-  return <Route path={path} component={Component} />;
+  // Se passou por todas as verificações, renderiza o componente
+  return <Component />;
+}
+
+// Componente Route que usa o renderer
+export function ProtectedRoute({
+  path,
+  component
+}: {
+  path: string;
+  component: () => React.JSX.Element;
+}) {
+  return (
+    <Route path={path}>
+      {() => <ProtectedRouteRenderer path={path} component={component} />}
+    </Route>
+  );
 }

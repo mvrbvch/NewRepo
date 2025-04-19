@@ -5,114 +5,12 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-// Página de autenticação simples (login/registro)
-export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
-  const [, navigate] = useLocation();
-  
-  // Redirecionar se já estiver logado (com verificação adicional)
-  useEffect(() => {
-    // Só tenta redirecionar se não estiver carregando e o usuário existir
-    if (!isLoading && user) {
-      // Usa setTimeout para evitar o erro de atualização durante renderização
-      setTimeout(() => {
-        navigate("/");
-      }, 0);
-    }
-  }, [user, isLoading, navigate]);
-  
-  // Se estiver carregando, mostrar loader
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Formulário (lado esquerdo) */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Por Nós</h1>
-            <p className="mt-2 text-gray-600">Todo dia é uma nova chance de nos escolher</p>
-          </div>
-          
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200">
-            <button
-              className={`flex-1 py-2 text-center ${
-                activeTab === "login"
-                  ? "border-b-2 border-primary text-primary font-medium"
-                  : "text-gray-500"
-              }`}
-              onClick={() => setActiveTab("login")}
-            >
-              Login
-            </button>
-            <button
-              className={`flex-1 py-2 text-center ${
-                activeTab === "register"
-                  ? "border-b-2 border-primary text-primary font-medium"
-                  : "text-gray-500"
-              }`}
-              onClick={() => setActiveTab("register")}
-            >
-              Cadastro
-            </button>
-          </div>
-          
-          {/* Formulário ativo */}
-          <div className="space-y-6">
-            {activeTab === "login" ? (
-              <LoginForm />
-            ) : (
-              <RegisterForm />
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Hero (lado direito) */}
-      <div className="w-full md:w-1/2 bg-gradient-to-br from-primary to-primary-400 hidden md:flex flex-col items-center justify-center text-white p-8">
-        <div className="max-w-md text-center">
-          <h2 className="text-4xl font-bold mb-6">Organize sua vida a dois</h2>
-          <p className="text-lg mb-8">
-            Por Nós é a plataforma ideal para casais que desejam organizar sua vida de forma
-            simples e eficiente. Compartilhe eventos, planeje tarefas domésticas e fortaleça
-            sua relação.
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-white/10 rounded-lg">
-              <p className="font-bold mb-2">Calendário Compartilhado</p>
-              <p className="text-sm">Visualize eventos e compromissos juntos</p>
-            </div>
-            <div className="p-4 bg-white/10 rounded-lg">
-              <p className="font-bold mb-2">Tarefas Domésticas</p>
-              <p className="text-sm">Organize as responsabilidades do lar</p>
-            </div>
-            <div className="p-4 bg-white/10 rounded-lg">
-              <p className="font-bold mb-2">Notificações</p>
-              <p className="text-sm">Lembretes de eventos e tarefas importantes</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Formulário de login
-function LoginForm() {
+// Componente de formulário de login - DEFINIDO FORA DO COMPONENTE AUTHPAGE
+const LoginForm = ({ loginMutation }: { loginMutation: any }) => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
-  const { loginMutation } = useAuth();
   const { toast } = useToast();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,10 +76,10 @@ function LoginForm() {
       </button>
     </form>
   );
-}
+};
 
-// Formulário de registro
-function RegisterForm() {
+// Componente de formulário de registro - DEFINIDO FORA DO COMPONENTE AUTHPAGE
+const RegisterForm = ({ registerMutation }: { registerMutation: any }) => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -189,7 +87,6 @@ function RegisterForm() {
     email: "",
     phoneNumber: "",
   });
-  const { registerMutation } = useAuth();
   const { toast } = useToast();
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -305,5 +202,106 @@ function RegisterForm() {
         )}
       </button>
     </form>
+  );
+};
+
+// Página de autenticação principal
+export default function AuthPage() {
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const { user, isLoading, loginMutation, registerMutation } = useAuth();
+  const [, navigate] = useLocation();
+  
+  // Redirecionar se já estiver logado (com verificação adicional)
+  useEffect(() => {
+    // Só tenta redirecionar se não estiver carregando e o usuário existir
+    if (!isLoading && user) {
+      // Usa setTimeout para evitar o erro de atualização durante renderização
+      setTimeout(() => {
+        navigate("/");
+      }, 0);
+    }
+  }, [user, isLoading, navigate]);
+  
+  // Se estiver carregando, mostrar loader
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Formulário (lado esquerdo) */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo */}
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900">Por Nós</h1>
+            <p className="mt-2 text-gray-600">Todo dia é uma nova chance de nos escolher</p>
+          </div>
+          
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200">
+            <button
+              className={`flex-1 py-2 text-center ${
+                activeTab === "login"
+                  ? "border-b-2 border-primary text-primary font-medium"
+                  : "text-gray-500"
+              }`}
+              onClick={() => setActiveTab("login")}
+            >
+              Login
+            </button>
+            <button
+              className={`flex-1 py-2 text-center ${
+                activeTab === "register"
+                  ? "border-b-2 border-primary text-primary font-medium"
+                  : "text-gray-500"
+              }`}
+              onClick={() => setActiveTab("register")}
+            >
+              Cadastro
+            </button>
+          </div>
+          
+          {/* Formulário ativo - passando mutations como props */}
+          <div className="space-y-6">
+            {activeTab === "login" ? (
+              <LoginForm loginMutation={loginMutation} />
+            ) : (
+              <RegisterForm registerMutation={registerMutation} />
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Hero (lado direito) */}
+      <div className="w-full md:w-1/2 bg-gradient-to-br from-primary to-primary-400 hidden md:flex flex-col items-center justify-center text-white p-8">
+        <div className="max-w-md text-center">
+          <h2 className="text-4xl font-bold mb-6">Organize sua vida a dois</h2>
+          <p className="text-lg mb-8">
+            Por Nós é a plataforma ideal para casais que desejam organizar sua vida de forma
+            simples e eficiente. Compartilhe eventos, planeje tarefas domésticas e fortaleça
+            sua relação.
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-white/10 rounded-lg">
+              <p className="font-bold mb-2">Calendário Compartilhado</p>
+              <p className="text-sm">Visualize eventos e compromissos juntos</p>
+            </div>
+            <div className="p-4 bg-white/10 rounded-lg">
+              <p className="font-bold mb-2">Tarefas Domésticas</p>
+              <p className="text-sm">Organize as responsabilidades do lar</p>
+            </div>
+            <div className="p-4 bg-white/10 rounded-lg">
+              <p className="font-bold mb-2">Notificações</p>
+              <p className="text-sm">Lembretes de eventos e tarefas importantes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

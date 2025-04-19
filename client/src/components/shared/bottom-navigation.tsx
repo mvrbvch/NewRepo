@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/providers/auth-provider";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import NotificationButton from "./notification-button";
 
