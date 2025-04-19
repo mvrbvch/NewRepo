@@ -111,8 +111,9 @@ export const AuthContext = createContext<AuthContextType>({
 
 // Simplified AuthProvider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Substituir useToast() pelo toast importado diretamente
-  // Isso evita chamar hooks dentro de outros hooks
+  // IMPORTANTE: todos os hooks devem ser chamados antes de qualquer lógica condicional
+  // e sempre na mesma ordem em todas as renderizações
+  const { toast } = useToast();
 
   const {
     data: user,
@@ -141,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
   });
-  const { toast } = useToast();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
