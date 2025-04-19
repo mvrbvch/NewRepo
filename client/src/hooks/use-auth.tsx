@@ -1,15 +1,16 @@
-// ESTE ARQUIVO ATUA APENAS COMO ALIAS
-// O código real foi movido para providers/auth-provider.tsx
-
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
+import { createContext, ReactNode, useContext } from "react";
+import {
+  useQuery,
+  useMutation,
+  UseMutationResult,
+} from "@tanstack/react-query";
+import { insertUserSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { UserType } from "@/lib/types";
 import { z } from "zod";
 
-// Tipos
-export type AuthContextType = {
+type AuthContextType = {
   user: UserType | null;
   isLoading: boolean;
   error: Error | null;
@@ -18,72 +19,130 @@ export type AuthContextType = {
   logoutMutation: UseMutationResult<void, Error, void>;
 };
 
-export type LoginData = {
+type LoginData = {
   username: string;
   password: string;
 };
 
-export type RegisterData = {
-  username: string;
-  password: string;
-  name: string;
-  email: string;
-  phoneNumber?: string;
-};
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email"),
+  phoneNumber: z.string().optional(),
+});
 
-// Criação do contexto
-export const AuthContext = createContext<AuthContextType | null>(null);
+type RegisterData = z.infer<typeof registerSchema>;
 
-// Provedor do contexto
-export function AuthProvider({ children }: { children: ReactNode }) {
-  // Estado para controlar o carregamento e o usuário
-  const [authState, setAuthState] = useState<{
-    user: UserType | null;
-    isLoading: boolean;
-    error: Error | null;
-  }>({
-    user: null,
-    isLoading: true,
+// Criar o contexto com um valor padrão seguro
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: false,
+  error: null,
+  loginMutation: {
+    mutate: () => {},
+    mutateAsync: async () => ({
+      id: 0,
+      name: "",
+      username: "",
+      email: "",
+      partnerStatus: "none",
+      onboardingComplete: false,
+    }),
+    data: undefined,
     error: null,
-  });
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    failureCount: 0,
+    failureReason: null,
+    status: "idle",
+    variables: undefined,
+    isIdle: true,
+    submittedAt: 0,
+    reset: () => {},
+    context: undefined,
+    isPaused: false,
+  },
+  registerMutation: {
+    mutate: () => {},
+    mutateAsync: async () => ({
+      id: 0,
+      name: "",
+      username: "",
+      email: "",
+      partnerStatus: "none",
+      onboardingComplete: false,
+    }),
+    data: undefined,
+    error: null,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    failureCount: 0,
+    failureReason: null,
+    status: "idle",
+    variables: undefined,
+    isIdle: true,
+    submittedAt: 0,
+    reset: () => {},
+    context: undefined,
+    isPaused: false,
+  },
+  logoutMutation: {
+    mutate: () => {},
+    mutateAsync: async () => {},
+    data: undefined,
+    error: null,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    failureCount: 0,
+    failureReason: null,
+    status: "idle",
+    variables: undefined,
+    isIdle: true,
+    submittedAt: 0,
+    reset: () => {},
+    context: undefined,
+    isPaused: false,
+  },
+});
+
+// Simplified AuthProvider Component
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // Extraímos o toast diretamente do módulo para não usar um hook
+  // Desta forma evitamos qualquer problema de ordem dos hooks
+  const toastState = useToast();
   
-  // Carregar os dados do usuário na inicialização
-  useEffect(() => {
-    const fetchUser = async () => {
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useQuery<UserType | null, Error, UserType | null>({
+    queryKey: ["/api/user"],
+    queryFn: async ({ queryKey }) => {
       try {
-        const res = await fetch("/api/user", {
+        const res = await fetch(queryKey[0] as string, {
           credentials: "include",
         });
-        
-        if (res.status === 401) {
-          setAuthState(prev => ({ ...prev, user: null, isLoading: false }));
-          return;
-        }
-        
-        if (!res.ok) {
-          throw new Error(`Erro: ${res.status}`);
-        }
-        
-        const userData = await res.json();
-        setAuthState(prev => ({ 
-          ...prev, 
-          user: userData, 
-          isLoading: false 
-        }));
-      } catch (error) {
-        setAuthState(prev => ({ 
-          ...prev, 
-          user: null, 
-          isLoading: false,
-          error: error instanceof Error ? error : new Error(String(error))
-        }));
-      }
-    };
-    
-    fetchUser();
-  }, []);
 
-  // Mutation para login
+        if (res.status === 401) {
+          return null;
+        }
+
+        if (!res.ok) {
+          throw new Error(`Error: ${res.status}`);
+        }
+
+        const userData = await res.json();
+        return userData as UserType; // Garantir o tipo esperado
+      } catch (error) {
+        return null;
+      }
+    },
+  });
+
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -91,14 +150,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      setAuthState(prev => ({ ...prev, user }));
-      toast({
+      toastState.toast({
         title: "Login bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      toast({
+      toastState.toast({
         title: "Erro ao entrar",
         description: error.message,
         variant: "destructive",
@@ -106,7 +164,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Mutation para registro
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
       const res = await apiRequest("POST", "/api/register", userData);
@@ -114,14 +171,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      setAuthState(prev => ({ ...prev, user }));
-      toast({
+      toastState.toast({
         title: "Cadastro bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      toast({
+      toastState.toast({
         title: "Erro ao cadastrar",
         description: error.message,
         variant: "destructive",
@@ -129,21 +185,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Mutation para logout
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      setAuthState(prev => ({ ...prev, user: null }));
-      toast({
+      toastState.toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",
       });
     },
     onError: (error: Error) => {
-      toast({
+      toastState.toast({
         title: "Erro ao sair",
         description: error.message,
         variant: "destructive",
@@ -154,9 +208,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: authState.user,
-        isLoading: authState.isLoading,
-        error: authState.error,
+        user: user ?? null, // Garantir que user nunca é undefined
+        isLoading: isLoading,
+        error: error as Error | null,
         loginMutation,
         registerMutation,
         logoutMutation,
@@ -167,11 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook para usar o contexto
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
-  }
   return context;
 }

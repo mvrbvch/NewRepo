@@ -1,20 +1,16 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { toast } from "@/hooks/use-toast"; // Importar apenas a função toast, não o hook
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+} from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Definição da interface PushSubscriptionJSON que está faltando
 interface PushSubscriptionJSON {
-  endpoint: string;
-  expirationTime: number | null;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
-// Interface para enviar ao servidor
-interface SafePushSubscriptionJSON {
   endpoint: string;
   expirationTime: number | null;
   keys: {
@@ -40,83 +36,67 @@ interface PushNotificationsContextType {
 }
 
 // Criação do contexto
-const PushNotificationsContext = createContext<PushNotificationsContextType | null>(null);
+const PushNotificationsContext =
+  createContext<PushNotificationsContextType | null>(null);
 
 // Provedor do contexto
-export function PushNotificationsProvider({ children }: { children: ReactNode }) {
-  const hookValue = usePushNotificationsHook();
-  
-  return (
-    <PushNotificationsContext.Provider value={hookValue}>
-      {children}
-    </PushNotificationsContext.Provider>
-  );
-}
-
-// Hook para usar o contexto
-export function usePushNotifications() {
-  const context = useContext(PushNotificationsContext);
-  if (!context) {
-    throw new Error("usePushNotifications deve ser usado dentro de um PushNotificationsProvider");
-  }
-  return context;
-}
-
-// Implementação real do hook, usado pelo provedor
-function usePushNotificationsHook(): PushNotificationsContextType {
-  // Não usamos useToast() para evitar dependência circular
+export function PushNotificationsProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [isPending, setIsPending] = useState(false);
-  // Inicializa com NOT_SUBSCRIBED em vez de NOT_SUPPORTED para dar uma melhor experiência inicial
-  const [subscriptionStatus, setSubscriptionStatus] = useState<PushSubscriptionStatus>(
-    PushSubscriptionStatus.NOT_SUBSCRIBED
-  );
+  const [subscriptionStatus, setSubscriptionStatus] =
+    useState<PushSubscriptionStatus>(PushSubscriptionStatus.NOT_SUPPORTED);
+  const { toast } = useToast();
 
   // Verificar o status inicial
   useEffect(() => {
     checkSubscriptionStatus();
   }, []);
 
-  // Verifica se estamos no iOS
+  // Verificar se estamos no iOS
   const isIOS = () => {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    );
   };
 
-  // Verifica se estamos no Safari no iOS
+  // Verificar se estamos no Safari no iOS
   const isIOSSafari = () => {
     const ua = navigator.userAgent;
-    return isIOS() && ua.includes('Safari') && !ua.includes('Chrome');
+    return isIOS() && ua.includes("Safari") && !ua.includes("Chrome");
   };
 
-  // Verifica se o iOS suporta notificações push (iOS 16.4+)
+  // Verificar se o iOS suporta notificações push (iOS 16.4+)
   const isIOSPushSupported = () => {
     if (!isIOS()) return false;
-    
+
     // Extrai a versão do iOS do user-agent
     const match = navigator.userAgent.match(/OS\s+(\d+)_(\d+)/);
     if (!match) return false;
-    
+
     const majorVersion = parseInt(match[1], 10);
     const minorVersion = parseInt(match[2], 10);
-    
+
     // iOS 16.4+ suporta notificações push no Safari
-    return (majorVersion > 16 || (majorVersion === 16 && minorVersion >= 4));
+    return majorVersion > 16 || (majorVersion === 16 && minorVersion >= 4);
   };
 
   // Função para verificar o status atual da inscrição
   const checkSubscriptionStatus = async () => {
-    // Verifica logs para depuração
-    console.log("[Push] Iniciando verificação de status de notificações push");
-    
     // Primeiro, verifica se estamos no iOS
     if (isIOS()) {
       // Caso especial para Safari no iOS 16.4+
       if (isIOSSafari() && isIOSPushSupported()) {
         // Continua com a verificação normal, pois o push é suportado
-        console.log("[Push] Safari no iOS 16.4+ detectado - Push é suportado");
-      } 
+        console.log("Safari no iOS 16.4+ detectado - Push é suportado");
+      }
       // iOS mais antigo ou outro navegador no iOS que não suporta push
       else if (!isIOSPushSupported()) {
-        console.log("[Push] Navegador iOS detectado mas Push não é suportado nesta versão");
+        console.log(
+          "Navegador iOS detectado mas Push não é suportado nesta versão",
+        );
         setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
         return;
       }
@@ -124,79 +104,53 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
     // Verificação padrão para navegadores não-iOS ou Safari no iOS 16.4+
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      console.log("[Push] ServiceWorker ou PushManager não suportados neste navegador");
+      console.log(
+        "ServiceWorker ou PushManager não suportados neste navegador",
+      );
       setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
       return;
     }
 
     try {
-      // Verificar permissões do Notification API
       const permission = Notification.permission;
       if (permission === "denied") {
-        console.log("[Push] Permissões de notificação negadas pelo usuário");
         setSubscriptionStatus(PushSubscriptionStatus.DENIED);
         return;
       }
 
-      // Verificar se há algum service worker registrado
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      if (registrations.length === 0) {
-        console.log("[Push] Nenhum Service Worker registrado. Tentando registrar...");
-        try {
-          // Tenta registrar o service worker explicitamente
-          await navigator.serviceWorker.register('/service-worker.js');
-          console.log("[Push] Service Worker registrado com sucesso");
-        } catch (regError) {
-          console.error("[Push] Erro ao registrar Service Worker:", regError);
-          // Não define NOT_SUPPORTED para dar uma chance de funcionar depois
-        }
-      } else {
-        console.log("[Push] Service Workers já registrados:", registrations.length);
-      }
-
+      // No iOS, o registro do service worker pode falhar silenciosamente
       try {
-        // Aguarda o service worker estar pronto
-        console.log("[Push] Aguardando Service Worker ficar pronto...");
         const registration = await navigator.serviceWorker.ready;
-        console.log("[Push] Service Worker está pronto");
-        
-        // Verifica se há uma inscrição existente
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
-          console.log("[Push] Inscrição de push existente encontrada");
+          console.log("Inscrição de push existente encontrada");
           setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
         } else {
-          console.log("[Push] Navegador suporta push, mas usuário não está inscrito");
+          console.log("Navegador suporta push, mas usuário não está inscrito");
           setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
         }
       } catch (swError) {
-        console.error("[Push] Erro ao acessar service worker:", swError);
-        
+        console.error("Erro ao acessar service worker:", swError);
+
         // Se estamos no iOS e ocorreu um erro, pode ser uma limitação da plataforma
         if (isIOS()) {
-          console.log("[Push] Erro de service worker no iOS - limitação conhecida");
+          console.log("Erro de service worker no iOS - limitação conhecida");
           setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
         } else {
-          console.log("[Push] Erro não relacionado ao iOS - considerando como NÃO_INSCRITO");
           setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
         }
       }
     } catch (error) {
-      console.error("[Push] Erro ao verificar status da inscrição:", error);
-      // Mesmo com erro, vamos tentar oferecer a possibilidade de inscrição
-      if (!isIOS()) {
-        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-      } else {
-        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
-      }
+      console.error("Erro ao verificar status da inscrição:", error);
+      setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
     }
   };
 
   // Registrar um novo dispositivo no backend
   const registerDeviceMutation = useMutation({
-    mutationFn: async (subscription: SafePushSubscriptionJSON) => {
-      const response = await apiRequest("POST", "/api/devices/register", {
+    mutationFn: async (subscription: PushSubscriptionJSON) => {
+      const response = await apiRequest("POST", "/api/devices", {
         deviceToken: JSON.stringify(subscription),
         deviceType: "web",
         deviceName: navigator.userAgent,
@@ -211,10 +165,19 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
   // Remover um dispositivo no backend
   const unregisterDeviceMutation = useMutation({
-    mutationFn: async (subscription: SafePushSubscriptionJSON) => {
-      const response = await apiRequest("POST", "/api/devices/unregister", {
-        deviceToken: JSON.stringify(subscription),
-      });
+    mutationFn: async (subscription: PushSubscriptionJSON) => {
+      // Primeiro precisamos encontrar o ID do dispositivo com base no token
+      const deviceTokenStr = JSON.stringify(subscription);
+      const devicesResponse = await apiRequest("GET", "/api/devices");
+      const devices = await devicesResponse.json();
+      const device = devices.find((d: any) => d.deviceToken === deviceTokenStr);
+
+      if (!device) {
+        throw new Error("Dispositivo não encontrado");
+      }
+
+      // Agora podemos excluir o dispositivo pelo ID
+      const response = await apiRequest("DELETE", `/api/devices/${device.id}`);
       return response.json();
     },
     onSuccess: () => {
@@ -256,23 +219,12 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         userVisibleOnly: true,
         // A chave pública VAPID deve ser configurada no backend
         applicationServerKey: urlBase64ToUint8Array(
-          "BDd3_hVL9bzn8xbpNV-0JecHiVhvQqMMn6SrTHce-cW6ogFLkP_rF9FKPkEVX-O-0FM-sgGh5cqEHVKgE3Ury_A"
+          "BDd3_hVL9bzn8xbpNV-0JecHiVhvQqMMn6SrTHce-cW6ogFLkP_rF9FKPkEVX-O-0FM-sgGh5cqEHVKgE3Ury_A",
         ),
       });
 
-      // Criar uma versão "segura" do objeto subscription
-      const subJSON = subscription.toJSON();
-      const safeSubscription: SafePushSubscriptionJSON = {
-        endpoint: subJSON.endpoint || "",
-        expirationTime: subJSON.expirationTime,
-        keys: {
-          p256dh: subJSON.keys?.p256dh || "",
-          auth: subJSON.keys?.auth || ""
-        }
-      };
-
       // Registrar a inscrição no servidor
-      await registerDeviceMutation.mutateAsync(safeSubscription);
+      await registerDeviceMutation.mutateAsync(subscription.toJSON() as any);
 
       // Atualizar o estado
       setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
@@ -280,7 +232,6 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         title: "Notificações ativadas",
         description: "Você receberá notificações importantes.",
       });
-
     } catch (error) {
       console.error("Erro ao se inscrever para notificações push:", error);
       toast({
@@ -305,23 +256,14 @@ function usePushNotificationsHook(): PushNotificationsContextType {
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
-        // Criar uma versão "segura" do objeto subscription
-        const subJSON = subscription.toJSON();
-        const safeSubscription: SafePushSubscriptionJSON = {
-          endpoint: subJSON.endpoint || "",
-          expirationTime: subJSON.expirationTime,
-          keys: {
-            p256dh: subJSON.keys?.p256dh || "",
-            auth: subJSON.keys?.auth || ""
-          }
-        };
-        
         // Cancelar a inscrição no servidor
-        await unregisterDeviceMutation.mutateAsync(safeSubscription);
-        
+        await unregisterDeviceMutation.mutateAsync(
+          subscription.toJSON() as any,
+        );
+
         // Cancelar a inscrição no navegador
         await subscription.unsubscribe();
-        
+
         // Atualizar o estado
         setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
         toast({
@@ -346,8 +288,8 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     try {
       const response = await apiRequest("POST", "/api/notifications/test");
       const result = await response.json();
-      
-      if (result.success) {
+
+      if (result.pushSent) {
         toast({
           title: "Notificação de teste enviada",
           description: "Verifique se você recebeu a notificação.",
@@ -355,7 +297,8 @@ function usePushNotificationsHook(): PushNotificationsContextType {
       } else {
         toast({
           title: "Erro",
-          description: result.message || "Não foi possível enviar a notificação de teste.",
+          description:
+            result.message || "Não foi possível enviar a notificação de teste.",
           variant: "destructive",
         });
       }
@@ -369,21 +312,36 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     }
   };
 
-  return {
-    subscriptionStatus,
-    isPending,
-    subscribe,
-    unsubscribe,
-    testNotification,
-  };
+  return (
+    <PushNotificationsContext.Provider
+      value={{
+        subscriptionStatus,
+        isPending,
+        subscribe,
+        unsubscribe,
+        testNotification,
+      }}
+    >
+      {children}
+    </PushNotificationsContext.Provider>
+  );
+}
+
+// Hook para usar o contexto
+export function usePushNotifications() {
+  const context = useContext(PushNotificationsContext);
+  if (!context) {
+    throw new Error(
+      "usePushNotifications deve ser usado dentro de um PushNotificationsProvider",
+    );
+  }
+  return context;
 }
 
 // Função auxiliar para converter chave VAPID para o formato correto
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Bell } from "lucide-react";
-import { usePushNotifications, PushSubscriptionStatus } from "@/providers/push-notifications-provider";
+import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
 import {
   Dialog,
   DialogContent,

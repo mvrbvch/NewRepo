@@ -1,82 +1,15 @@
-import { Route, Switch } from "wouter";
-import { useEffect } from "react";
-import { toast } from "@/hooks/use-toast";
-
-// Páginas
-import AuthPage from "@/pages/auth-page";
-import HomePage from "@/pages/home-page";
-import NotFound from "@/pages/not-found";
-import OnboardingPage from "@/pages/onboarding-page";
-import HouseholdTasksPage from "@/pages/household-tasks-page";
-import PartnerInvitePage from "@/pages/partner-invite-page";
-
-// Importação dos novos componentes de contexto
-import { AuthProvider } from "@/contexts/auth-context";
-import { ProtectedRoute } from "@/contexts/protected-route";
-import { PushNotificationsProvider } from "@/providers/push-notifications-provider";
-
-// Aplicação principal
+// Versão mínima para diagnóstico
 function App() {
-  // Garantir que o Service Worker esteja registrado
-  useEffect(() => {
-    async function ensureServiceWorker() {
-      try {
-        // Verificar se o navegador suporta Service Worker
-        if (!("serviceWorker" in navigator)) {
-          console.error("[PWA] Service Worker não é suportado neste navegador");
-          return;
-        }
-        
-        // Verificar se já existe algum Service Worker registrado
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        
-        if (registrations.length > 0) {
-          console.log("[PWA] Service Worker já está registrado:", registrations.length);
-        } else {
-          try {
-            // Tenta registrar o Service Worker
-            const registration = await navigator.serviceWorker.register('/service-worker.js');
-            console.log("[PWA] Service Worker registrado com sucesso:", registration);
-            
-            // Mostra uma notificação na interface
-            toast({
-              title: "Service Worker Ativado",
-              description: "Notificações e recursos offline agora estão disponíveis.",
-            });
-          } catch (error) {
-            console.error("[PWA] Erro ao registrar Service Worker:", error);
-          }
-        }
-      } catch (error) {
-        console.error("[PWA] Erro geral ao verificar Service Worker:", error);
-      }
-    }
-    
-    ensureServiceWorker();
-  }, []);
-  
   return (
-    <AuthProvider>
-      <PushNotificationsProvider>
-        <div className="min-h-screen bg-background flex flex-col">
-          <AppRoutes />
-        </div>
-      </PushNotificationsProvider>
-    </AuthProvider>
-  );
-}
-
-// Router com ProtectedRoute
-function AppRoutes() {
-  return (
-    <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/partner-invite/:token" component={PartnerInvitePage} />
-      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
-      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
-      <ProtectedRoute path="/" component={HomePage} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
+        <h1 className="mb-4 text-2xl font-bold">Por Nós - Diagnóstico</h1>
+        <p className="mb-4">
+          Esta é uma versão mínima para diagnóstico da aplicação.
+        </p>
+        <p>Teste de Tailwind CSS.</p>
+      </div>
+    </div>
   );
 }
 
