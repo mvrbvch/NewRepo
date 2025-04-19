@@ -36,6 +36,7 @@ async function main() {
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
+        description TEXT,
         date DATE NOT NULL,
         start_time TEXT NOT NULL,
         end_time TEXT NOT NULL,
@@ -81,6 +82,20 @@ async function main() {
         phone_number TEXT,
         token TEXT NOT NULL UNIQUE,
         status TEXT NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS household_tasks (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        recurrence_rule TEXT,
+        frequency TEXT NOT NULL DEFAULT 'once',
+        created_by INTEGER NOT NULL REFERENCES users(id),
+        assigned_to INTEGER REFERENCES users(id),
+        due_date DATE,
+        next_due_date DATE,
+        completed BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
       
