@@ -748,6 +748,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST - Enviar lembrete de tarefa por e-mail para o parceiro
+  app.post("/api/tasks/:id/remind", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = parseInt(req.params.id);
+      const { message } = req.body;
+      const userId = req.user?.id as number;
+      
+      // Obter a tarefa
+      const task = await storage.getHouseholdTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Verificar se o usuário tem acesso à tarefa
+      if (task.createdBy !== userId && task.assignedTo !== userId) {
+        return res.status(403).json({ message: "You don't have permission to send reminders for this task" });
+      }
+      
+      // Obter o usuário atual e seu parceiro
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!currentUser.partnerId) {
+        return res.status(400).json({ message: "You don't have a partner to send reminders to" });
+      }
+      
+      const partner = await storage.getUser(currentUser.partnerId);
+      if (!partner) {
+        return res.status(404).json({ message: "Partner not found" });
+      }
+      
+      if (!partner.email) {
+        return res.status(400).json({ message: "Your partner doesn't have an email address" });
+      }
+      
+      // Gerar e enviar o e-mail
+      const { html, text } = generateTaskReminderEmail(
+        partner.name,
+        currentUser.name,
+        task.title,
+        task.description,
+        message || null,
+        taskId
+      );
+      
+      const emailSent = await sendEmail({
+        to: partner.email,
+        subject: `Lembrete: ${task.title}`,
+        html,
+        text
+      });
+      
+      if (emailSent) {
+        res.status(200).json({ message: "Reminder sent successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to send reminder email" });
+      }
+    } catch (error) {
+      console.error('Erro ao enviar lembrete de tarefa:', error);
+      res.status(500).json({ 
+        message: "Failed to send task reminder",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // POST - Notificar parceiro via WhatsApp (stub para expansão futura)
+  app.post("/api/tasks/:id/notify", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Esta rota é um stub para expansão futura com integração WhatsApp
+    // Por enquanto, fornecemos uma resposta informativa
+    res.status(200).json({ 
+      message: "Notification feature is under development. Currently, use email reminders instead.",
+      alternativeEndpoint: `/api/tasks/${req.params.id}/remind`
+    });
+  });
+  
+  // Rota de teste para demonstração do envio de lembrete
+  // IMPORTANTE: Esta rota é apenas para testes e deve ser removida em produção
+  app.get("/api/test-reminder/:taskId/:userId", async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      const userId = parseInt(req.params.userId);
+      
+      // Obter a tarefa
+      const task = await storage.getHouseholdTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Obter o usuário e seu parceiro
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (!currentUser.partnerId) {
+        return res.status(400).json({ message: "You don't have a partner to send reminders to" });
+      }
+      
+      const partner = await storage.getUser(currentUser.partnerId);
+      if (!partner) {
+        return res.status(404).json({ message: "Partner not found" });
+      }
+      
+      if (!partner.email) {
+        return res.status(400).json({ message: "Your partner doesn't have an email address" });
+      }
+      
+      // Gerar e enviar o e-mail
+      const { html, text } = generateTaskReminderEmail(
+        partner.name,
+        currentUser.name,
+        task.title,
+        task.description,
+        "Este é um lembrete de teste da funcionalidade de notificação entre parceiros!",
+        taskId
+      );
+      
+      const emailSent = await sendEmail({
+        to: partner.email,
+        subject: `Lembrete de teste: ${task.title}`,
+        html,
+        text
+      });
+      
+      if (emailSent) {
+        res.status(200).json({ 
+          message: "Test reminder sent successfully",
+          details: {
+            from: currentUser.name,
+            to: partner.name,
+            email: partner.email,
+            task: task.title
+          }
+        });
+      } else {
+        res.status(500).json({ message: "Failed to send test reminder email" });
+      }
+    } catch (error) {
+      console.error('Erro ao enviar lembrete de teste:', error);
+      res.status(500).json({ 
+        message: "Failed to send test reminder",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
