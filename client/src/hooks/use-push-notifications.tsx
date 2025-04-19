@@ -13,6 +13,16 @@ interface PushSubscriptionJSON {
   };
 }
 
+// Interface para enviar ao servidor
+interface SafePushSubscriptionJSON {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 export enum PushSubscriptionStatus {
   NOT_SUPPORTED = "not_supported",
   DENIED = "denied",
@@ -185,7 +195,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
   // Registrar um novo dispositivo no backend
   const registerDeviceMutation = useMutation({
-    mutationFn: async (subscription: PushSubscriptionJSON) => {
+    mutationFn: async (subscription: SafePushSubscriptionJSON) => {
       const response = await apiRequest("POST", "/api/devices/register", {
         deviceToken: JSON.stringify(subscription),
         deviceType: "web",
@@ -201,7 +211,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
   // Remover um dispositivo no backend
   const unregisterDeviceMutation = useMutation({
-    mutationFn: async (subscription: PushSubscriptionJSON) => {
+    mutationFn: async (subscription: SafePushSubscriptionJSON) => {
       const response = await apiRequest("POST", "/api/devices/unregister", {
         deviceToken: JSON.stringify(subscription),
       });
@@ -250,8 +260,19 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         ),
       });
 
+      // Criar uma versão "segura" do objeto subscription
+      const subJSON = subscription.toJSON();
+      const safeSubscription: SafePushSubscriptionJSON = {
+        endpoint: subJSON.endpoint || "",
+        expirationTime: subJSON.expirationTime,
+        keys: {
+          p256dh: subJSON.keys?.p256dh || "",
+          auth: subJSON.keys?.auth || ""
+        }
+      };
+
       // Registrar a inscrição no servidor
-      await registerDeviceMutation.mutateAsync(subscription.toJSON());
+      await registerDeviceMutation.mutateAsync(safeSubscription);
 
       // Atualizar o estado
       setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
@@ -284,8 +305,19 @@ function usePushNotificationsHook(): PushNotificationsContextType {
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
+        // Criar uma versão "segura" do objeto subscription
+        const subJSON = subscription.toJSON();
+        const safeSubscription: SafePushSubscriptionJSON = {
+          endpoint: subJSON.endpoint || "",
+          expirationTime: subJSON.expirationTime,
+          keys: {
+            p256dh: subJSON.keys?.p256dh || "",
+            auth: subJSON.keys?.auth || ""
+          }
+        };
+        
         // Cancelar a inscrição no servidor
-        await unregisterDeviceMutation.mutateAsync(subscription.toJSON());
+        await unregisterDeviceMutation.mutateAsync(safeSubscription);
         
         // Cancelar a inscrição no navegador
         await subscription.unsubscribe();
