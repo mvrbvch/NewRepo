@@ -34,11 +34,18 @@ export default function Header() {
     : "U";
 
   return (
-    <header className="px-4 py-3 flex items-center justify-between border-b bg-primary-dark shadow-md text-white">
+    <header
+      style={{ paddingTop: 30 }}
+      className="px-4 py-3 flex items-center justify-between border-b bg-primary-dark shadow-md text-white"
+    >
       <div className="flex items-center">
         <Link href="/">
           <a className="flex items-center">
-            <img src="/logo.png" alt="Por Nós" className="h-8 drop-shadow-sm" />
+            <img
+              src="/logo-white.png"
+              alt="Por Nós"
+              className="h-10 drop-shadow-sm"
+            />
           </a>
         </Link>
       </div>
@@ -46,10 +53,10 @@ export default function Header() {
       <div className="flex items-center space-x-3">
         <InstallButton />
         <IOSInstallGuide />
-        <NotificationButton 
-          variant="ghost" 
-          size="icon" 
-          className="text-white hover:text-white/90 hover:bg-primary/80" 
+        <NotificationButton
+          variant="ghost"
+          size="icon"
+          className="text-white hover:text-white/90 hover:bg-primary/80"
         />
 
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>

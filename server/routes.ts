@@ -11,6 +11,7 @@ import { sendEmail, generateTaskReminderEmail, generatePartnerInviteEmail } from
 import { sendPushToUser, PushNotificationPayload } from "./pushNotifications";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
+import { registerWebAuthnRoutes } from "./webauthn-routes";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {
@@ -113,6 +114,9 @@ function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date):
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Registrar rotas de autenticação biométrica WebAuthn
+  registerWebAuthnRoutes(app);
   
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get('/api/db-health', async (req: Request, res: Response) => {
@@ -1267,13 +1271,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id as number;
       
-      console.log("Iniciando teste de notificação para usuário", userId);
-      
       // Criar uma notificação de teste
       const notification = await storage.createNotification({
         userId,
         title: "Notificação de teste",
-        message: "Esta é uma notificação de teste do aplicativo Por Nós!",
+        message: "Esta é uma notificação de teste do sistema NossaRotina!",
         type: "test",
         referenceType: null,
         referenceId: null,
@@ -1281,27 +1283,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false
       });
       
-      console.log("Notificação criada no banco de dados:", notification);
-      
       // Enviar push para o próprio usuário
       try {
-        // Verificar os dispositivos registrados do usuário
-        const devices = await storage.getUserDevices(userId);
-        console.log(`Usuário tem ${devices.length} dispositivo(s) registrado(s):`);
-        devices.forEach((device, index) => {
-          console.log(`- Dispositivo #${index+1}: ${device.deviceName} (${device.deviceType}), pushEnabled: ${device.pushEnabled}`);
-        });
-        
         const pushPayload: PushNotificationPayload = {
           title: "Notificação de teste",
-          body: "Esta é uma notificação de teste do aplicativo Por Nós!",
-          icon: "/icons/icon-192x192.png",
-          badge: "/icons/icon-192x192.png",
+          body: "Esta é uma notificação de teste do sistema NossaRotina!",
           data: {
             type: "test",
-            time: new Date().toISOString()
-          },
-          requireInteraction: true
+          }
         };
         
         // Enviar push para todos os dispositivos do usuário

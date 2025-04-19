@@ -151,7 +151,7 @@ export default function InstallButton() {
     <Button
       variant="outline"
       size="sm"
-      className="gap-1 md:flex text-white hover:text-white/90 hover:bg-primary/80 border-white/20"
+      className="gap-1 md:flex"
       onClick={handleInstallClick}
     >
       <Download className="h-4 w-4" />

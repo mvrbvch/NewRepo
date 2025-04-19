@@ -1,28 +1,44 @@
-// Versão ultramínima sem hooks problema
-import { Route, Switch } from "wouter";
-
-// Páginas
-import AuthPage from "@/pages/auth-page";
-import HomePage from "@/pages/home-page";
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import HomePage from "@/pages/home-page";
+import AuthPage from "@/pages/auth-page";
+import OnboardingPage from "@/pages/onboarding-page";
+import PartnerInvitePage from "@/pages/partner-invite-page";
+import HouseholdTasksPage from "@/pages/household-tasks-page";
+import { ProtectedRoute } from "./lib/protected-route";
+import { AuthProvider } from "./hooks/use-auth";
+import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 
-// Aplicação principal
-function App() {
+function Router() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <AppRouter />
-    </div>
+    <Switch>
+      <ProtectedRoute path="/" component={HomePage} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
+      <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
+      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
+      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
-// Router simplificado sem ProtectedRoute
-function AppRouter() {
+function App() {
   return (
-    <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/" component={HomePage} />
-      <Route component={NotFound} />
-    </Switch>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <PushNotificationsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </PushNotificationsProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
