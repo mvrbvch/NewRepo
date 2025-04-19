@@ -238,6 +238,62 @@ export default function TaskDetailsModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Diálogo para enviar lembrete */}
+      <Dialog open={reminderDialogOpen} onOpenChange={(open) => !open && setReminderDialogOpen(false)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Enviar lembrete para seu parceiro</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-100">
+              <h3 className="font-medium mb-1">{task.title}</h3>
+              {task.description && <p className="text-sm text-gray-700">{task.description}</p>}
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-700">
+                Escreva uma mensagem personalizada para enviar junto com o lembrete dessa tarefa.
+                Seu parceiro receberá um e-mail com os detalhes da tarefa.
+              </p>
+              
+              <Textarea
+                placeholder="Exemplo: Por favor, não se esqueça de realizar esta tarefa até amanhã!"
+                value={reminderMessage}
+                onChange={(e) => setReminderMessage(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReminderDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendReminder}
+              disabled={sendingReminder}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {sendingReminder ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar Lembrete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
