@@ -30,12 +30,6 @@ export default function AuthPage() {
   const { loginMutation, registerMutation, user } = useAuth();
   const [, navigate] = useLocation();
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
-
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -54,6 +48,12 @@ export default function AuthPage() {
       phoneNumber: "",
     },
   });
+  
+  // Redirect if already logged in - moved after all hooks are called
+  if (user) {
+    navigate("/");
+    // Don't return null here, it causes the hooks error
+  }
 
   const onSubmitLogin = (data: LoginFormValues) => {
     loginMutation.mutate(data);
