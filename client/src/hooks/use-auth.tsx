@@ -1,10 +1,4 @@
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -53,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
     error: null,
   });
-
+  
   useEffect(() => {
     // Carregar dados do usuário ao iniciar
     const fetchUser = async () => {
@@ -61,32 +55,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/user", {
           credentials: "include",
         });
-
+        
         if (res.status === 401) {
-          setAuthState((prev) => ({ ...prev, user: null, isLoading: false }));
+          setAuthState(prev => ({ ...prev, user: null, isLoading: false }));
           return;
         }
-
+        
         if (!res.ok) {
           throw new Error(`Error: ${res.status}`);
         }
-
+        
         const userData = await res.json();
-        setAuthState((prev) => ({
-          ...prev,
-          user: userData,
-          isLoading: false,
+        setAuthState(prev => ({ 
+          ...prev, 
+          user: userData, 
+          isLoading: false 
         }));
       } catch (error) {
-        setAuthState((prev) => ({
-          ...prev,
-          user: null,
+        setAuthState(prev => ({ 
+          ...prev, 
+          user: null, 
           isLoading: false,
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: error instanceof Error ? error : new Error(String(error))
         }));
       }
     };
-
+    
     fetchUser();
   }, []);
 
@@ -97,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      setAuthState((prev) => ({ ...prev, user }));
+      setAuthState(prev => ({ ...prev, user }));
       toast({
         title: "Login bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
@@ -119,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      setAuthState((prev) => ({ ...prev, user }));
+      setAuthState(prev => ({ ...prev, user }));
       toast({
         title: "Cadastro bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
@@ -140,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      setAuthState((prev) => ({ ...prev, user: null }));
+      setAuthState(prev => ({ ...prev, user: null }));
       toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",

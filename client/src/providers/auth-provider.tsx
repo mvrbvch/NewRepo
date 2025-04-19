@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { setGlobalShowToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { UserType } from "@/lib/types";
 import { z } from "zod";
 
@@ -32,20 +32,6 @@ type RegisterData = z.infer<typeof registerSchema>;
 
 // Criação do contexto
 export const AuthContext = createContext<AuthContextType | null>(null);
-
-// Função para mostrar toast - implementação simples para evitar problemas de hooks
-function showToast(options: { title: string; description?: string; variant?: "default" | "destructive"; }) {
-  const message = options.title + (options.description ? `: ${options.description}` : "");
-  const type = options.variant === "destructive" ? "error" : "info";
-  
-  // Use a função global para mostrar o toast
-  if (typeof setGlobalShowToast === 'function') {
-    setGlobalShowToast({ message, type });
-  } else {
-    // Fallback para console se o toast não estiver disponível
-    console.log(`[TOAST] ${type.toUpperCase()}: ${message}`);
-  }
-}
 
 // Provedor do contexto
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -105,13 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
       setAuthState(prev => ({ ...prev, user }));
-      showToast({
+      toast({
         title: "Login bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      showToast({
+      toast({
         title: "Erro ao entrar",
         description: error.message,
         variant: "destructive",
@@ -128,13 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
       setAuthState(prev => ({ ...prev, user }));
-      showToast({
+      toast({
         title: "Cadastro bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      showToast({
+      toast({
         title: "Erro ao cadastrar",
         description: error.message,
         variant: "destructive",
@@ -150,13 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       setAuthState(prev => ({ ...prev, user: null }));
-      showToast({
+      toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",
       });
     },
     onError: (error: Error) => {
-      showToast({
+      toast({
         title: "Erro ao sair",
         description: error.message,
         variant: "destructive",

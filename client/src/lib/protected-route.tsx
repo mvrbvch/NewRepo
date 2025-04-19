@@ -1,6 +1,7 @@
+import { useAuth } from "@/providers/auth-provider";
+import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 
-// Versão extremamente simplificada que não usa hooks diretamente
 export function ProtectedRoute({
   path,
   component: Component,
@@ -8,9 +9,34 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  return (
-    <Route path={path}>
-      {() => <Component />}
-    </Route>
-  );
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Route>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Route path={path}>
+        <Redirect to="/auth" />
+      </Route>
+    );
+  }
+
+  // If user is authenticated but hasn't completed onboarding and isn't on the onboarding page
+  if (user && !user.onboardingComplete && path !== "/onboarding") {
+    return (
+      <Route path={path}>
+        <Redirect to="/onboarding" />
+      </Route>
+    );
+  }
+
+  return <Route path={path} component={Component} />;
 }

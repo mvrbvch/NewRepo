@@ -23,21 +23,11 @@ export function useToast() {
   return { toast };
 }
 
-// Interface para o showToast global - aceita ambas interfaces para compatibilidade
-interface ShowToastOptions {
-  message?: string;
-  title?: string;
-  description?: string;
-  type?: 'success' | 'error' | 'info';
-  variant?: 'default' | 'destructive';
-  duration?: number;
-}
-
 // Função alternativa (vai usar um toast global)
-let globalShowToast: ((options: ShowToastOptions) => void) | null = null;
+let globalShowToast: ((options: {message: string, type?: 'success' | 'error' | 'info', duration?: number}) => void) | null = null;
 
 // Função para definir o showToast global
-export function setGlobalShowToast(fn: (options: ShowToastOptions) => void) {
+export function setGlobalShowToast(fn: (options: {message: string, type?: 'success' | 'error' | 'info', duration?: number}) => void) {
   globalShowToast = fn;
 }
 

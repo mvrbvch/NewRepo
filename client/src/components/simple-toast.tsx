@@ -74,22 +74,7 @@ export function SimpleToastProvider({ children }: { children: React.ReactNode })
 
   // Registrar o showToast global quando o componente for montado
   useEffect(() => {
-    // Adaptador para aceitar diferentes formatos de options
-    const showToastAdapter = (options: any) => {
-      if (options.message) {
-        // Já está no formato correto
-        showToast(options);
-      } else if (options.title) {
-        // Converter de title/description para message
-        showToast({
-          message: options.title + (options.description ? `: ${options.description}` : ""),
-          type: options.variant === "destructive" ? "error" : "info",
-          duration: options.duration || 3000
-        });
-      }
-    };
-    
-    setGlobalShowToast(showToastAdapter);
+    setGlobalShowToast(showToast);
   }, []);
 
   return (

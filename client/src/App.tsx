@@ -1,45 +1,84 @@
 import { Route, Switch } from "wouter";
+import { useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 
-// Páginas básicas que funcionarão sem providers
+// Páginas
 import AuthPage from "@/pages/auth-page";
+import HomePage from "@/pages/home-page";
 import NotFound from "@/pages/not-found";
+import OnboardingPage from "@/pages/onboarding-page";
+import HouseholdTasksPage from "@/pages/household-tasks-page";
+import PartnerInvitePage from "@/pages/partner-invite-page";
 
-// Aplicação principal extremamente simplificada (sem toasts)
+// Provedores personalizados
+import { AuthProvider } from "@/providers/auth-provider";
+import { PushNotificationsProvider } from "@/providers/push-notifications-provider";
+
+// Componentes de proteção de rota
+import { ProtectedRoute } from "@/lib/protected-route";
+
+// Aplicação principal
 function App() {
+  // Garantir que o Service Worker esteja registrado
+  useEffect(() => {
+    async function ensureServiceWorker() {
+      try {
+        // Verificar se o navegador suporta Service Worker
+        if (!("serviceWorker" in navigator)) {
+          console.error("[PWA] Service Worker não é suportado neste navegador");
+          return;
+        }
+        
+        // Verificar se já existe algum Service Worker registrado
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        
+        if (registrations.length > 0) {
+          console.log("[PWA] Service Worker já está registrado:", registrations.length);
+        } else {
+          try {
+            // Tenta registrar o Service Worker
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log("[PWA] Service Worker registrado com sucesso:", registration);
+            
+            // Mostra uma notificação na interface
+            toast({
+              title: "Service Worker Ativado",
+              description: "Notificações e recursos offline agora estão disponíveis.",
+            });
+          } catch (error) {
+            console.error("[PWA] Erro ao registrar Service Worker:", error);
+          }
+        }
+      } catch (error) {
+        console.error("[PWA] Erro geral ao verificar Service Worker:", error);
+      }
+    }
+    
+    ensureServiceWorker();
+  }, []);
+  
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <h1 className="text-center p-4 text-xl font-bold">Por Nós - Versão Mínima</h1>
-      <AppRouter />
-    </div>
+    <AuthProvider>
+      <PushNotificationsProvider>
+        <div className="min-h-screen bg-background flex flex-col">
+          <AppRouter />
+        </div>
+      </PushNotificationsProvider>
+    </AuthProvider>
   );
 }
 
-// Router mínimo apenas com páginas essenciais
+// Router separado para facilitar manutenção
 function AppRouter() {
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
-      <Route path="/" component={MinimalHomePage} />
+      <Route path="/partner-invite/:token" component={PartnerInvitePage} />
+      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
+      <ProtectedRoute path="/household-tasks" component={HouseholdTasksPage} />
+      <ProtectedRoute path="/" component={HomePage} />
       <Route component={NotFound} />
     </Switch>
-  );
-}
-
-// Página inicial mínima para testar
-function MinimalHomePage() {
-  return (
-    <div className="flex flex-col items-center justify-center p-6">
-      <h2 className="text-2xl font-bold mb-4">Bem-vindo ao Por Nós</h2>
-      <p className="text-center mb-4">
-        Esta é uma versão mínima da aplicação para depuração.
-      </p>
-      <a 
-        href="/auth" 
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        Ir para Login
-      </a>
-    </div>
   );
 }
 
