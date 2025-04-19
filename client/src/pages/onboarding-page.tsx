@@ -1,13 +1,33 @@
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/providers/auth-provider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
-  const { user } = useAuth();
+  // Verificação de autenticação
+  const { user, isLoading: authLoading } = useAuth();
+  
+  // Redirecionamento se não estiver autenticado
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+  
+  // Redirecionar se já completou onboarding
+  if (user.onboardingComplete === true) {
+    return <Redirect to="/" />;
+  }
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);

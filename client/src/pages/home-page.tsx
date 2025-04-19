@@ -15,11 +15,34 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
+import { Bell, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
+import { useAuth } from "@/providers/auth-provider";
+import { Redirect } from "wouter";
 
 export default function HomePage() {
+  // Verificação de autenticação
+  const { user, isLoading: authLoading } = useAuth();
+  
+  // Redirecionamento se não estiver autenticado
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+  
+  // Redirecionamento se não completou onboarding
+  if (user.onboardingComplete === false) {
+    return <Redirect to="/onboarding" />;
+  }
+  
   const [view, setView] = useState<'day' | 'week' | 'month'>('day');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [createModalOpen, setCreateModalOpen] = useState(false);

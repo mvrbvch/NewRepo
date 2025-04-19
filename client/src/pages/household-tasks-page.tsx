@@ -23,11 +23,32 @@ import {
   AlertCircle,
   User as UserIcon,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/providers/auth-provider";
+import { Redirect } from "wouter";
 
 export default function HouseholdTasksPage() {
+  // Verificação de autenticação
+  const { user, isLoading: authLoading } = useAuth();
+  
+  // Redirecionamento se não estiver autenticado
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
+  
+  // Redirecionamento se não completou onboarding
+  if (user.onboardingComplete === false) {
+    return <Redirect to="/onboarding" />;
+  }
+  
   const { toast } = useToast();
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
