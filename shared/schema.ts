@@ -107,8 +107,6 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Tabelas de WebAuthn removidas para simplificar o aplicativo
-
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -236,5 +234,3 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = Omit<typeof notifications.$inferSelect, 'createdAt'> & {
   createdAt: Date | string | null;
 };
-
-// WebAuthn schemas removidos para simplificar o aplicativo

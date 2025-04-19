@@ -34,109 +34,32 @@ const registerSchema = z.object({
 
 type RegisterData = z.infer<typeof registerSchema>;
 
-// Criar o contexto com um valor padrão seguro
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isLoading: false,
-  error: null,
-  loginMutation: {
-    mutate: () => {},
-    mutateAsync: async () => ({
-      id: 0,
-      name: "",
-      username: "",
-      email: "",
-      partnerStatus: "none",
-      onboardingComplete: false,
-    }),
-    data: undefined,
-    error: null,
-    isPending: false,
-    isError: false,
-    isSuccess: false,
-    failureCount: 0,
-    failureReason: null,
-    status: "idle",
-    variables: undefined,
-    isIdle: true,
-    submittedAt: 0,
-    reset: () => {},
-    context: undefined,
-    isPaused: false,
-  },
-  registerMutation: {
-    mutate: () => {},
-    mutateAsync: async () => ({
-      id: 0,
-      name: "",
-      username: "",
-      email: "",
-      partnerStatus: "none",
-      onboardingComplete: false,
-    }),
-    data: undefined,
-    error: null,
-    isPending: false,
-    isError: false,
-    isSuccess: false,
-    failureCount: 0,
-    failureReason: null,
-    status: "idle",
-    variables: undefined,
-    isIdle: true,
-    submittedAt: 0,
-    reset: () => {},
-    context: undefined,
-    isPaused: false,
-  },
-  logoutMutation: {
-    mutate: () => {},
-    mutateAsync: async () => {},
-    data: undefined,
-    error: null,
-    isPending: false,
-    isError: false,
-    isSuccess: false,
-    failureCount: 0,
-    failureReason: null,
-    status: "idle",
-    variables: undefined,
-    isIdle: true,
-    submittedAt: 0,
-    reset: () => {},
-    context: undefined,
-    isPaused: false,
-  },
-});
+export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Simplified AuthProvider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Extraímos o toast diretamente do módulo para não usar um hook
-  // Desta forma evitamos qualquer problema de ordem dos hooks
-  const toastState = useToast();
+  const { toast } = useToast();
   
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<UserType | null, Error, UserType | null>({
+  } = useQuery<UserType | null>({
     queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
         const res = await fetch(queryKey[0] as string, {
           credentials: "include",
         });
-
+        
         if (res.status === 401) {
           return null;
         }
-
+        
         if (!res.ok) {
           throw new Error(`Error: ${res.status}`);
         }
-
-        const userData = await res.json();
-        return userData as UserType; // Garantir o tipo esperado
+        
+        return await res.json();
       } catch (error) {
         return null;
       }
@@ -150,13 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      toastState.toast({
+      toast({
         title: "Login bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      toastState.toast({
+      toast({
         title: "Erro ao entrar",
         description: error.message,
         variant: "destructive",
@@ -171,13 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      toastState.toast({
+      toast({
         title: "Cadastro bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      toastState.toast({
+      toast({
         title: "Erro ao cadastrar",
         description: error.message,
         variant: "destructive",
@@ -191,13 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      toastState.toast({
+      toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",
       });
     },
     onError: (error: Error) => {
-      toastState.toast({
+      toast({
         title: "Erro ao sair",
         description: error.message,
         variant: "destructive",
@@ -208,9 +131,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null, // Garantir que user nunca é undefined
-        isLoading: isLoading,
-        error: error as Error | null,
+        user,
+        isLoading,
+        error,
         loginMutation,
         registerMutation,
         logoutMutation,
@@ -223,5 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
 }

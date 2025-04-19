@@ -1,15 +1,44 @@
-// Versão mínima para diagnóstico
+import { Switch, Route } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import HomePage from "@/pages/home-page";
+import AuthPage from "@/pages/auth-page";
+import OnboardingPage from "@/pages/onboarding-page";
+import PartnerInvitePage from "@/pages/partner-invite-page";
+import HouseholdTasksPage from "@/pages/household-tasks-page";
+import { ProtectedRoute } from "./lib/protected-route";
+import { AuthProvider } from "./hooks/use-auth";
+import { PushNotificationsProvider } from "./hooks/use-push-notifications";
+
+function Router() {
+  return (
+    <Switch>
+      <ProtectedRoute path="/" component={HomePage} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
+      <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
+      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
+      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
-        <h1 className="mb-4 text-2xl font-bold">Por Nós - Diagnóstico</h1>
-        <p className="mb-4">
-          Esta é uma versão mínima para diagnóstico da aplicação.
-        </p>
-        <p>Teste de Tailwind CSS.</p>
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <PushNotificationsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </PushNotificationsProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

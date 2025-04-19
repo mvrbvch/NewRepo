@@ -38,7 +38,7 @@ export default function Header() {
       <div className="flex items-center">
         <Link href="/">
           <a className="flex items-center">
-            <img src="/logo.png" alt="Por Nós" className="h-8 drop-shadow-sm" />
+            <img src="/logo-white.png" alt="Por Nós" className="h-10" />
           </a>
         </Link>
       </div>
@@ -46,10 +46,10 @@ export default function Header() {
       <div className="flex items-center space-x-3">
         <InstallButton />
         <IOSInstallGuide />
-        <NotificationButton 
-          variant="ghost" 
-          size="icon" 
-          className="text-white hover:text-white/90 hover:bg-primary/80" 
+        <NotificationButton
+          variant="ghost"
+          size="icon"
+          className="text-white hover:text-white/90 hover:bg-primary/80"
         />
 
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>

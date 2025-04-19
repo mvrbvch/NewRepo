@@ -138,9 +138,7 @@ self.addEventListener('push', event => {
   let payload;
   try {
     payload = event.data.json();
-    console.log('[Service Worker] Payload da notificação:', payload);
   } catch (e) {
-    console.error('[Service Worker] Erro ao analisar payload:', e);
     payload = {
       title: 'Por Nós',
       body: event.data ? event.data.text() : 'Notificação sem detalhes',
@@ -156,25 +154,11 @@ self.addEventListener('push', event => {
     actions: payload.actions || [],
     vibrate: [100, 50, 100],
     tag: payload.tag || 'default',
-    requireInteraction: payload.requireInteraction || false,
-    renotify: payload.renotify || false,
-    silent: payload.silent || false
+    requireInteraction: payload.requireInteraction || false
   };
-
-  // Log detalhado para depuração
-  console.log('[Service Worker] Mostrando notificação:', {
-    title: payload.title || 'Por Nós',
-    options
-  });
 
   event.waitUntil(
     self.registration.showNotification(payload.title || 'Por Nós', options)
-      .then(() => {
-        console.log('[Service Worker] Notificação exibida com sucesso');
-      })
-      .catch(err => {
-        console.error('[Service Worker] Erro ao exibir notificação:', err);
-      })
   );
 });
 

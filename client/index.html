@@ -32,17 +32,30 @@
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration - Temporariamente desativado para diagnóstico -->
     <script>
+      // Comentado temporariamente para resolver problemas de conexão
+      /*
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+          navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
               console.log('Service Worker registrado com sucesso:', registration);
             })
             .catch(error => {
               console.log('Falha ao registrar Service Worker:', error);
             });
+        });
+      }
+      */
+      
+      // Verificar se existe um service worker registrado e desativá-lo
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker desregistrado para diagnóstico');
+          }
         });
       }
     </script>
