@@ -63,6 +63,20 @@ export interface IStorage {
   deleteHouseholdTask(id: number): Promise<boolean>;
   markHouseholdTaskAsCompleted(id: number, completed: boolean): Promise<HouseholdTask | undefined>;
   
+  // User devices for push notifications
+  registerUserDevice(device: InsertUserDevice): Promise<UserDevice>;
+  getUserDevices(userId: number): Promise<UserDevice[]>;
+  getUserDeviceByToken(token: string): Promise<UserDevice | undefined>;
+  updateUserDevice(id: number, updates: Partial<UserDevice>): Promise<UserDevice | undefined>;
+  deleteUserDevice(id: number): Promise<boolean>;
+  
+  // Notifications
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getNotification(id: number): Promise<Notification | undefined>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  deleteNotification(id: number): Promise<boolean>;
+  
   // Session store
   sessionStore: SessionStore;
 }
@@ -75,6 +89,8 @@ export class MemStorage implements IStorage {
   private calendarConnectionsMap: Map<number, CalendarConnection>;
   private partnerInvitesMap: Map<number, PartnerInvite>;
   private householdTasksMap: Map<number, HouseholdTask>;
+  private userDevicesMap: Map<number, UserDevice>;
+  private notificationsMap: Map<number, Notification>;
   
   private userIdCounter: number;
   private eventIdCounter: number;
@@ -83,6 +99,8 @@ export class MemStorage implements IStorage {
   private calendarConnectionIdCounter: number;
   private partnerInviteIdCounter: number;
   private householdTaskIdCounter: number;
+  private userDeviceIdCounter: number;
+  private notificationIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -94,6 +112,8 @@ export class MemStorage implements IStorage {
     this.calendarConnectionsMap = new Map();
     this.partnerInvitesMap = new Map();
     this.householdTasksMap = new Map();
+    this.userDevicesMap = new Map();
+    this.notificationsMap = new Map();
     
     this.userIdCounter = 1;
     this.eventIdCounter = 1;
@@ -102,6 +122,8 @@ export class MemStorage implements IStorage {
     this.calendarConnectionIdCounter = 1;
     this.partnerInviteIdCounter = 1;
     this.householdTaskIdCounter = 1;
+    this.userDeviceIdCounter = 1;
+    this.notificationIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
@@ -352,6 +374,85 @@ export class MemStorage implements IStorage {
     this.householdTasksMap.set(id, updatedTask);
     return updatedTask;
   }
+  
+  // Métodos para dispositivos do usuário
+  async registerUserDevice(insertDevice: InsertUserDevice): Promise<UserDevice> {
+    const id = this.userDeviceIdCounter++;
+    const device: UserDevice = {
+      ...insertDevice,
+      id,
+      lastUsed: new Date(),
+      createdAt: new Date()
+    };
+    this.userDevicesMap.set(id, device);
+    return device;
+  }
+  
+  async getUserDevices(userId: number): Promise<UserDevice[]> {
+    return Array.from(this.userDevicesMap.values()).filter(
+      (device) => device.userId === userId
+    );
+  }
+  
+  async getUserDeviceByToken(token: string): Promise<UserDevice | undefined> {
+    return Array.from(this.userDevicesMap.values()).find(
+      (device) => device.deviceToken === token
+    );
+  }
+  
+  async updateUserDevice(id: number, updates: Partial<UserDevice>): Promise<UserDevice | undefined> {
+    const device = this.userDevicesMap.get(id);
+    if (!device) return undefined;
+    
+    const updatedDevice = { ...device, ...updates, lastUsed: new Date() };
+    this.userDevicesMap.set(id, updatedDevice);
+    return updatedDevice;
+  }
+  
+  async deleteUserDevice(id: number): Promise<boolean> {
+    return this.userDevicesMap.delete(id);
+  }
+  
+  // Métodos para notificações
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const id = this.notificationIdCounter++;
+    const notification: Notification = {
+      ...insertNotification,
+      id,
+      createdAt: new Date()
+    };
+    this.notificationsMap.set(id, notification);
+    return notification;
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const notifications = Array.from(this.notificationsMap.values())
+      .filter(notification => notification.userId === userId);
+    
+    // Ordenar notificações pela data de criação (mais recentes primeiro)
+    return notifications.sort((a, b) => {
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return this.notificationsMap.get(id);
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const notification = this.notificationsMap.get(id);
+    if (!notification) return undefined;
+    
+    const updatedNotification = { ...notification, isRead: true };
+    this.notificationsMap.set(id, updatedNotification);
+    return updatedNotification;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    return this.notificationsMap.delete(id);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -362,6 +463,127 @@ export class DatabaseStorage implements IStorage {
       pool, 
       createTableIfMissing: true 
     });
+  }
+  
+  // User devices methods
+  async registerUserDevice(device: InsertUserDevice): Promise<UserDevice> {
+    const [userDevice] = await db.insert(userDevices)
+      .values({
+        ...device,
+        lastUsed: new Date(),
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return {
+      ...userDevice,
+      lastUsed: userDevice.lastUsed ? userDevice.lastUsed.toISOString() : null,
+      createdAt: userDevice.createdAt ? userDevice.createdAt.toISOString() : null
+    };
+  }
+  
+  async getUserDevices(userId: number): Promise<UserDevice[]> {
+    const devices = await db.select().from(userDevices).where(eq(userDevices.userId, userId));
+    
+    return devices.map(device => ({
+      ...device,
+      lastUsed: device.lastUsed ? device.lastUsed.toISOString() : null,
+      createdAt: device.createdAt ? device.createdAt.toISOString() : null
+    }));
+  }
+  
+  async getUserDeviceByToken(token: string): Promise<UserDevice | undefined> {
+    const [device] = await db.select().from(userDevices).where(eq(userDevices.deviceToken, token));
+    
+    if (!device) return undefined;
+    
+    return {
+      ...device,
+      lastUsed: device.lastUsed ? device.lastUsed.toISOString() : null,
+      createdAt: device.createdAt ? device.createdAt.toISOString() : null
+    };
+  }
+  
+  async updateUserDevice(id: number, updates: Partial<UserDevice>): Promise<UserDevice | undefined> {
+    const [device] = await db.update(userDevices)
+      .set({
+        ...updates,
+        lastUsed: new Date()
+      })
+      .where(eq(userDevices.id, id))
+      .returning();
+    
+    if (!device) return undefined;
+    
+    return {
+      ...device,
+      lastUsed: device.lastUsed ? device.lastUsed.toISOString() : null,
+      createdAt: device.createdAt ? device.createdAt.toISOString() : null
+    };
+  }
+  
+  async deleteUserDevice(id: number): Promise<boolean> {
+    const result = await db.delete(userDevices).where(eq(userDevices.id, id));
+    return true; // Drizzle não retorna informação fácil sobre se algo foi deletado
+  }
+  
+  // Notifications methods
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications)
+      .values({
+        ...notification,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return {
+      ...newNotification,
+      createdAt: newNotification.createdAt ? newNotification.createdAt.toISOString() : null
+    };
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const userNotifications = await db.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(notifications.createdAt).desc();
+    
+    return userNotifications.map(notification => ({
+      ...notification,
+      createdAt: notification.createdAt ? notification.createdAt.toISOString() : null
+    }));
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await db.select()
+      .from(notifications)
+      .where(eq(notifications.id, id));
+    
+    if (!notification) return undefined;
+    
+    return {
+      ...notification,
+      createdAt: notification.createdAt ? notification.createdAt.toISOString() : null
+    };
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const [notification] = await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    if (!notification) return undefined;
+    
+    return {
+      ...notification,
+      createdAt: notification.createdAt ? notification.createdAt.toISOString() : null
+    };
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    const result = await db.delete(notifications).where(eq(notifications.id, id));
+    return true; // Drizzle não retorna informação fácil sobre se algo foi deletado
   }
 
   // User methods
