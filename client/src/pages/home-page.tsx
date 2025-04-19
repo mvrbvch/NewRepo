@@ -9,20 +9,51 @@ import MonthView from "@/components/calendar/month-view";
 import CreateEventModal from "@/components/calendar/create-event-modal";
 import EventDetailsModal from "@/components/calendar/event-details-modal";
 import { EventType } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatDate } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Bell } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 export default function HomePage() {
   const [view, setView] = useState<'day' | 'week' | 'month'>('day');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+  const { toast } = useToast();
+  const { isRegistered, registerDevice } = usePushNotifications();
   
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
     queryKey: ['/api/events'],
+  });
+  
+  // Mutação para enviar notificação de teste
+  const testNotificationMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/notifications/test');
+      if (!res.ok) {
+        throw new Error('Falha ao enviar notificação de teste');
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Notificação de teste enviada',
+        description: 'Uma notificação de teste foi enviada para este dispositivo.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Falha ao enviar notificação',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
   });
   
   // Calcular eventos baseados na visualização atual
@@ -175,6 +206,31 @@ export default function HomePage() {
           onClose={handleCloseEventDetails}
         />
       )}
+      
+      {/* Botão de teste de notificação - apenas em desenvolvimento */}
+      <div className="fixed bottom-20 right-4 z-50">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex items-center gap-2 bg-white shadow-md"
+          onClick={() => {
+            if (!isRegistered) {
+              toast({
+                title: 'Notificações não registradas',
+                description: 'Você precisa permitir notificações primeiro',
+                variant: 'destructive',
+              });
+              registerDevice();
+            } else {
+              testNotificationMutation.mutate();
+            }
+          }}
+          disabled={testNotificationMutation.isPending}
+        >
+          <Bell className="h-4 w-4" />
+          {testNotificationMutation.isPending ? 'Enviando...' : 'Testar Notificação'}
+        </Button>
+      </div>
     </div>
   );
 }
