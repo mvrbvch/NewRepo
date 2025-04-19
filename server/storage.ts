@@ -314,9 +314,22 @@ export class DatabaseStorage implements IStorage {
 
   // Event methods
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    // Garantir que os campos opcionais sejam null quando não fornecidos
+    const eventData = {
+      ...insertEvent,
+      location: insertEvent.location || null,
+      emoji: insertEvent.emoji || null,
+      recurrence: insertEvent.recurrence || 'never',
+      recurrenceEnd: insertEvent.recurrenceEnd || null,
+      recurrenceRule: insertEvent.recurrenceRule || null
+    };
+    
+    console.log('Creating event with data:', eventData);
+    
     const [event] = await db.insert(events)
-      .values(insertEvent)
+      .values(eventData)
       .returning();
+    
     return event;
   }
   
@@ -345,9 +358,18 @@ export class DatabaseStorage implements IStorage {
   
   // Event sharing methods
   async shareEvent(insertShare: InsertEventShare): Promise<EventShare> {
+    // Garantir que permission sempre tenha um valor
+    const shareData = {
+      ...insertShare,
+      permission: insertShare.permission || 'view'
+    };
+    
+    console.log('Sharing event with data:', shareData);
+    
     const [share] = await db.insert(eventShares)
-      .values(insertShare)
+      .values(shareData)
       .returning();
+    
     return share;
   }
   
@@ -410,12 +432,21 @@ export class DatabaseStorage implements IStorage {
   
   // Calendar connections
   async addCalendarConnection(insertConnection: InsertCalendarConnection): Promise<CalendarConnection> {
+    // Garantir que os campos opcionais sejam null quando não fornecidos
+    const connectionData = {
+      ...insertConnection,
+      accessToken: insertConnection.accessToken || null,
+      refreshToken: insertConnection.refreshToken || null,
+      tokenExpiry: insertConnection.tokenExpiry || null,
+      syncEnabled: true
+    };
+    
+    console.log('Adding calendar connection with data:', connectionData);
+    
     const [connection] = await db.insert(calendarConnections)
-      .values({
-        ...insertConnection,
-        syncEnabled: true
-      })
+      .values(connectionData)
       .returning();
+    
     return connection;
   }
   
@@ -431,12 +462,20 @@ export class DatabaseStorage implements IStorage {
   
   // Partner invites
   async createPartnerInvite(insertInvite: InsertPartnerInvite): Promise<PartnerInvite> {
+    // Garantir que os campos opcionais sejam null quando não fornecidos
+    const inviteData = {
+      ...insertInvite,
+      email: insertInvite.email || null,
+      phoneNumber: insertInvite.phoneNumber || null,
+      status: 'pending'
+    };
+    
+    console.log('Creating partner invite with data:', inviteData);
+    
     const [invite] = await db.insert(partnerInvites)
-      .values({
-        ...insertInvite,
-        status: 'pending'
-      })
+      .values(inviteData)
       .returning();
+    
     return invite;
   }
   

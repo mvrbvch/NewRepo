@@ -36,12 +36,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const userId = req.user?.id as number;
-      const eventData = { ...req.body, createdBy: userId };
+      console.log('Creating event for user:', userId);
+      console.log('Event data received:', req.body);
+      
+      // Validate required fields
+      if (!req.body.title || !req.body.date || !req.body.startTime || !req.body.endTime || !req.body.period) {
+        return res.status(400).json({ 
+          message: "Required fields missing", 
+          required: ["title", "date", "startTime", "endTime", "period"] 
+        });
+      }
+      
+      // Parse date if it's a string
+      let eventData: any = { ...req.body, createdBy: userId };
+      if (typeof eventData.date === 'string') {
+        eventData.date = new Date(eventData.date);
+      }
+      
+      // Ensure proper recurrence values
+      if (!eventData.recurrence) {
+        eventData.recurrence = 'never';
+      }
+      
+      console.log('Prepared event data:', eventData);
       
       const newEvent = await storage.createEvent(eventData);
+      console.log('Event created successfully:', newEvent);
       
       // If event is being shared with a partner
       if (req.body.shareWithPartner && req.user?.partnerId) {
+        console.log('Sharing event with partner:', req.user.partnerId);
         await storage.shareEvent({
           eventId: newEvent.id,
           userId: req.user.partnerId,
@@ -51,7 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(newEvent);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create event" });
+      console.error('Error creating event:', error);
+      res.status(500).json({ message: "Failed to create event", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
