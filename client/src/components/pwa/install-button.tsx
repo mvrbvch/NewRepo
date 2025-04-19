@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useSimpleToast } from "@/components/simple-toast";
 
 // Interface para o evento BeforeInstallPrompt (não existe no TypeScript padrão)
 interface BeforeInstallPromptEvent extends Event {
@@ -26,7 +26,8 @@ export default function InstallButton() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
-  const { toast } = useToast();
+  const simpleToast = useSimpleToast();
+  const toast = (options: any) => simpleToast.showToast(options);
 
   useEffect(() => {
     // Detecta dispositivos iOS

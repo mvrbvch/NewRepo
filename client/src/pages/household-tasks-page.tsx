@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { format, isToday, isThisWeek, isThisMonth, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
+import { useSimpleToast } from "@/components/simple-toast";
 import CreateTaskModal from "@/components/household/create-task-modal";
 import TaskDetailsModal from "@/components/household/task-details-modal";
 import {
@@ -23,10 +23,11 @@ import {
   AlertCircle,
   User as UserIcon,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function HouseholdTasksPage() {
-  const { toast } = useToast();
+  const simpleToast = useSimpleToast();
+  const toast = (options: any) => simpleToast.showToast(options);
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();

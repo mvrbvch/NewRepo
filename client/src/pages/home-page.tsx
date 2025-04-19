@@ -17,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
+import { usePushNotifications, PushSubscriptionStatus } from "@/providers/push-notifications-provider";
 
 export default function HomePage() {
   const [view, setView] = useState<'day' | 'week' | 'month'>('day');

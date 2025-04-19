@@ -11,12 +11,16 @@ export default function AuthPage() {
   const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
   
-  // Redirecionar se já estiver logado
+  // Redirecionar se já estiver logado (com verificação adicional)
   useEffect(() => {
-    if (user) {
-      navigate("/");
+    // Só tenta redirecionar se não estiver carregando e o usuário existir
+    if (!isLoading && user) {
+      // Usa setTimeout para evitar o erro de atualização durante renderização
+      setTimeout(() => {
+        navigate("/");
+      }, 0);
     }
-  }, [user, navigate]);
+  }, [user, isLoading, navigate]);
   
   // Se estiver carregando, mostrar loader
   if (isLoading) {

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/providers/auth-provider";
 import { Link } from "wouter";
 import {
   DropdownMenu,
@@ -15,7 +15,11 @@ import InstallButton from "@/components/pwa/install-button";
 import NotificationButton from "@/components/shared/notification-button";
 import IOSInstallGuide from "@/components/shared/ios-install-guide";
 
-export default function Header() {
+interface HeaderProps {
+  title?: string;
+}
+
+export default function Header({ title }: HeaderProps) {
   const { user, logoutMutation } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -38,7 +42,14 @@ export default function Header() {
       <div className="flex items-center">
         <Link href="/">
           <a className="flex items-center">
-            <img src="/logo-white.png" alt="Por Nós" className="h-10" />
+            {!title ? (
+              <img src="/logo-white.png" alt="Por Nós" className="h-10" />
+            ) : (
+              <div className="flex items-center">
+                <img src="/icon-white.png" alt="" className="h-8 mr-2" />
+                <h1 className="text-xl font-bold">{title}</h1>
+              </div>
+            )}
           </a>
         </Link>
       </div>

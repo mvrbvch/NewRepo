@@ -1,19 +1,13 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
-import { setGlobalShowToast } from '@/hooks/use-toast';
-
-// Interface para as opções do toast
-interface ToastOptions {
-  message: string;
-  type?: 'success' | 'error' | 'info';
-  duration?: number;
-}
+import { setGlobalShowToast, type ToastOptions } from '@/hooks/use-toast';
 
 // Estado do toast
 interface ToastState {
   visible: boolean;
-  message: string;
-  type: 'success' | 'error' | 'info';
+  title: string;
+  description?: string;
+  variant: 'default' | 'destructive';
   duration: number;
 }
 
@@ -30,13 +24,12 @@ function Toast({ state }: { state: ToastState }) {
   if (!state.visible) return null;
 
   const bgColor = 
-    state.type === 'success' ? 'bg-green-500' :
-    state.type === 'error' ? 'bg-red-500' :
-    'bg-blue-500';
+    state.variant === 'destructive' ? 'bg-red-500' : 'bg-blue-500';
 
   return createPortal(
     <div className={`fixed top-4 right-4 z-50 p-4 rounded shadow-lg text-white ${bgColor} transition-all transform max-w-xs`}>
-      {state.message}
+      <div className="font-medium">{state.title}</div>
+      {state.description && <div className="text-sm mt-1">{state.description}</div>}
     </div>,
     document.body
   );
@@ -46,8 +39,9 @@ function Toast({ state }: { state: ToastState }) {
 export function SimpleToastProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ToastState>({
     visible: false,
-    message: '',
-    type: 'info',
+    title: '',
+    description: '',
+    variant: 'default',
     duration: 3000
   });
 
@@ -66,15 +60,20 @@ export function SimpleToastProvider({ children }: { children: React.ReactNode })
   const showToast = (options: ToastOptions) => {
     setState({
       visible: true,
-      message: options.message,
-      type: options.type || 'info',
+      title: options.title || 'Notificação',
+      description: options.description || '',
+      variant: options.variant || 'default',
       duration: options.duration || 3000
     });
   };
 
   // Registrar o showToast global quando o componente for montado
   useEffect(() => {
-    setGlobalShowToast(showToast);
+    // Adaptador para compatibilidade com a interface antiga
+    const adaptedShowToast = (options: ToastOptions) => {
+      showToast(options);
+    };
+    setGlobalShowToast(adaptedShowToast);
   }, []);
 
   return (

@@ -6,6 +6,7 @@ export interface ToastOptions {
   description?: string;
   variant?: "default" | "destructive";
   action?: React.ReactNode;
+  duration?: number;
 }
 
 // Hook para usar o toast - agora é a principal exportação
@@ -14,9 +15,10 @@ export function useToast() {
   
   const toast = (options: ToastOptions) => {
     showToast({
-      message: options.title + (options.description ? `: ${options.description}` : ""),
-      type: options.variant === "destructive" ? "error" : "info",
-      duration: 3000
+      title: options.title || "Notificação",
+      description: options.description,
+      variant: options.variant || "default",
+      duration: options.duration || 3000
     });
   };
   
@@ -24,10 +26,10 @@ export function useToast() {
 }
 
 // Função alternativa (vai usar um toast global)
-let globalShowToast: ((options: {message: string, type?: 'success' | 'error' | 'info', duration?: number}) => void) | null = null;
+let globalShowToast: ((options: ToastOptions) => void) | null = null;
 
 // Função para definir o showToast global
-export function setGlobalShowToast(fn: (options: {message: string, type?: 'success' | 'error' | 'info', duration?: number}) => void) {
+export function setGlobalShowToast(fn: (options: ToastOptions) => void) {
   globalShowToast = fn;
 }
 
@@ -35,8 +37,10 @@ export function setGlobalShowToast(fn: (options: {message: string, type?: 'succe
 export function toast(options: ToastOptions) {
   if (globalShowToast) {
     globalShowToast({
-      message: options.title + (options.description ? `: ${options.description}` : ""),
-      type: options.variant === "destructive" ? "error" : "info",
+      title: options.title || "Notificação",
+      description: options.description,
+      variant: options.variant || "default",
+      duration: options.duration || 3000
     });
   } else {
     console.warn("Toast foi chamado antes de ser inicializado");
