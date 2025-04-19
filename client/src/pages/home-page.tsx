@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/shared/header";
 import BottomNavigation from "@/components/shared/bottom-navigation";
 import DateNavigation from "@/components/shared/date-navigation";
@@ -11,6 +11,8 @@ import EventDetailsModal from "@/components/calendar/event-details-modal";
 import { EventType } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { formatDate } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
 
 export default function HomePage() {
   const [view, setView] = useState<'day' | 'week' | 'month'>('day');
@@ -50,20 +52,46 @@ export default function HomePage() {
     setSelectedEvent(null);
   };
   
+  // Navegação otimizada usando date-fns
   const handlePrevDay = () => {
-    const prevDate = new Date(selectedDate);
-    prevDate.setDate(prevDate.getDate() - 1);
-    setSelectedDate(prevDate);
+    setSelectedDate(subDays(selectedDate, 1));
   };
   
   const handleNextDay = () => {
-    const nextDate = new Date(selectedDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    setSelectedDate(nextDate);
+    setSelectedDate(addDays(selectedDate, 1));
+  };
+  
+  const handlePrevWeek = () => {
+    setSelectedDate(subWeeks(selectedDate, 1));
+  };
+  
+  const handleNextWeek = () => {
+    setSelectedDate(addWeeks(selectedDate, 1));
+  };
+  
+  const handlePrevMonth = () => {
+    setSelectedDate(subMonths(selectedDate, 1));
+  };
+  
+  const handleNextMonth = () => {
+    setSelectedDate(addMonths(selectedDate, 1));
   };
   
   const goToToday = () => {
     setSelectedDate(new Date());
+  };
+  
+  // Determinar qual função de navegação usar baseado na visualização atual
+  const handlePrev = () => {
+    if (view === 'day') handlePrevDay();
+    else if (view === 'week') handlePrevWeek();
+    else if (view === 'month') handlePrevMonth();
+  };
+  
+  const handleNext = () => {
+    if (view === 'day') handleNextDay();
+    else if (view === 'week') handleNextWeek();
+    else if (view === 'month') handleNextMonth();
   };
   
   const sharedEventsCount = filteredEvents.filter(event => event.isShared).length;
@@ -76,8 +104,8 @@ export default function HomePage() {
         date={selectedDate} 
         eventCount={filteredEvents.length}
         sharedCount={sharedEventsCount}
-        onPrev={handlePrevDay}
-        onNext={handleNextDay}
+        onPrev={handlePrev}
+        onNext={handleNext}
       />
       
       <ViewToggle 
@@ -104,6 +132,7 @@ export default function HomePage() {
           isLoading={isLoading}
           onEventClick={handleOpenEventDetails}
           onDayChange={setSelectedDate}
+          onWeekChange={setSelectedDate}
         />
       )}
       
@@ -114,6 +143,7 @@ export default function HomePage() {
           isLoading={isLoading}
           onEventClick={handleOpenEventDetails}
           onDayChange={setSelectedDate}
+          onMonthChange={setSelectedDate}
         />
       )}
       

@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, isToday, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DateNavigationProps {
   date: Date;
@@ -9,6 +10,7 @@ interface DateNavigationProps {
   sharedCount: number;
   onPrev: () => void;
   onNext: () => void;
+  calendarView?: 'day' | 'week' | 'month';
 }
 
 export default function DateNavigation({
@@ -17,28 +19,49 @@ export default function DateNavigation({
   sharedCount,
   onPrev,
   onNext,
+  calendarView = 'day',
 }: DateNavigationProps) {
-  const formattedDate = format(date, "d 'de' MMMM yyyy", { locale: ptBR });
+  const isMobile = useIsMobile();
   
-  // Determine if the date is today, tomorrow, or yesterday
+  let displayDate = '';
   const today = new Date();
-  const isToday = date.toDateString() === today.toDateString();
   
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const isYesterday = date.toDateString() === yesterday.toDateString();
-  
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const isTomorrow = date.toDateString() === tomorrow.toDateString();
-  
-  let displayDate = formattedDate;
-  if (isToday) {
-    displayDate = `Hoje, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
-  } else if (isYesterday) {
-    displayDate = `Ontem, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
-  } else if (isTomorrow) {
-    displayDate = `Amanhã, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+  if (calendarView === 'day') {
+    const formattedDate = format(date, "d 'de' MMMM yyyy", { locale: ptBR });
+    
+    // Determine if the date is today, tomorrow, or yesterday
+    if (isToday(date)) {
+      displayDate = `Hoje, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+    } else if (isSameDay(date, addDays(today, -1))) {
+      displayDate = `Ontem, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+    } else if (isSameDay(date, addDays(today, 1))) {
+      displayDate = `Amanhã, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+    } else {
+      displayDate = formattedDate;
+    }
+  } else if (calendarView === 'week') {
+    const start = startOfWeek(date, { weekStartsOn: 0 });
+    const end = endOfWeek(date, { weekStartsOn: 0 });
+    
+    // Formato para semana atual ou não
+    if (isSameMonth(start, end)) {
+      displayDate = `${format(start, "d")} - ${format(end, "d 'de' MMMM", { locale: ptBR })}`;
+    } else {
+      displayDate = `${format(start, "d 'de' MMM", { locale: ptBR })} - ${format(end, "d 'de' MMM", { locale: ptBR })}`;
+    }
+    
+    // Verificar se é a semana atual
+    const todayStart = startOfWeek(today, { weekStartsOn: 0 });
+    if (isSameDay(start, todayStart)) {
+      displayDate = `Semana atual (${displayDate})`;
+    }
+  } else if (calendarView === 'month') {
+    displayDate = format(date, "MMMM yyyy", { locale: ptBR });
+    
+    // Verificar se é o mês atual
+    if (isSameMonth(date, today)) {
+      displayDate = `Mês atual (${displayDate})`;
+    }
   }
   
   return (
