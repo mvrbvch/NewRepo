@@ -1,15 +1,28 @@
-// Versão mínima para diagnóstico
+// Versão ultramínima sem hooks problema
+import { Route, Switch } from "wouter";
+
+// Páginas
+import AuthPage from "@/pages/auth-page";
+import HomePage from "@/pages/home-page";
+import NotFound from "@/pages/not-found";
+
+// Aplicação principal
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
-        <h1 className="mb-4 text-2xl font-bold">Por Nós - Diagnóstico</h1>
-        <p className="mb-4">
-          Esta é uma versão mínima para diagnóstico da aplicação.
-        </p>
-        <p>Teste de Tailwind CSS.</p>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <AppRouter />
     </div>
+  );
+}
+
+// Router simplificado sem ProtectedRoute
+function AppRouter() {
+  return (
+    <Switch>
+      <Route path="/auth" component={AuthPage} />
+      <Route path="/" component={HomePage} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
