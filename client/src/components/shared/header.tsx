@@ -34,7 +34,9 @@ export default function Header() {
     <header className="px-4 py-3 flex items-center justify-between border-b bg-white">
       <div className="flex items-center">
         <Link href="/">
-          <a className="text-xl font-bold text-primary">Renovo ❤️</a>
+          <a className="flex items-center">
+            <img src="/logo.png" alt="Por Nós" className="h-8 mr-2" />
+          </a>
         </Link>
       </div>
 
