@@ -8,9 +8,7 @@ import type {
   GenerateAuthenticationOptionsOpts,
   GenerateRegistrationOptionsOpts,
   VerifyAuthenticationResponseOpts,
-  VerifyRegistrationResponseOpts,
-  VerifyRegistrationResponseResult,
-  VerifyAuthenticationResponseResult
+  VerifyRegistrationResponseOpts
 } from '@simplewebauthn/server';
 import { isBefore } from 'date-fns';
 import { db } from './db';
@@ -116,7 +114,7 @@ export async function verifyWebAuthnRegistration(
     };
 
     // Verifica a resposta
-    const verification: VerifyRegistrationResponseResult = await verifyRegistrationResponse(verifyOptions);
+    const verification = await verifyRegistrationResponse(verifyOptions);
 
     // Se a verificação falhar, retorna erro
     if (!verification.verified || !verification.registrationInfo) {
@@ -287,7 +285,7 @@ export async function verifyWebAuthnAuthentication(
     };
 
     // Verifica a resposta
-    const verification: VerifyAuthenticationResponseResult = await verifyAuthenticationResponse(verifyOptions);
+    const verification = await verifyAuthenticationResponse(verifyOptions);
 
     // Se a verificação falhar, retorna erro
     if (!verification.verified) {
