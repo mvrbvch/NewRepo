@@ -9,6 +9,7 @@ import { db } from "./db";
 import { eq, and, or, SQL, inArray } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import { formatDateSafely } from "./utils";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -924,29 +925,12 @@ export class DatabaseStorage implements IStorage {
       const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
       if (!task) return undefined;
       
-      // Função para formatar data de forma segura
-      const formatDate = (date: any): string | null => {
-        if (!date) return null;
-        try {
-          if (date instanceof Date) {
-            return date.toISOString();
-          } else if (typeof date === 'string') {
-            const d = new Date(date);
-            return isNaN(d.getTime()) ? null : d.toISOString();
-          }
-          return null;
-        } catch (e) {
-          console.log('Erro ao formatar data:', e);
-          return null;
-        }
-      };
-      
-      // Formatar datas de forma segura
+      // Formatar datas de forma segura usando a função utilitária
       return {
         ...task,
-        dueDate: formatDate(task.dueDate),
-        nextDueDate: formatDate(task.nextDueDate),
-        createdAt: formatDate(task.createdAt)
+        dueDate: formatDateSafely(task.dueDate),
+        nextDueDate: formatDateSafely(task.nextDueDate),
+        createdAt: formatDateSafely(task.createdAt)
       } as HouseholdTask;
     } catch (error) {
       console.error('Erro ao buscar tarefa doméstica:', error);
@@ -963,14 +947,13 @@ export class DatabaseStorage implements IStorage {
         )
       );
       
-      // Mapear cada tarefa e formatar suas datas de forma segura
+      // Mapear cada tarefa e formatar suas datas de forma segura usando a função utilitária
       return tasks.map(task => {
-        // Formatar datas de forma segura
         return {
           ...task,
-          dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
-          nextDueDate: task.nextDueDate ? new Date(task.nextDueDate).toISOString() : null,
-          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+          dueDate: formatDateSafely(task.dueDate),
+          nextDueDate: formatDateSafely(task.nextDueDate),
+          createdAt: formatDateSafely(task.createdAt)
         } as HouseholdTask;
       });
     } catch (error) {
@@ -993,30 +976,13 @@ export class DatabaseStorage implements IStorage {
         )
       );
       
-      // Função para formatar data de forma segura
-      const formatDate = (date: any): string | null => {
-        if (!date) return null;
-        try {
-          if (date instanceof Date) {
-            return date.toISOString();
-          } else if (typeof date === 'string') {
-            const d = new Date(date);
-            return isNaN(d.getTime()) ? null : d.toISOString();
-          }
-          return null;
-        } catch (e) {
-          console.log('Erro ao formatar data:', e);
-          return null;
-        }
-      };
-      
-      // Mapear cada tarefa e formatar suas datas de forma segura
+      // Mapear cada tarefa e formatar suas datas de forma segura usando a função utilitária
       return tasks.map(task => {
         return {
           ...task,
-          dueDate: formatDate(task.dueDate),
-          nextDueDate: formatDate(task.nextDueDate),
-          createdAt: formatDate(task.createdAt)
+          dueDate: formatDateSafely(task.dueDate),
+          nextDueDate: formatDateSafely(task.nextDueDate),
+          createdAt: formatDateSafely(task.createdAt)
         } as HouseholdTask;
       });
     } catch (error) {
@@ -1032,6 +998,10 @@ export class DatabaseStorage implements IStorage {
       
       if (typeof processedUpdates.dueDate === 'string') {
         try {
+          // Usar a mesma lógica de formatDateSafely mas convertendo para Date
+          if (processedUpdates.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            processedUpdates.dueDate = `${processedUpdates.dueDate}T00:00:00.000Z`;
+          }
           processedUpdates.dueDate = new Date(processedUpdates.dueDate);
           if (isNaN(processedUpdates.dueDate.getTime())) {
             console.log('dueDate inválido, definindo como null');
@@ -1045,6 +1015,10 @@ export class DatabaseStorage implements IStorage {
       
       if (typeof processedUpdates.nextDueDate === 'string') {
         try {
+          // Usar a mesma lógica de formatDateSafely mas convertendo para Date
+          if (processedUpdates.nextDueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            processedUpdates.nextDueDate = `${processedUpdates.nextDueDate}T00:00:00.000Z`;
+          }
           processedUpdates.nextDueDate = new Date(processedUpdates.nextDueDate);
           if (isNaN(processedUpdates.nextDueDate.getTime())) {
             console.log('nextDueDate inválido, definindo como null');
@@ -1063,12 +1037,12 @@ export class DatabaseStorage implements IStorage {
       
       if (!updatedTask) return undefined;
       
-      // Formatar datas de forma segura
+      // Formatar datas de forma segura usando a função utilitária
       return {
         ...updatedTask,
-        dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate).toISOString() : null,
-        nextDueDate: updatedTask.nextDueDate ? new Date(updatedTask.nextDueDate).toISOString() : null,
-        createdAt: updatedTask.createdAt ? new Date(updatedTask.createdAt).toISOString() : null
+        dueDate: formatDateSafely(updatedTask.dueDate),
+        nextDueDate: formatDateSafely(updatedTask.nextDueDate),
+        createdAt: formatDateSafely(updatedTask.createdAt)
       } as HouseholdTask;
     } catch (error) {
       console.error('Erro ao atualizar tarefa doméstica:', error);
@@ -1117,12 +1091,12 @@ export class DatabaseStorage implements IStorage {
       
       if (!updatedTask) return undefined;
       
-      // Formatar datas de forma segura
+      // Formatar datas de forma segura usando a função utilitária
       return {
         ...updatedTask,
-        dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate).toISOString() : null,
-        nextDueDate: updatedTask.nextDueDate ? new Date(updatedTask.nextDueDate).toISOString() : null,
-        createdAt: updatedTask.createdAt ? new Date(updatedTask.createdAt).toISOString() : null
+        dueDate: formatDateSafely(updatedTask.dueDate),
+        nextDueDate: formatDateSafely(updatedTask.nextDueDate),
+        createdAt: formatDateSafely(updatedTask.createdAt)
       } as HouseholdTask;
     } catch (error) {
       console.error('Erro ao marcar tarefa como concluída:', error);
