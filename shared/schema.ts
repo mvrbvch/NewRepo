@@ -119,16 +119,24 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 export type InsertEvent = z.infer<typeof insertEventSchema>;
-export type Event = typeof events.$inferSelect;
+export type Event = Omit<typeof events.$inferSelect, 'date'> & {
+  date: Date | string;
+};
 
 export type InsertEventShare = z.infer<typeof insertEventShareSchema>;
 export type EventShare = typeof eventShares.$inferSelect;
 
 export type InsertEventComment = z.infer<typeof insertEventCommentSchema>;
-export type EventComment = typeof eventComments.$inferSelect;
+export type EventComment = Omit<typeof eventComments.$inferSelect, 'createdAt'> & {
+  createdAt: Date | string | null;
+};
 
 export type InsertCalendarConnection = z.infer<typeof insertCalendarConnectionSchema>;
-export type CalendarConnection = typeof calendarConnections.$inferSelect;
+export type CalendarConnection = Omit<typeof calendarConnections.$inferSelect, 'tokenExpiry'> & {
+  tokenExpiry: Date | string | null;
+};
 
 export type InsertPartnerInvite = z.infer<typeof insertPartnerInviteSchema>;
-export type PartnerInvite = typeof partnerInvites.$inferSelect;
+export type PartnerInvite = Omit<typeof partnerInvites.$inferSelect, 'createdAt'> & {
+  createdAt: Date | string | null;
+};

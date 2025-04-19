@@ -335,11 +335,27 @@ export class DatabaseStorage implements IStorage {
   
   async getEvent(id: number): Promise<Event | undefined> {
     const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event ? this.formatEventDates(event) : undefined;
+  }
+  
+  // Função auxiliar para formatar as datas dos eventos
+  private formatEventDates(event: Event): Event {
+    // Converter a data para string ISO se for uma data válida
+    if (event.date instanceof Date) {
+      // Criar uma cópia do evento para não modificar o original
+      return {
+        ...event,
+        date: event.date.toISOString()
+      };
+    }
     return event;
   }
   
   async getUserEvents(userId: number): Promise<Event[]> {
-    return await db.select().from(events).where(eq(events.createdBy, userId));
+    const userEvents = await db.select().from(events).where(eq(events.createdBy, userId));
+    
+    // Formatar as datas dos eventos antes de retorná-los
+    return userEvents.map(event => this.formatEventDates(event));
   }
   
   async updateEvent(id: number, updates: Partial<Event>): Promise<Event | undefined> {
