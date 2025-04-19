@@ -2,7 +2,6 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
@@ -11,8 +10,8 @@ import PartnerInvitePage from "@/pages/partner-invite-page";
 import HouseholdTasksPage from "@/pages/household-tasks-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
-import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 
+// Versão simplificada para evitar problemas de hooks
 function Router() {
   return (
     <Switch>
@@ -27,16 +26,13 @@ function Router() {
   );
 }
 
+// Versão simplificada do App para resolver problemas de hooks
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <PushNotificationsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </PushNotificationsProvider>
+        <Toaster />
+        <Router />
       </AuthProvider>
     </QueryClientProvider>
   );

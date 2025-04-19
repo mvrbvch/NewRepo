@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { insertUserSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast"; // Importar apenas a função toast, não o hook
 import { UserType } from "@/lib/types";
 import { z } from "zod";
 
@@ -37,34 +37,52 @@ type RegisterData = z.infer<typeof registerSchema>;
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
+  // Não usamos useToast() aqui para evitar dependência circular
+  const [authState, setAuthState] = useState<{
+    user: UserType | null;
+    isLoading: boolean;
+    error: Error | null;
+  }>({
+    user: null,
+    isLoading: true,
+    error: null,
+  });
   
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<UserType | null>({
-    queryKey: ["/api/user"],
-    queryFn: async ({ queryKey }) => {
+  useEffect(() => {
+    // Carregar dados do usuário ao iniciar
+    const fetchUser = async () => {
       try {
-        const res = await fetch(queryKey[0] as string, {
+        const res = await fetch("/api/user", {
           credentials: "include",
         });
         
         if (res.status === 401) {
-          return null;
+          setAuthState(prev => ({ ...prev, user: null, isLoading: false }));
+          return;
         }
         
         if (!res.ok) {
           throw new Error(`Error: ${res.status}`);
         }
         
-        return await res.json();
+        const userData = await res.json();
+        setAuthState(prev => ({ 
+          ...prev, 
+          user: userData, 
+          isLoading: false 
+        }));
       } catch (error) {
-        return null;
+        setAuthState(prev => ({ 
+          ...prev, 
+          user: null, 
+          isLoading: false,
+          error: error instanceof Error ? error : new Error(String(error))
+        }));
       }
-    },
-  });
+    };
+    
+    fetchUser();
+  }, []);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -73,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
+      setAuthState(prev => ({ ...prev, user }));
       toast({
         title: "Login bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
@@ -94,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
+      setAuthState(prev => ({ ...prev, user }));
       toast({
         title: "Cadastro bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
@@ -114,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      setAuthState(prev => ({ ...prev, user: null }));
       toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",
@@ -131,9 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
-        isLoading,
-        error,
+        user: authState.user,
+        isLoading: authState.isLoading,
+        error: authState.error,
         loginMutation,
         registerMutation,
         logoutMutation,
