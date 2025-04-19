@@ -5,9 +5,10 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
 import { pool } from "./db";
-import { Event, insertHouseholdTaskSchema } from "@shared/schema";
+import { Event, insertHouseholdTaskSchema, insertUserDeviceSchema, insertNotificationSchema } from "@shared/schema";
 import { addDays, addMonths, addWeeks, isAfter, isBefore, parseISO } from "date-fns";
 import { sendEmail, generateTaskReminderEmail, generatePartnerInviteEmail } from "./email";
+import { sendPushToUser, PushNotificationPayload } from "./pushNotifications";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(events: Event[], startDate: Date, endDate: Date): Event[] {
@@ -948,6 +949,309 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Failed to send test reminder",
         error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // ===== API para gerenciamento de dispositivos e notificações push =====
+  
+  // Registra um novo dispositivo para receber notificações push
+  app.post("/api/devices", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      
+      // Validar dados do corpo da requisição
+      const validationResult = insertUserDeviceSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid device data", 
+          errors: validationResult.error.format() 
+        });
+      }
+      
+      // Verificar se o token já está registrado para este usuário
+      const existingDevice = await storage.getUserDeviceByToken(req.body.deviceToken);
+      if (existingDevice && existingDevice.userId === userId) {
+        // Atualizar dispositivo existente
+        const updatedDevice = await storage.updateUserDevice(existingDevice.id, {
+          ...req.body,
+          lastUsed: new Date()
+        });
+        return res.json(updatedDevice);
+      }
+      
+      // Registrar novo dispositivo
+      const device = await storage.registerUserDevice({
+        ...req.body,
+        userId
+      });
+      
+      res.status(201).json(device);
+    } catch (error) {
+      console.error('Erro ao registrar dispositivo:', error);
+      res.status(500).json({ 
+        message: "Failed to register device", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Obtém todos os dispositivos registrados para o usuário atual
+  app.get("/api/devices", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const devices = await storage.getUserDevices(userId);
+      res.json(devices);
+    } catch (error) {
+      console.error('Erro ao obter dispositivos:', error);
+      res.status(500).json({ 
+        message: "Failed to fetch devices", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Atualiza as configurações de um dispositivo
+  app.put("/api/devices/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const deviceId = parseInt(req.params.id);
+      
+      // Verificar se o dispositivo pertence ao usuário
+      const devices = await storage.getUserDevices(userId);
+      const device = devices.find(d => d.id === deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found or not owned by you" });
+      }
+      
+      const updatedDevice = await storage.updateUserDevice(deviceId, {
+        ...req.body,
+        lastUsed: new Date()
+      });
+      
+      res.json(updatedDevice);
+    } catch (error) {
+      console.error('Erro ao atualizar dispositivo:', error);
+      res.status(500).json({ 
+        message: "Failed to update device", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Remove um dispositivo
+  app.delete("/api/devices/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const deviceId = parseInt(req.params.id);
+      
+      // Verificar se o dispositivo pertence ao usuário
+      const devices = await storage.getUserDevices(userId);
+      const device = devices.find(d => d.id === deviceId);
+      
+      if (!device) {
+        return res.status(404).json({ message: "Device not found or not owned by you" });
+      }
+      
+      const deleted = await storage.deleteUserDevice(deviceId);
+      
+      if (deleted) {
+        res.status(204).send();
+      } else {
+        res.status(500).json({ message: "Failed to delete device" });
+      }
+    } catch (error) {
+      console.error('Erro ao remover dispositivo:', error);
+      res.status(500).json({ 
+        message: "Failed to delete device", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // ===== Endpoints para notificações =====
+  
+  // Obtém todas as notificações do usuário
+  app.get("/api/notifications", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const notifications = await storage.getUserNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Erro ao obter notificações:', error);
+      res.status(500).json({ 
+        message: "Failed to fetch notifications", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Marca uma notificação como lida
+  app.put("/api/notifications/:id/read", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const notificationId = parseInt(req.params.id);
+      
+      // Verificar se a notificação pertence ao usuário
+      const notification = await storage.getNotification(notificationId);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      if (notification.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to access this notification" });
+      }
+      
+      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      res.json(updatedNotification);
+    } catch (error) {
+      console.error('Erro ao marcar notificação como lida:', error);
+      res.status(500).json({ 
+        message: "Failed to mark notification as read", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Remove uma notificação
+  app.delete("/api/notifications/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const notificationId = parseInt(req.params.id);
+      
+      // Verificar se a notificação pertence ao usuário
+      const notification = await storage.getNotification(notificationId);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      if (notification.userId !== userId) {
+        return res.status(403).json({ message: "You don't have permission to delete this notification" });
+      }
+      
+      const deleted = await storage.deleteNotification(notificationId);
+      
+      if (deleted) {
+        res.status(204).send();
+      } else {
+        res.status(500).json({ message: "Failed to delete notification" });
+      }
+    } catch (error) {
+      console.error('Erro ao remover notificação:', error);
+      res.status(500).json({ 
+        message: "Failed to delete notification", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Envia uma notificação para o parceiro
+  app.post("/api/partner/notify", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const currentUser = req.user;
+      
+      // Verificar se o usuário tem um parceiro
+      if (!currentUser.partnerId) {
+        return res.status(400).json({ message: "You don't have a partner to notify" });
+      }
+      
+      // Validar dados da notificação
+      const { title, message, type, referenceType, referenceId, metadata } = req.body;
+      
+      if (!title || !message || !type) {
+        return res.status(400).json({ 
+          message: "Required fields missing", 
+          required: ["title", "message", "type"] 
+        });
+      }
+      
+      // Criar a notificação para o parceiro
+      const notification = await storage.createNotification({
+        userId: currentUser.partnerId,
+        title,
+        message,
+        type,
+        referenceType: referenceType || null,
+        referenceId: referenceId || null,
+        metadata: metadata || null,
+        isRead: false
+      });
+      
+      // Enviar notificação push para os dispositivos do parceiro
+      try {
+        const pushPayload: PushNotificationPayload = {
+          title: title,
+          body: message,
+          data: {
+            type,
+            referenceType,
+            referenceId,
+            metadata
+          }
+        };
+        
+        // Enviar push para todos os dispositivos do parceiro
+        const sentCount = await sendPushToUser(currentUser.partnerId, pushPayload);
+        
+        console.log(`Enviadas ${sentCount} notificações push para o parceiro`);
+        
+        res.status(201).json({
+          message: "Notification sent to partner",
+          notification,
+          pushSent: sentCount > 0
+        });
+      } catch (pushError) {
+        console.error('Erro ao enviar notificação push:', pushError);
+        
+        // Mesmo com falha no push, a notificação foi criada
+        res.status(201).json({
+          message: "Notification created but push failed",
+          notification,
+          pushSent: false,
+          pushError: pushError instanceof Error ? pushError.message : String(pushError)
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao enviar notificação para o parceiro:', error);
+      res.status(500).json({ 
+        message: "Failed to send notification", 
+        error: error instanceof Error ? error.message : String(error) 
       });
     }
   });
