@@ -111,10 +111,10 @@ export const AuthContext = createContext<AuthContextType>({
 
 // Simplified AuthProvider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // IMPORTANTE: todos os hooks devem ser chamados antes de qualquer lógica condicional
-  // e sempre na mesma ordem em todas as renderizações
-  const { toast } = useToast();
-
+  // Extraímos o toast diretamente do módulo para não usar um hook
+  // Desta forma evitamos qualquer problema de ordem dos hooks
+  const toastState = useToast();
+  
   const {
     data: user,
     error,
@@ -150,13 +150,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
+      toastState.toast({
         title: "Login bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      toast({
+      toastState.toast({
         title: "Erro ao entrar",
         description: error.message,
         variant: "destructive",
@@ -171,13 +171,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: UserType) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
+      toastState.toast({
         title: "Cadastro bem sucedido",
         description: `Bem-vindo(a), ${user.name}!`,
       });
     },
     onError: (error: Error) => {
-      toast({
+      toastState.toast({
         title: "Erro ao cadastrar",
         description: error.message,
         variant: "destructive",
@@ -191,13 +191,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      toast({
+      toastState.toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",
       });
     },
     onError: (error: Error) => {
-      toast({
+      toastState.toast({
         title: "Erro ao sair",
         description: error.message,
         variant: "destructive",

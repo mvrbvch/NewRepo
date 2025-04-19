@@ -1,27 +1,29 @@
-// Versão extremamente simplificada sem nenhum componente externo
+// Versão absolutamente mínima sem NADA
 function App() {
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh', 
-      backgroundColor: '#fff' 
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      padding: '16px'
     }}>
-      <div style={{ 
-        maxWidth: '400px', 
-        padding: '20px', 
-        border: '1px solid #ccc', 
+      <div style={{
+        maxWidth: '400px',
+        padding: '24px',
+        border: '1px solid #ccc',
         borderRadius: '8px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '16px' }}>Diagnóstico do Por Nós</h1>
-        <p style={{ marginBottom: '12px' }}>
-          Versão básica para verificar o funcionamento do React.
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          marginBottom: '16px'
+        }}>Por Nós - Diagnóstico</h1>
+        <p style={{ marginBottom: '8px' }}>
+          Versão absolutamente mínima.
         </p>
-        <p style={{ color: '#666' }}>
-          Sem hooks, sem contextos, sem autenticação.
-        </p>
+        <p>Sem nenhuma dependência externa.</p>
       </div>
     </div>
   );
