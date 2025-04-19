@@ -1,5 +1,7 @@
 import { EventType } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -10,7 +12,9 @@ import {
   isSameMonth, 
   isSameDay, 
   addMonths,
-  subMonths
+  subMonths,
+  getMonth,
+  getYear
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -20,6 +24,7 @@ interface MonthViewProps {
   isLoading: boolean;
   onEventClick: (event: EventType) => void;
   onDayChange: (date: Date) => void;
+  onMonthChange?: (date: Date) => void;
 }
 
 export default function MonthView({
@@ -28,7 +33,9 @@ export default function MonthView({
   isLoading,
   onEventClick,
   onDayChange,
+  onMonthChange,
 }: MonthViewProps) {
+  const isMobile = useIsMobile();
   // Get all days in month view (including days from previous/next month to fill the grid)
   const monthDays = eachDayOfInterval({
     start: startOfWeek(startOfMonth(date), { locale: ptBR }),
@@ -56,13 +63,47 @@ export default function MonthView({
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 p-2">
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-gray-600 flex items-center"
+          onClick={() => onMonthChange && onMonthChange(subMonths(date, 1))}
+        >
+          <span className="material-icons mr-1">chevron_left</span>
+          <span className="hidden sm:inline">{format(subMonths(date, 1), 'MMMM', { locale: ptBR })}</span>
+        </Button>
+        
+        <h2 className="text-lg font-medium text-gray-800">
+          {format(date, 'MMMM yyyy', { locale: ptBR })}
+        </h2>
+        
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-gray-600 flex items-center"
+          onClick={() => onMonthChange && onMonthChange(addMonths(date, 1))}
+        >
+          <span className="hidden sm:inline">{format(addMonths(date, 1), 'MMMM', { locale: ptBR })}</span>
+          <span className="material-icons ml-1">chevron_right</span>
+        </Button>
+      </div>
+      
       {/* Day names header */}
       <div className="grid grid-cols-7 mb-2">
-        {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day, i) => (
-          <div key={i} className="text-center text-sm font-medium p-2">
-            {day}
-          </div>
-        ))}
+        {isMobile 
+          ? ["D", "S", "T", "Q", "Q", "S", "S"].map((day, i) => (
+              <div key={i} className="text-center text-sm font-medium p-1">
+                {day}
+              </div>
+            ))
+          : ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day, i) => (
+              <div key={i} className="text-center text-sm font-medium p-2">
+                {day}
+              </div>
+            ))
+        }
       </div>
       
       {/* Calendar grid */}
@@ -97,7 +138,7 @@ export default function MonthView({
               </div>
               
               <div className="space-y-1 overflow-hidden max-h-[calc(100%-24px)]">
-                {dayData.events.slice(0, 3).map((event, idx) => (
+                {dayData.events.slice(0, isMobile ? 2 : 3).map((event, idx) => (
                   <div 
                     key={idx}
                     className={`text-xs truncate px-1.5 py-0.5 rounded
@@ -112,13 +153,19 @@ export default function MonthView({
                       onEventClick(event);
                     }}
                   >
-                    {event.emoji ? `${event.emoji} ` : ''}{event.title}
+                    {isMobile 
+                      ? (event.emoji ? event.emoji : (
+                          event.period === 'morning' ? '🌅' : 
+                          event.period === 'afternoon' ? '☀️' : '🌙'
+                        ))
+                      : `${event.emoji || ''} ${event.title}`
+                    }
                   </div>
                 ))}
                 
-                {dayData.events.length > 3 && (
+                {dayData.events.length > (isMobile ? 2 : 3) && (
                   <div className="text-xs text-center text-gray-500">
-                    +{dayData.events.length - 3} mais
+                    +{dayData.events.length - (isMobile ? 2 : 3)}
                   </div>
                 )}
               </div>

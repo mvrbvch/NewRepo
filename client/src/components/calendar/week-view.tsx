@@ -2,8 +2,10 @@ import { EventType } from "@/lib/types";
 import { formatDate, formatTime, getPeriodFromTime } from "@/lib/utils";
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, addDays, startOfWeek } from "date-fns";
+import { format, addDays, startOfWeek, subDays, subWeeks, addWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WeekViewProps {
   date: Date;
@@ -11,6 +13,7 @@ interface WeekViewProps {
   isLoading: boolean;
   onEventClick: (event: EventType) => void;
   onDayChange: (date: Date) => void;
+  onWeekChange?: (date: Date) => void;
 }
 
 export default function WeekView({
@@ -19,7 +22,9 @@ export default function WeekView({
   isLoading,
   onEventClick,
   onDayChange,
+  onWeekChange,
 }: WeekViewProps) {
+  const isMobile = useIsMobile();
   
   // Generate week days from selected date
   const weekDays = useMemo(() => {
@@ -65,32 +70,62 @@ export default function WeekView({
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar">
+      <div className="flex items-center bg-white border-b px-2">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="h-8 w-8 text-gray-500"
+          onClick={() => onWeekChange && onWeekChange(subWeeks(date, 1))}
+        >
+          <span className="material-icons text-xl">chevron_left</span>
+        </Button>
+        
+        <div className="text-xs text-center text-gray-500 font-medium mx-2">
+          <span className="hidden sm:inline">Semana de </span>
+          {format(weekDays[0], "d/MM", { locale: ptBR })} - {format(weekDays[6], "d/MM", { locale: ptBR })}
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="h-8 w-8 text-gray-500"
+          onClick={() => onWeekChange && onWeekChange(addWeeks(date, 1))}
+        >
+          <span className="material-icons text-xl">chevron_right</span>
+        </Button>
+      </div>
+      
       <div className="grid grid-cols-7 bg-white border-b">
-        {weekDays.map((day, index) => (
-          <div 
-            key={index}
-            className={`flex flex-col items-center justify-center p-2 cursor-pointer ${
-              day.toDateString() === new Date().toDateString() ? 'bg-primary/10' : ''
-            } ${
-              day.toDateString() === date.toDateString() ? 'border-b-2 border-primary' : ''
-            }`}
-            onClick={() => onDayChange(day)}
-          >
-            <div className="text-sm font-medium">
-              {format(day, 'EEE', { locale: ptBR })}
+        {weekDays.map((day, index) => {
+          const isToday = day.toDateString() === new Date().toDateString();
+          const isSelected = day.toDateString() === date.toDateString();
+          
+          return (
+            <div 
+              key={index}
+              className={`flex flex-col items-center justify-center p-1 pt-2 cursor-pointer ${
+                isToday ? 'bg-primary/10' : ''
+              } ${
+                isSelected ? 'border-b-2 border-primary' : ''
+              }`}
+              onClick={() => onDayChange(day)}
+            >
+              <div className="text-xs font-medium">
+                {format(day, isMobile ? 'EEEEE' : 'EEE', { locale: ptBR })}
+              </div>
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                isSelected ? 'bg-primary text-white' : isToday ? 'border border-primary' : ''
+              }`}>
+                {format(day, 'd')}
+              </div>
+              <div className="text-[10px] text-gray-500">
+                {eventsInWeek[index].events.length > 0 
+                  ? `${eventsInWeek[index].events.length}${isMobile ? '' : ` evento${eventsInWeek[index].events.length > 1 ? 's' : ''}`}` 
+                  : ''}
+              </div>
             </div>
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-              day.toDateString() === date.toDateString() ? 'bg-primary text-white' : ''
-            }`}>
-              {format(day, 'd')}
-            </div>
-            <div className="text-xs text-gray-500">
-              {eventsInWeek[index].events.length > 0 
-                ? `${eventsInWeek[index].events.length} evento${eventsInWeek[index].events.length > 1 ? 's' : ''}` 
-                : ''}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="p-4">
