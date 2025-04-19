@@ -51,14 +51,20 @@ export default function BottomNavigation({ onCreateEvent }: BottomNavigationProp
         </Button>
       </div>
       
-      <Button 
-        variant="ghost" 
-        className="flex flex-col items-center py-1 px-3 h-auto text-gray-500"
-        disabled
-      >
-        <span className="material-icons text-[22px]">chat</span>
-        <span className="text-xs mt-1">Mensagens</span>
-      </Button>
+      <Link href="/tasks">
+        <Button 
+          variant="ghost" 
+          className={`flex flex-col items-center py-1 px-3 h-auto ${
+            location === '/tasks' ? 'text-primary' : 'text-gray-500'
+          }`}
+          asChild
+        >
+          <a>
+            <span className="material-icons text-[22px]">task_alt</span>
+            <span className="text-xs mt-1">Tarefas</span>
+          </a>
+        </Button>
+      </Link>
       
       <Button 
         variant="ghost" 
