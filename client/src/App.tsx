@@ -1,5 +1,24 @@
-// Versão absolutamente mínima sem NADA
+import * as React from "react";
+
+// Definição de estado mínima que você mencionou que estava funcionando
+interface State {
+  count: number;
+}
+
+const memoryState: State = {
+  count: 0
+};
+
 function App() {
+  const [state, setState] = React.useState<State>(memoryState);
+  
+  function incrementCounter() {
+    setState(prevState => ({
+      ...prevState,
+      count: prevState.count + 1
+    }));
+  }
+  
   return (
     <div style={{
       display: 'flex',
@@ -19,11 +38,23 @@ function App() {
           fontSize: '24px',
           fontWeight: 'bold',
           marginBottom: '16px'
-        }}>Por Nós - Diagnóstico</h1>
-        <p style={{ marginBottom: '8px' }}>
-          Versão absolutamente mínima.
+        }}>Por Nós - Teste de Estado</h1>
+        <p style={{ marginBottom: '16px' }}>
+          Contador: {state.count}
         </p>
-        <p>Sem nenhuma dependência externa.</p>
+        <button 
+          onClick={incrementCounter}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Incrementar
+        </button>
       </div>
     </div>
   );
