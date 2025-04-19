@@ -800,120 +800,166 @@ export class DatabaseStorage implements IStorage {
 
   // Household tasks methods
   async createHouseholdTask(insertTask: InsertHouseholdTask): Promise<HouseholdTask> {
-    // Processa as datas antes de inserir
-    let dueDate: Date | null = null;
-    if (insertTask.dueDate) {
-      if (insertTask.dueDate instanceof Date) {
-        dueDate = insertTask.dueDate;
-      } else if (typeof insertTask.dueDate === 'string') {
-        dueDate = new Date(insertTask.dueDate);
+    try {
+      console.log('Criando tarefa doméstica com dados:', JSON.stringify(insertTask, null, 2));
+      
+      // Processa as datas antes de inserir
+      let dueDate: Date | null = null;
+      if (insertTask.dueDate) {
+        console.log('dueDate original:', insertTask.dueDate);
+        if (insertTask.dueDate instanceof Date) {
+          dueDate = insertTask.dueDate;
+          console.log('dueDate é um objeto Date');
+        } else if (typeof insertTask.dueDate === 'string') {
+          dueDate = new Date(insertTask.dueDate);
+          console.log('dueDate convertido de string:', dueDate);
+        }
       }
-    }
 
-    let nextDueDate: Date | null = null;
-    if (insertTask.nextDueDate) {
-      if (insertTask.nextDueDate instanceof Date) {
-        nextDueDate = insertTask.nextDueDate;
-      } else if (typeof insertTask.nextDueDate === 'string') {
-        nextDueDate = new Date(insertTask.nextDueDate);
+      let nextDueDate: Date | null = null;
+      if (insertTask.nextDueDate) {
+        console.log('nextDueDate original:', insertTask.nextDueDate);
+        if (insertTask.nextDueDate instanceof Date) {
+          nextDueDate = insertTask.nextDueDate;
+          console.log('nextDueDate é um objeto Date');
+        } else if (typeof insertTask.nextDueDate === 'string') {
+          nextDueDate = new Date(insertTask.nextDueDate);
+          console.log('nextDueDate convertido de string:', nextDueDate);
+        }
       }
+
+      // Verificar se as datas são válidas
+      if (dueDate && isNaN(dueDate.getTime())) {
+        console.log('dueDate inválido, definindo como null');
+        dueDate = null;
+      }
+      
+      if (nextDueDate && isNaN(nextDueDate.getTime())) {
+        console.log('nextDueDate inválido, definindo como null');
+        nextDueDate = null;
+      }
+
+      // Remover campos desnecessários antes de passar para o banco de dados
+      const { dueDate: _, nextDueDate: __, ...restOfInsertTask } = insertTask;
+      
+      const taskData = {
+        ...restOfInsertTask,
+        dueDate,
+        nextDueDate,
+        completed: insertTask.completed || false,
+      };
+
+      console.log('Dados finais para inserção:', JSON.stringify(taskData, null, 2));
+
+      const [task] = await db.insert(householdTasks)
+        .values(taskData)
+        .returning();
+      
+      console.log('Tarefa criada com sucesso, dados do banco:', JSON.stringify(task, null, 2));
+      
+      // Processar para retorno
+      const formatted = {
+        ...task,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        nextDueDate: nextDueDate ? nextDueDate.toISOString() : null, 
+        createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+      };
+      
+      console.log('Tarefa formatada:', JSON.stringify(formatted, null, 2));
+      return formatted as HouseholdTask;
+    } catch (error) {
+      console.error('Erro crítico ao criar tarefa:', error);
+      throw error;
     }
-
-    const taskData = {
-      ...insertTask,
-      dueDate,
-      nextDueDate,
-      completed: insertTask.completed || false,
-    };
-
-    const [task] = await db.insert(householdTasks)
-      .values(taskData)
-      .returning();
-    
-    return this.formatHouseholdTaskDates(task);
   }
   
   // Função auxiliar para formatar as datas das tarefas
   private formatHouseholdTaskDates(task: any): HouseholdTask {
     const formattedTask = { ...task };
     
-    // Formatar dueDate
-    if (formattedTask.dueDate) {
-      if (formattedTask.dueDate instanceof Date) {
-        formattedTask.dueDate = formattedTask.dueDate.toISOString();
-      } else if (typeof formattedTask.dueDate === 'string') {
-        try {
-          if (formattedTask.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            formattedTask.dueDate = `${formattedTask.dueDate}T00:00:00Z`;
+    // Função auxiliar para formatar datas de forma segura
+    const formatDateSafely = (dateValue: any): string | null => {
+      if (!dateValue) return null;
+      
+      try {
+        if (dateValue instanceof Date) {
+          // Verificar se a data é válida
+          if (isNaN(dateValue.getTime())) {
+            console.log('Data inválida (Date object):', dateValue);
+            return null;
           }
-          const tempDate = new Date(formattedTask.dueDate);
+          return dateValue.toISOString();
+        } 
+        else if (typeof dateValue === 'string') {
+          // Para datas no formato YYYY-MM-DD, adicione a parte de tempo
+          if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            dateValue = `${dateValue}T00:00:00Z`;
+          }
+          
+          // Verificar se a string de data pode ser convertida em um Date válido
+          const tempDate = new Date(dateValue);
           if (isNaN(tempDate.getTime())) {
-            formattedTask.dueDate = null;
+            console.log('Data inválida (string):', dateValue);
+            return null;
           }
-        } catch (err) {
-          console.error('Erro ao validar dueDate:', err);
-          formattedTask.dueDate = null;
+          return tempDate.toISOString();
         }
+      } catch (err) {
+        console.error('Erro ao processar data:', err, dateValue);
       }
-    }
+      
+      return null;
+    };
     
-    // Formatar nextDueDate
-    if (formattedTask.nextDueDate) {
-      if (formattedTask.nextDueDate instanceof Date) {
-        formattedTask.nextDueDate = formattedTask.nextDueDate.toISOString();
-      } else if (typeof formattedTask.nextDueDate === 'string') {
-        try {
-          if (formattedTask.nextDueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            formattedTask.nextDueDate = `${formattedTask.nextDueDate}T00:00:00Z`;
-          }
-          const tempDate = new Date(formattedTask.nextDueDate);
-          if (isNaN(tempDate.getTime())) {
-            formattedTask.nextDueDate = null;
-          }
-        } catch (err) {
-          console.error('Erro ao validar nextDueDate:', err);
-          formattedTask.nextDueDate = null;
-        }
-      }
-    }
-    
-    // Formatar createdAt
-    if (formattedTask.createdAt) {
-      if (formattedTask.createdAt instanceof Date) {
-        formattedTask.createdAt = formattedTask.createdAt.toISOString();
-      } else if (typeof formattedTask.createdAt === 'string') {
-        try {
-          if (formattedTask.createdAt.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            formattedTask.createdAt = `${formattedTask.createdAt}T00:00:00Z`;
-          }
-          const tempDate = new Date(formattedTask.createdAt);
-          if (isNaN(tempDate.getTime())) {
-            formattedTask.createdAt = null;
-          }
-        } catch (err) {
-          console.error('Erro ao validar createdAt:', err);
-          formattedTask.createdAt = null;
-        }
-      }
-    }
+    // Aplicar a função de formatação às datas
+    formattedTask.dueDate = formatDateSafely(formattedTask.dueDate);
+    formattedTask.nextDueDate = formatDateSafely(formattedTask.nextDueDate);
+    formattedTask.createdAt = formatDateSafely(formattedTask.createdAt);
     
     return formattedTask;
   }
   
   async getHouseholdTask(id: number): Promise<HouseholdTask | undefined> {
-    const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
-    return task ? this.formatHouseholdTaskDates(task) : undefined;
+    try {
+      const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
+      if (!task) return undefined;
+      
+      // Formatar datas de forma segura
+      return {
+        ...task,
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+        nextDueDate: task.nextDueDate ? new Date(task.nextDueDate).toISOString() : null,
+        createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+      } as HouseholdTask;
+    } catch (error) {
+      console.error('Erro ao buscar tarefa doméstica:', error);
+      return undefined;
+    }
   }
   
   async getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
-    const tasks = await db.select().from(householdTasks).where(
-      or(
-        eq(householdTasks.assignedTo, userId),
-        eq(householdTasks.createdBy, userId)
-      )
-    );
-    
-    return tasks.map(task => this.formatHouseholdTaskDates(task));
+    try {
+      const tasks = await db.select().from(householdTasks).where(
+        or(
+          eq(householdTasks.assignedTo, userId),
+          eq(householdTasks.createdBy, userId)
+        )
+      );
+      
+      // Mapear cada tarefa e formatar suas datas de forma segura
+      return tasks.map(task => {
+        // Formatar datas de forma segura
+        return {
+          ...task,
+          dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+          nextDueDate: task.nextDueDate ? new Date(task.nextDueDate).toISOString() : null,
+          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+        } as HouseholdTask;
+      });
+    } catch (error) {
+      console.error('Erro ao buscar tarefas do usuário:', error);
+      return [];
+    }
   }
   
   async getPartnerHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
