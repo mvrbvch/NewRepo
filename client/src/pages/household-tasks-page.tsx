@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Clock,
   AlertCircle,
+  User as UserIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -258,14 +259,18 @@ export default function HouseholdTasksPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredTasks.length > 0 ? (
-            <div className="space-y-3 px-4">
+            <div className="space-y-4 px-4">
               {filteredTasks.map((task) => (
                 <Card
                   key={task.id}
-                  className={`p-4 relative ${task.completed ? "bg-gray-50" : "bg-white hover:bg-primary-light"} border ${task.completed ? "" : "border-primary-light"} shadow-sm hover:shadow transition-all`}
+                  className={`p-4 relative ${
+                    task.completed 
+                      ? "bg-gray-50 border-gray-200" 
+                      : "bg-white hover:bg-primary-light/10 border-primary-light"
+                  } shadow-sm hover:shadow-md transition-all cursor-pointer`}
                   onClick={() => handleOpenTaskDetails(task)}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <div
                       className="mt-1"
                       onClick={(e) => {
@@ -275,19 +280,27 @@ export default function HouseholdTasksPage() {
                     >
                       <Checkbox 
                         checked={task.completed} 
-                        className={`h-5 w-5 ${!task.completed ? "border-primary" : ""}`} 
+                        className={`h-5 w-5 rounded-sm ${
+                          !task.completed 
+                            ? "border-primary hover:border-primary-dark" 
+                            : "text-green-600"
+                        }`} 
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <h3
-                          className={`font-medium ${task.completed ? "line-through text-gray-500" : "text-dark"}`}
+                          className={`font-semibold text-lg ${
+                            task.completed 
+                              ? "line-through text-gray-500" 
+                              : "text-dark"
+                          }`}
                         >
                           {task.title}
                         </h3>
                         {task.frequency !== "once" && (
-                          <div className="flex items-center text-xs bg-primary-light text-primary-dark px-2 py-1 rounded-full">
-                            <RefreshCw className="h-3 w-3 mr-1" />
+                          <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium">
+                            <RefreshCw className="h-3 w-3 mr-1 text-primary" />
                             {getFrequencyText(task.frequency)}
                           </div>
                         )}
@@ -295,38 +308,50 @@ export default function HouseholdTasksPage() {
 
                       {task.description && (
                         <p
-                          className={`text-sm mt-1 ${task.completed ? "text-gray-500" : "text-medium"}`}
+                          className={`text-sm mt-2 ${
+                            task.completed 
+                              ? "text-gray-500" 
+                              : "text-medium"
+                          }`}
                         >
                           {task.description}
                         </p>
                       )}
 
-                      {task.dueDate && (
-                        <div className="mt-2 text-xs flex items-center">
-                          <CalendarIcon className="h-3 w-3 mr-1" />
-                          {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
-                            <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
-                              <AlertCircle size={12} />
-                              <span>{getFormattedDueDate(task.dueDate)}</span>
-                            </Badge>
-                          ) : (
-                            <span className={`${task.completed ? "text-gray-500" : "text-dark font-medium"} bg-gray-100 px-2 py-0.5 rounded-full`}>
-                              {getFormattedDueDate(task.dueDate)}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div className="mt-3 flex flex-wrap gap-2 items-center">
+                        {task.dueDate && (
+                          <div className="text-xs flex items-center">
+                            <CalendarIcon className="h-3 w-3 mr-1 text-gray-500" />
+                            {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
+                              <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
+                                <AlertCircle size={12} />
+                                <span>{getFormattedDueDate(task.dueDate)}</span>
+                              </Badge>
+                            ) : (
+                              <span className={`${
+                                task.completed 
+                                  ? "text-gray-500 bg-gray-100" 
+                                  : "text-dark font-medium bg-primary-light/20"
+                                } px-2 py-0.5 rounded-full`}
+                              >
+                                {getFormattedDueDate(task.dueDate)}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
-                      {task.completed ? (
-                        <div className="mt-2 text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full w-fit">
-                          <Check className="h-3 w-3 mr-1" />
-                          Concluída
-                        </div>
-                      ) : task.assignedTo && task.assignedTo === user?.partnerId && (
-                        <div className="mt-2 text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full w-fit">
-                          Atribuída ao parceiro
-                        </div>
-                      )}
+                        {task.completed ? (
+                          <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                            <Check className="h-3 w-3 mr-1" />
+                            Concluída
+                          </div>
+                        ) : task.assignedTo && task.assignedTo === user?.partnerId && (
+                          <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            <UserIcon className="h-3 w-3 mr-1" />
+                            Atribuída ao parceiro
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
