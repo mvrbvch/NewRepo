@@ -425,19 +425,66 @@ export class DatabaseStorage implements IStorage {
     // Criar uma cópia do evento para não modificar o original
     const formattedEvent = { ...event };
     
-    // Converter a data para string ISO se for uma data válida
-    if (formattedEvent.date instanceof Date && !isNaN(formattedEvent.date.getTime())) {
-      formattedEvent.date = formattedEvent.date.toISOString();
-    } else if (formattedEvent.date === null) {
-      // Se a data for null, definir uma data padrão (hoje)
+    // Processar a data principal do evento
+    if (!formattedEvent.date) {
+      // Se a data for null ou undefined, definir uma data padrão (hoje)
       formattedEvent.date = new Date().toISOString();
+    } else if (formattedEvent.date instanceof Date) {
+      if (!isNaN(formattedEvent.date.getTime())) {
+        // Se for um objeto Date válido, converter para string ISO
+        formattedEvent.date = formattedEvent.date.toISOString();
+      } else {
+        // Se for um objeto Date inválido, definir uma data padrão (hoje)
+        formattedEvent.date = new Date().toISOString();
+      }
+    } else if (typeof formattedEvent.date === 'string') {
+      // Se já for uma string, verificar se é uma data válida
+      // Alguns bancos retornam datas como: '2025-04-19'
+      try {
+        // Adicionar 'T00:00:00Z' se for uma data sem hora
+        if (formattedEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          formattedEvent.date = `${formattedEvent.date}T00:00:00Z`;
+        }
+        
+        // Verificar se a data agora é válida
+        const tempDate = new Date(formattedEvent.date);
+        if (isNaN(tempDate.getTime())) {
+          formattedEvent.date = new Date().toISOString();
+        }
+      } catch (err) {
+        console.error('Erro ao validar data em formato string:', err);
+        formattedEvent.date = new Date().toISOString();
+      }
     }
     
-    // Converter recurrenceEnd se for uma data válida
-    if (formattedEvent.recurrenceEnd instanceof Date && !isNaN(formattedEvent.recurrenceEnd.getTime())) {
-      formattedEvent.recurrenceEnd = formattedEvent.recurrenceEnd.toISOString();
+    // Processar a data de término da recorrência
+    if (formattedEvent.recurrenceEnd) {
+      if (formattedEvent.recurrenceEnd instanceof Date) {
+        if (!isNaN(formattedEvent.recurrenceEnd.getTime())) {
+          formattedEvent.recurrenceEnd = formattedEvent.recurrenceEnd.toISOString();
+        } else {
+          formattedEvent.recurrenceEnd = null;
+        }
+      } else if (typeof formattedEvent.recurrenceEnd === 'string') {
+        try {
+          // Adicionar 'T00:00:00Z' se for uma data sem hora
+          if (formattedEvent.recurrenceEnd.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedEvent.recurrenceEnd = `${formattedEvent.recurrenceEnd}T00:00:00Z`;
+          }
+          
+          // Verificar se a data agora é válida
+          const tempDate = new Date(formattedEvent.recurrenceEnd);
+          if (isNaN(tempDate.getTime())) {
+            formattedEvent.recurrenceEnd = null;
+          }
+        } catch (err) {
+          console.error('Erro ao validar recurrenceEnd em formato string:', err);
+          formattedEvent.recurrenceEnd = null;
+        }
+      }
     }
     
+    console.log(`Evento formatado: ID=${formattedEvent.id}, Data=${formattedEvent.date}`);
     return formattedEvent;
   }
   
