@@ -963,83 +963,137 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPartnerHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
-    // Primeiro, encontrar o usuário e seu parceiro
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user || !user.partnerId) return [];
-    
-    // Obter as tarefas do parceiro
-    const tasks = await db.select().from(householdTasks).where(
-      or(
-        eq(householdTasks.assignedTo, user.partnerId),
-        eq(householdTasks.createdBy, user.partnerId)
-      )
-    );
-    
-    return tasks.map(task => this.formatHouseholdTaskDates(task));
+    try {
+      // Primeiro, encontrar o usuário e seu parceiro
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user || !user.partnerId) return [];
+      
+      // Obter as tarefas do parceiro
+      const tasks = await db.select().from(householdTasks).where(
+        or(
+          eq(householdTasks.assignedTo, user.partnerId),
+          eq(householdTasks.createdBy, user.partnerId)
+        )
+      );
+      
+      // Mapear cada tarefa e formatar suas datas de forma segura
+      return tasks.map(task => {
+        return {
+          ...task,
+          dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+          nextDueDate: task.nextDueDate ? new Date(task.nextDueDate).toISOString() : null,
+          createdAt: task.createdAt ? new Date(task.createdAt).toISOString() : null
+        } as HouseholdTask;
+      });
+    } catch (error) {
+      console.error('Erro ao buscar tarefas do parceiro:', error);
+      return [];
+    }
   }
   
   async updateHouseholdTask(id: number, updates: Partial<HouseholdTask>): Promise<HouseholdTask | undefined> {
-    // Processar datas se estiverem sendo atualizadas
-    const processedUpdates: any = { ...updates };
-    
-    if (typeof processedUpdates.dueDate === 'string') {
-      try {
-        processedUpdates.dueDate = new Date(processedUpdates.dueDate);
-      } catch (err) {
-        console.error('Erro ao converter dueDate para Date:', err);
+    try {
+      // Processar datas se estiverem sendo atualizadas
+      const processedUpdates: any = { ...updates };
+      
+      if (typeof processedUpdates.dueDate === 'string') {
+        try {
+          processedUpdates.dueDate = new Date(processedUpdates.dueDate);
+          if (isNaN(processedUpdates.dueDate.getTime())) {
+            console.log('dueDate inválido, definindo como null');
+            processedUpdates.dueDate = null;
+          }
+        } catch (err) {
+          console.error('Erro ao converter dueDate para Date:', err);
+          processedUpdates.dueDate = null;
+        }
       }
-    }
-    
-    if (typeof processedUpdates.nextDueDate === 'string') {
-      try {
-        processedUpdates.nextDueDate = new Date(processedUpdates.nextDueDate);
-      } catch (err) {
-        console.error('Erro ao converter nextDueDate para Date:', err);
+      
+      if (typeof processedUpdates.nextDueDate === 'string') {
+        try {
+          processedUpdates.nextDueDate = new Date(processedUpdates.nextDueDate);
+          if (isNaN(processedUpdates.nextDueDate.getTime())) {
+            console.log('nextDueDate inválido, definindo como null');
+            processedUpdates.nextDueDate = null;
+          }
+        } catch (err) {
+          console.error('Erro ao converter nextDueDate para Date:', err);
+          processedUpdates.nextDueDate = null;
+        }
       }
+      
+      const [updatedTask] = await db.update(householdTasks)
+        .set(processedUpdates)
+        .where(eq(householdTasks.id, id))
+        .returning();
+      
+      if (!updatedTask) return undefined;
+      
+      // Formatar datas de forma segura
+      return {
+        ...updatedTask,
+        dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate).toISOString() : null,
+        nextDueDate: updatedTask.nextDueDate ? new Date(updatedTask.nextDueDate).toISOString() : null,
+        createdAt: updatedTask.createdAt ? new Date(updatedTask.createdAt).toISOString() : null
+      } as HouseholdTask;
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa doméstica:', error);
+      return undefined;
     }
-    
-    const [updatedTask] = await db.update(householdTasks)
-      .set(processedUpdates)
-      .where(eq(householdTasks.id, id))
-      .returning();
-    
-    return updatedTask ? this.formatHouseholdTaskDates(updatedTask) : undefined;
   }
   
   async deleteHouseholdTask(id: number): Promise<boolean> {
-    const result = await db.delete(householdTasks)
-      .where(eq(householdTasks.id, id))
-      .returning({ id: householdTasks.id });
-    
-    return result.length > 0;
+    try {
+      const result = await db.delete(householdTasks)
+        .where(eq(householdTasks.id, id))
+        .returning({ id: householdTasks.id });
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error('Erro ao excluir tarefa doméstica:', error);
+      return false;
+    }
   }
   
   async markHouseholdTaskAsCompleted(id: number, completed: boolean): Promise<HouseholdTask | undefined> {
-    // Obter a tarefa atual
-    const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
-    if (!task) return undefined;
-    
-    // Calcular a próxima data de vencimento se for recorrente e estiver sendo marcada como concluída
-    let nextDueDate = task.nextDueDate;
-    if (completed && task.frequency !== 'once') {
-      const currentDate = new Date();
+    try {
+      // Obter a tarefa atual
+      const [task] = await db.select().from(householdTasks).where(eq(householdTasks.id, id));
+      if (!task) return undefined;
       
-      if (task.frequency === 'daily') {
-        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
-      } else if (task.frequency === 'weekly') {
-        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
-      } else if (task.frequency === 'monthly') {
-        nextDueDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+      // Calcular a próxima data de vencimento se for recorrente e estiver sendo marcada como concluída
+      let nextDueDate = task.nextDueDate;
+      if (completed && task.frequency !== 'once') {
+        const currentDate = new Date();
+        
+        if (task.frequency === 'daily') {
+          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+        } else if (task.frequency === 'weekly') {
+          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
+        } else if (task.frequency === 'monthly') {
+          nextDueDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1));
+        }
       }
+      
+      // Atualizar a tarefa
+      const [updatedTask] = await db.update(householdTasks)
+        .set({ completed, nextDueDate })
+        .where(eq(householdTasks.id, id))
+        .returning();
+      
+      if (!updatedTask) return undefined;
+      
+      // Formatar datas de forma segura
+      return {
+        ...updatedTask,
+        dueDate: updatedTask.dueDate ? new Date(updatedTask.dueDate).toISOString() : null,
+        nextDueDate: updatedTask.nextDueDate ? new Date(updatedTask.nextDueDate).toISOString() : null,
+        createdAt: updatedTask.createdAt ? new Date(updatedTask.createdAt).toISOString() : null
+      } as HouseholdTask;
+    } catch (error) {
+      console.error('Erro ao marcar tarefa como concluída:', error);
+      return undefined;
     }
-    
-    // Atualizar a tarefa
-    const [updatedTask] = await db.update(householdTasks)
-      .set({ completed, nextDueDate })
-      .where(eq(householdTasks.id, id))
-      .returning();
-    
-    return updatedTask ? this.formatHouseholdTaskDates(updatedTask) : undefined;
   }
 }
 
