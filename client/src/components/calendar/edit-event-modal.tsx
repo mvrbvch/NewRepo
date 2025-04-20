@@ -2,10 +2,22 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +39,7 @@ export default function EditEventModal({
 }: EditEventModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // Form state
   const [title, setTitle] = useState(event.title);
   const [date, setDate] = useState("");
@@ -35,19 +47,24 @@ export default function EditEventModal({
   const [startTime, setStartTime] = useState(event.startTime);
   const [endTime, setEndTime] = useState(event.endTime);
   const [location, setLocation] = useState(event.location || "");
-  const [recurrence, setRecurrence] = useState<'never' | 'daily' | 'weekly' | 'monthly' | 'custom'>(event.recurrence);
+  const [recurrence, setRecurrence] = useState<
+    "never" | "daily" | "weekly" | "monthly" | "custom"
+  >(event.recurrence);
   const [emoji, setEmoji] = useState(event.emoji || "");
-  const [shareWithPartner, setShareWithPartner] = useState(event.isShared || false);
-  const [partnerPermission, setPartnerPermission] = useState<'view' | 'edit'>(event.sharePermission as 'view' | 'edit' || "view");
-  
+  const [shareWithPartner, setShareWithPartner] = useState(
+    event.isShared || false,
+  );
+  const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
+    (event.sharePermission as "view" | "edit") || "view",
+  );
+
   // Set initial form values when modal opens or event changes
   useEffect(() => {
     if (isOpen && event) {
       setTitle(event.title);
       // Format date from event.date which could be string or Date object
-      const eventDate = event.date instanceof Date 
-        ? event.date 
-        : new Date(event.date);
+      const eventDate =
+        event.date instanceof Date ? event.date : new Date(event.date);
       setDate(format(eventDate, "yyyy-MM-dd"));
       setPeriod(event.period);
       setStartTime(event.startTime);
@@ -59,11 +76,11 @@ export default function EditEventModal({
       setPartnerPermission(event.sharePermission || "view");
     }
   }, [isOpen, event]);
-  
+
   // Handle period change to adjust default start/end times
   const handlePeriodChange = (value: string) => {
-    setPeriod(value as "morning" | "afternoon" | "night");
-    
+    setPeriod(value as "morning" | "afternoon" | "night" | "allday");
+
     // Update default times based on selected period
     if (value === "morning") {
       setStartTime("08:00");
@@ -76,7 +93,7 @@ export default function EditEventModal({
       setEndTime("20:00");
     }
   };
-  
+
   // Update event mutation
   const updateEventMutation = useMutation({
     mutationFn: async (eventData: any) => {
@@ -88,7 +105,7 @@ export default function EditEventModal({
         title: "Evento atualizado",
         description: "O evento foi atualizado com sucesso.",
       });
-      
+
       // Invalidate related queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}`] });
@@ -103,7 +120,7 @@ export default function EditEventModal({
       });
     },
   });
-  
+
   // Handle form submit
   const handleUpdateEvent = () => {
     // Validation
@@ -115,11 +132,11 @@ export default function EditEventModal({
       });
       return;
     }
-    
+
     // Prepare event data
     const eventData = {
       title,
-      date,
+      date: new Date(date),
       period,
       startTime,
       endTime,
@@ -127,18 +144,18 @@ export default function EditEventModal({
       recurrence,
       emoji: emoji || null,
     };
-    
+
     // Send update request
     updateEventMutation.mutate(eventData);
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar evento</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-2">
           <div>
             <Label htmlFor="title">Nome do evento</Label>
@@ -149,7 +166,7 @@ export default function EditEventModal({
               placeholder="Ex: Reunião, Aniversário..."
             />
           </div>
-          
+
           <div className="flex space-x-4">
             <div className="flex-1">
               <Label htmlFor="date">Data</Label>
@@ -160,7 +177,7 @@ export default function EditEventModal({
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
-            
+
             <div className="flex-1">
               <Label htmlFor="period">Período</Label>
               <Select value={period} onValueChange={handlePeriodChange}>
@@ -175,7 +192,7 @@ export default function EditEventModal({
               </Select>
             </div>
           </div>
-          
+
           <div className="flex space-x-4">
             <div className="flex-1">
               <Label htmlFor="startTime">Hora início</Label>
@@ -196,7 +213,7 @@ export default function EditEventModal({
               />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="location">Local (opcional)</Label>
             <Input
@@ -206,7 +223,7 @@ export default function EditEventModal({
               placeholder="Ex: Sala de reuniões, Restaurante..."
             />
           </div>
-          
+
           <div>
             <Label htmlFor="emoji">Emoji (opcional)</Label>
             <Input
@@ -217,12 +234,16 @@ export default function EditEventModal({
               maxLength={2}
             />
           </div>
-          
+
           <div>
             <Label htmlFor="recurrence">Repetição</Label>
-            <Select 
-              value={recurrence} 
-              onValueChange={(value: string) => setRecurrence(value as 'never' | 'daily' | 'weekly' | 'monthly' | 'custom')}
+            <Select
+              value={recurrence}
+              onValueChange={(value: string) =>
+                setRecurrence(
+                  value as "never" | "daily" | "weekly" | "monthly" | "custom",
+                )
+              }
             >
               <SelectTrigger id="recurrence">
                 <SelectValue placeholder="Selecione uma opção" />
@@ -235,18 +256,16 @@ export default function EditEventModal({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="shareWithPartner" 
+            <Checkbox
+              id="shareWithPartner"
               checked={shareWithPartner}
               onCheckedChange={(checked) => setShareWithPartner(!!checked)}
             />
-            <Label htmlFor="shareWithPartner">
-              Compartilhar com parceiro
-            </Label>
+            <Label htmlFor="shareWithPartner">Compartilhar com parceiro</Label>
           </div>
-          
+
           {shareWithPartner && (
             <div className="bg-gray-50 p-3 rounded-lg flex items-center">
               <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm mr-3">
@@ -256,9 +275,11 @@ export default function EditEventModal({
                 <div className="text-sm font-medium">Parceiro</div>
                 <div className="text-xs text-gray-500">Permissão:</div>
               </div>
-              <Select 
-                value={partnerPermission} 
-                onValueChange={(value: string) => setPartnerPermission(value as 'view' | 'edit')}
+              <Select
+                value={partnerPermission}
+                onValueChange={(value: string) =>
+                  setPartnerPermission(value as "view" | "edit")
+                }
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Permissão" />
@@ -271,12 +292,12 @@ export default function EditEventModal({
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button 
+          <Button
             onClick={handleUpdateEvent}
             disabled={updateEventMutation.isPending}
           >

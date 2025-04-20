@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Processar eventos recorrentes
       // O período de visualização padrão é 3 meses a partir de hoje
-      const startDate = new Date(); // hoje
+      const startDate = new Date(req.body.date); // hoje
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + 3); // 3 meses depois
 

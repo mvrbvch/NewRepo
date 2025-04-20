@@ -6,20 +6,20 @@ export interface EventType {
   endTime: string;
   location?: string;
   emoji?: string;
-  period: 'morning' | 'afternoon' | 'night';
-  recurrence: 'never' | 'daily' | 'weekly' | 'monthly' | 'custom';
+  period: "morning" | "afternoon" | "night" | "allday";
+  recurrence: "never" | "daily" | "weekly" | "monthly" | "custom";
   recurrenceEnd?: string | Date;
   recurrenceRule?: string;
   createdBy: number;
   isShared?: boolean;
-  sharePermission?: 'view' | 'edit';
+  sharePermission?: "view" | "edit";
 }
 
 export interface EventShareType {
   id: number;
   eventId: number;
   userId: number;
-  permission: 'view' | 'edit';
+  permission: "view" | "edit";
 }
 
 export interface EventCommentType {
@@ -37,7 +37,7 @@ export interface UserType {
   email: string;
   phoneNumber?: string;
   partnerId?: number | null;
-  partnerStatus: 'none' | 'invited' | 'pending' | 'connected';
+  partnerStatus: "none" | "invited" | "pending" | "connected";
   onboardingComplete: boolean;
 }
 
@@ -47,28 +47,28 @@ export interface PartnerInviteType {
   email?: string;
   phoneNumber?: string;
   token: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
   createdAt: string | Date;
 }
 
 export interface CalendarConnectionType {
   id: number;
   userId: number;
-  provider: 'google' | 'apple' | 'outlook';
+  provider: "google" | "apple" | "outlook";
   providerId: string;
   syncEnabled: boolean;
 }
 
 export interface DateSelection {
   date: Date;
-  view: 'day' | 'week' | 'month';
+  view: "day" | "week" | "month";
 }
 
 export interface HouseholdTaskType {
   id: number;
   title: string;
   description: string | null;
-  frequency: 'once' | 'daily' | 'weekly' | 'monthly';
+  frequency: "once" | "daily" | "weekly" | "monthly";
   assignedTo: number | null;
   createdBy: number;
   dueDate: string | Date | null;

@@ -751,33 +751,34 @@ export class DatabaseStorage implements IStorage {
     
     // Processar a data principal do evento
     if (!formattedEvent.date) {
-      // Se a data for null ou undefined, definir uma data padrão (hoje)
-      formattedEvent.date = new Date().toISOString();
+      // Se a data for null ou undefined, manter como está
+      // Não substituímos mais por data atual
+      console.warn(`Evento ${formattedEvent.id} sem data definida`);
     } else if (formattedEvent.date instanceof Date) {
       if (!isNaN(formattedEvent.date.getTime())) {
         // Se for um objeto Date válido, converter para string ISO
         formattedEvent.date = formattedEvent.date.toISOString();
       } else {
-        // Se for um objeto Date inválido, definir uma data padrão (hoje)
-        formattedEvent.date = new Date().toISOString();
+        // Se for um objeto Date inválido, log de aviso mas não modificamos
+        console.warn(`Evento ${formattedEvent.id} tem data inválida (objeto Date)`);
       }
     } else if (typeof formattedEvent.date === 'string') {
-      // Se já for uma string, verificar se é uma data válida
+      // Se já for uma string, verificar se é uma data sem hora
       // Alguns bancos retornam datas como: '2025-04-19'
       try {
         // Adicionar 'T00:00:00Z' se for uma data sem hora
         if (formattedEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
           formattedEvent.date = `${formattedEvent.date}T00:00:00Z`;
+          console.log(`Evento ${formattedEvent.id} - data formatada para ISO: ${formattedEvent.date}`);
         }
         
-        // Verificar se a data agora é válida
+        // Verificamos se é válida apenas para log
         const tempDate = new Date(formattedEvent.date);
         if (isNaN(tempDate.getTime())) {
-          formattedEvent.date = new Date().toISOString();
+          console.warn(`Evento ${formattedEvent.id} tem data inválida (string)`);
         }
       } catch (err) {
-        console.error('Erro ao validar data em formato string:', err);
-        formattedEvent.date = new Date().toISOString();
+        console.error(`Erro ao validar data em formato string para evento ${formattedEvent.id}:`, err);
       }
     }
     

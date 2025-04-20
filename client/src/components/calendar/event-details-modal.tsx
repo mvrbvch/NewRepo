@@ -1,5 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { EventType, EventCommentType } from "@/lib/types";
 import { formatDate, formatTime, periodLabels } from "@/lib/utils";
@@ -28,39 +33,46 @@ export default function EventDetailsModal({
   const { toast } = useToast();
   const [comment, setComment] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
+
   // Determine background color based on period
-  const periodColor = 
-    event.period === 'morning' ? 'bg-orange-500/10' : 
-    event.period === 'afternoon' ? 'bg-blue-500/10' : 
-    'bg-purple-700/10';
-  
+  const periodColor =
+    event.period === "morning"
+      ? "bg-orange-500/10"
+      : event.period === "afternoon"
+        ? "bg-blue-500/10"
+        : "bg-purple-700/10";
+
   // Format date for display
-  const formattedDate = event.date ? format(new Date(event.date), "EEEE, d 'de' MMMM yyyy", { locale: ptBR }) : '';
-  
+  const formattedDate = event.date
+    ? format(new Date(event.date), "EEEE, d 'de' MMMM yyyy", { locale: ptBR })
+    : "";
+
   // Duration calculation
-  const startParts = event.startTime.split(':').map(Number);
-  const endParts = event.endTime.split(':').map(Number);
+  const startParts = event.startTime.split(":").map(Number);
+  const endParts = event.endTime.split(":").map(Number);
   const startMinutes = startParts[0] * 60 + startParts[1];
   const endMinutes = endParts[0] * 60 + endParts[1];
   let durationMinutes = endMinutes - startMinutes;
   if (durationMinutes < 0) durationMinutes += 24 * 60; // If end time is next day
   const durationHours = Math.floor(durationMinutes / 60);
   const remainingMinutes = durationMinutes % 60;
-  const durationText = durationHours > 0 
-    ? `${durationHours}h ${remainingMinutes > 0 ? `${remainingMinutes}min` : ''}` 
-    : `${remainingMinutes}min`;
-  
+  const durationText =
+    durationHours > 0
+      ? `${durationHours}h ${remainingMinutes > 0 ? `${remainingMinutes}min` : ""}`
+      : `${remainingMinutes}min`;
+
   // Fetch event details including comments
   const { data: eventDetails, isLoading } = useQuery({
     queryKey: [`/api/events/${event.id}`],
     enabled: isOpen && !!event.id,
   });
-  
+
   // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async (content: string) => {
-      const res = await apiRequest("POST", `/api/events/${event.id}/comments`, { content });
+      const res = await apiRequest("POST", `/api/events/${event.id}/comments`, {
+        content,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -74,12 +86,13 @@ export default function EventDetailsModal({
     onError: () => {
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o comentário. Tente novamente.",
+        description:
+          "Não foi possível adicionar o comentário. Tente novamente.",
         variant: "destructive",
       });
     },
   });
-  
+
   // Delete event mutation
   const deleteEventMutation = useMutation({
     mutationFn: async () => {
@@ -91,7 +104,7 @@ export default function EventDetailsModal({
         title: "Evento excluído",
         description: "O evento foi excluído com sucesso!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       onClose();
     },
     onError: () => {
@@ -102,49 +115,49 @@ export default function EventDetailsModal({
       });
     },
   });
-  
+
   const handleAddComment = () => {
     if (!comment.trim()) return;
     addCommentMutation.mutate(comment);
   };
-  
+
   const handleDeleteEvent = () => {
     if (window.confirm("Tem certeza que deseja excluir este evento?")) {
       deleteEventMutation.mutate();
     }
   };
-  
+
   // Define types for the event details
   type EventDetailsType = {
     comments: EventCommentType[];
     shares: any[];
     event: EventType;
   };
-  
+
   const comments = (eventDetails as EventDetailsType)?.comments || [];
   const shares = (eventDetails as EventDetailsType)?.shares || [];
-  
+
   // Handle edit button click
   const handleEditClick = () => {
     setIsEditModalOpen(true);
   };
-  
+
   // Handle edit modal close
   const handleEditModalClose = () => {
     setIsEditModalOpen(false);
   };
-  
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className={`p-4 border-b ${periodColor}`}>
             <DialogTitle className="flex items-center">
-              <span className="mr-2">{event.emoji || '📅'}</span>
+              <span className="mr-2">{event.emoji || "📅"}</span>
               <span>{event.title}</span>
             </DialogTitle>
           </DialogHeader>
-          
+
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -157,45 +170,50 @@ export default function EventDetailsModal({
                   <div>
                     <div>{formattedDate}</div>
                     <div className="text-sm text-gray-500">
-                      {formatTime(event.startTime)} - {formatTime(event.endTime)} ({durationText})
+                      {formatTime(event.startTime)} -{" "}
+                      {formatTime(event.endTime)} ({durationText})
                     </div>
                   </div>
                 </div>
-                
+
                 {event.location && (
                   <div className="flex items-center text-gray-700">
                     <span className="material-icons mr-3">location_on</span>
                     <div>{event.location}</div>
                   </div>
                 )}
-                
-                {event.recurrence && event.recurrence !== 'never' && (
+
+                {event.recurrence && event.recurrence !== "never" && (
                   <div className="flex items-center text-gray-700">
                     <span className="material-icons mr-3">repeat</span>
                     <div>
-                      {event.recurrence === 'daily' && 'Diariamente'}
-                      {event.recurrence === 'weekly' && 'Semanalmente'}
-                      {event.recurrence === 'monthly' && 'Mensalmente'}
-                      {event.recurrence === 'custom' && 'Personalizado'}
+                      {event.recurrence === "daily" && "Diariamente"}
+                      {event.recurrence === "weekly" && "Semanalmente"}
+                      {event.recurrence === "monthly" && "Mensalmente"}
+                      {event.recurrence === "custom" && "Personalizado"}
                     </div>
                   </div>
                 )}
-                
+
                 {event.isShared && (
                   <div className="flex items-center text-gray-700">
-                    <span className="material-icons text-secondary mr-3">favorite</span>
+                    <span className="material-icons text-secondary mr-3">
+                      favorite
+                    </span>
                     <div>
                       <div>Compartilhado</div>
                       <div className="text-sm text-gray-500">
-                        {event.sharePermission === 'edit' ? 'Pode editar' : 'Pode visualizar'}
+                        {event.sharePermission === "edit"
+                          ? "Pode editar"
+                          : "Pode visualizar"}
                       </div>
                     </div>
                   </div>
                 )}
-                
+
                 <div className="border-t pt-4">
                   <h3 className="font-medium mb-2">Conversa</h3>
-                  
+
                   {comments.length === 0 ? (
                     <div className="text-center text-gray-500 my-4">
                       Sem comentários ainda. Seja o primeiro a comentar!
@@ -203,24 +221,29 @@ export default function EventDetailsModal({
                   ) : (
                     <div className="space-y-3 max-h-48 overflow-y-auto mb-3">
                       {comments.map((comment: EventCommentType) => (
-                        <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
+                        <div
+                          key={comment.id}
+                          className="bg-gray-50 p-3 rounded-lg"
+                        >
                           <div className="flex items-start mb-1">
                             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm mr-2">
                               {user?.name?.[0] || "U"}
                             </div>
                             <div>
-                              <div className="text-sm font-medium">{user?.name}</div>
+                              <div className="text-sm font-medium">
+                                {user?.name}
+                              </div>
                               <div className="text-sm">{comment.content}</div>
                             </div>
                           </div>
                           <div className="text-xs text-gray-500 ml-10">
-                            {format(new Date(comment.createdAt), 'HH:mm')}
+                            {format(new Date(comment.createdAt), "HH:mm")}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-                  
+
                   <div className="flex mt-3">
                     <Input
                       value={comment}
@@ -228,7 +251,7 @@ export default function EventDetailsModal({
                       placeholder="Escreva uma mensagem..."
                       className="flex-1 rounded-r-none"
                     />
-                    <Button 
+                    <Button
                       className="rounded-l-none"
                       onClick={handleAddComment}
                       disabled={addCommentMutation.isPending || !comment.trim()}
@@ -242,18 +265,18 @@ export default function EventDetailsModal({
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-4 border-t flex space-x-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1 flex items-center justify-center"
                   onClick={handleEditClick}
                 >
                   <span className="material-icons mr-1">edit</span>
                   Editar
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1 flex items-center justify-center text-red-600 border-red-200 hover:bg-red-50"
                   onClick={handleDeleteEvent}
                   disabled={deleteEventMutation.isPending}
@@ -270,9 +293,9 @@ export default function EventDetailsModal({
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Event Modal */}
-      <EditEventModal 
+      <EditEventModal
         event={event}
         isOpen={isEditModalOpen}
         onClose={handleEditModalClose}

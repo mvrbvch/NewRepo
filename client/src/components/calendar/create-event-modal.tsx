@@ -1,8 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,6 +24,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Textarea } from "../ui/textarea";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -26,7 +39,7 @@ export default function CreateEventModal({
 }: CreateEventModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(format(defaultDate, "yyyy-MM-dd"));
   const [period, setPeriod] = useState("morning");
@@ -34,15 +47,16 @@ export default function CreateEventModal({
   const [endTime, setEndTime] = useState("09:00");
   const [location, setLocation] = useState("");
   const [recurrence, setRecurrence] = useState("never");
+  const [description, setDescription] = useState("");
   const [emoji, setEmoji] = useState("");
   const [shareWithPartner, setShareWithPartner] = useState(false);
   const [partnerPermission, setPartnerPermission] = useState("view");
-  
+
   // Reset form when modal opens with a new default date
   useEffect(() => {
     if (isOpen) {
       setDate(format(defaultDate, "yyyy-MM-dd"));
-      
+
       // Set default times based on selected period
       if (period === "morning") {
         setStartTime("08:00");
@@ -56,7 +70,7 @@ export default function CreateEventModal({
       }
     }
   }, [isOpen, defaultDate, period]);
-  
+
   const createEventMutation = useMutation({
     mutationFn: async (eventData: any) => {
       const res = await apiRequest("POST", "/api/events", eventData);
@@ -67,7 +81,7 @@ export default function CreateEventModal({
         title: "Evento criado",
         description: "Seu evento foi criado com sucesso!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       resetForm();
       onClose();
     },
@@ -79,7 +93,7 @@ export default function CreateEventModal({
       });
     },
   });
-  
+
   const handleCreateEvent = () => {
     if (!title) {
       toast({
@@ -89,7 +103,7 @@ export default function CreateEventModal({
       });
       return;
     }
-    
+
     createEventMutation.mutate({
       title,
       date: new Date(date),
@@ -99,11 +113,12 @@ export default function CreateEventModal({
       emoji: emoji || undefined,
       period,
       recurrence,
+      description,
       shareWithPartner,
       partnerPermission,
     });
   };
-  
+
   const resetForm = () => {
     setTitle("");
     setDate(format(new Date(), "yyyy-MM-dd"));
@@ -116,10 +131,10 @@ export default function CreateEventModal({
     setShareWithPartner(false);
     setPartnerPermission("view");
   };
-  
+
   const handlePeriodChange = (value: string) => {
     setPeriod(value);
-    
+
     // Update time suggestions based on period
     if (value === "morning") {
       setStartTime("08:00");
@@ -132,14 +147,14 @@ export default function CreateEventModal({
       setEndTime("20:00");
     }
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo evento</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-2">
           <div>
             <Label htmlFor="title">Nome do evento</Label>
@@ -150,7 +165,7 @@ export default function CreateEventModal({
               placeholder="Ex: Reunião, Aniversário..."
             />
           </div>
-          
+
           <div className="flex space-x-4">
             <div className="flex-1">
               <Label htmlFor="date">Data</Label>
@@ -161,7 +176,7 @@ export default function CreateEventModal({
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
-            
+
             <div className="flex-1">
               <Label htmlFor="period">Período</Label>
               <Select value={period} onValueChange={handlePeriodChange}>
@@ -169,6 +184,7 @@ export default function CreateEventModal({
                   <SelectValue placeholder="Selecione um período" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="allday">Dia todo (24h)</SelectItem>
                   <SelectItem value="morning">Manhã (6h-12h)</SelectItem>
                   <SelectItem value="afternoon">Tarde (12h-18h)</SelectItem>
                   <SelectItem value="night">Noite (18h-0h)</SelectItem>
@@ -177,6 +193,7 @@ export default function CreateEventModal({
             </div>
           </div>
           
+
           <div className="flex space-x-4">
             <div className="flex-1">
               <Label htmlFor="startTime">Hora de início</Label>
@@ -187,7 +204,7 @@ export default function CreateEventModal({
                 onChange={(e) => setStartTime(e.target.value)}
               />
             </div>
-            
+
             <div className="flex-1">
               <Label htmlFor="endTime">Hora de fim</Label>
               <Input
@@ -198,7 +215,17 @@ export default function CreateEventModal({
               />
             </div>
           </div>
-          
+
+          <div>
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Digite o endereço ou local"
+            />
+          </div>
+
           <div>
             <Label htmlFor="location">Local</Label>
             <Input
@@ -208,7 +235,7 @@ export default function CreateEventModal({
               placeholder="Digite o endereço ou local"
             />
           </div>
-          
+
           <div>
             <Label htmlFor="recurrence">Repetir</Label>
             <Select value={recurrence} onValueChange={setRecurrence}>
@@ -224,7 +251,7 @@ export default function CreateEventModal({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div>
             <Label>Emoji</Label>
             <div className="grid grid-cols-6 gap-2 border border-gray-200 rounded-lg p-2 mt-1">
@@ -233,7 +260,7 @@ export default function CreateEventModal({
                   key={em}
                   type="button"
                   className={`h-8 w-8 flex items-center justify-center text-lg hover:bg-gray-100 rounded ${
-                    emoji === em ? 'bg-gray-200' : ''
+                    emoji === em ? "bg-gray-200" : ""
                   }`}
                   onClick={() => setEmoji(em)}
                 >
@@ -242,7 +269,7 @@ export default function CreateEventModal({
               ))}
             </div>
           </div>
-          
+
           {/* Show partner sharing option only if user has a partner */}
           {user?.partnerId && (
             <div className="space-y-3">
@@ -256,7 +283,7 @@ export default function CreateEventModal({
                   onCheckedChange={setShareWithPartner}
                 />
               </div>
-              
+
               {shareWithPartner && (
                 <div className="bg-gray-50 p-3 rounded-lg flex items-center">
                   <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm mr-3">
@@ -266,7 +293,10 @@ export default function CreateEventModal({
                     <div className="text-sm font-medium">Parceiro</div>
                     <div className="text-xs text-gray-500">Permissão:</div>
                   </div>
-                  <Select value={partnerPermission} onValueChange={setPartnerPermission}>
+                  <Select
+                    value={partnerPermission}
+                    onValueChange={setPartnerPermission}
+                  >
                     <SelectTrigger className="w-[140px]">
                       <SelectValue placeholder="Permissão" />
                     </SelectTrigger>
@@ -280,12 +310,12 @@ export default function CreateEventModal({
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button 
+          <Button
             onClick={handleCreateEvent}
             disabled={createEventMutation.isPending}
           >

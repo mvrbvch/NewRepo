@@ -47,6 +47,12 @@ export const periodLabels = {
     timeRange: '18h - 00h',
     icon: 'nights_stay',
     color: 'text-purple-700'
+  },
+  allday: {
+    label: 'Dia todo',
+    timeRange: '24h',
+    icon: 'nights_stay',
+    color: 'text-purple-700'
   }
 };
 
