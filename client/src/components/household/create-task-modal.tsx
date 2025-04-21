@@ -82,7 +82,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px] modal-card">
+      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-title title-gradient">Criar Nova Tarefa</DialogTitle>
         </DialogHeader>
@@ -225,20 +225,20 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               )}
             />
 
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={createTaskMutation.isPending}
-                className="shadow-hover"
+                className="shadow-hover w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={createTaskMutation.isPending}
-                className="btn-gradient shadow-hover"
+                className="btn-gradient shadow-hover w-full sm:w-auto"
               >
                 {createTaskMutation.isPending ? (
                   <>
