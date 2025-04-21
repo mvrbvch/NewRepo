@@ -776,9 +776,10 @@ export class DatabaseStorage implements IStorage {
       try {
         // Se a data estiver no formato YYYY-MM-DD (formato do PostgreSQL), adicionar a parte de hora
         // Quando a data vem do banco em formato string YYYY-MM-DD temos que formatar para o ISO
+        // MAS SEM O 'Z' para preservar o fuso horário local
         if (formattedEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          formattedEvent.date = `${formattedEvent.date}T00:00:00Z`;
-          console.log(`Evento ${formattedEvent.id} - data formatada de YYYY-MM-DD para ISO: ${formattedEvent.date}`);
+          formattedEvent.date = `${formattedEvent.date}T00:00:00.000`;
+          console.log(`Evento ${formattedEvent.id} - data formatada de YYYY-MM-DD para ISO (sem Z): ${formattedEvent.date}`);
         }
         
         // Aqui vamos fazer uma conversão de segurança para ISO se não for formato ISO mas for válido
@@ -786,9 +787,16 @@ export class DatabaseStorage implements IStorage {
           // Se não tem o 'T' que separa data e hora no formato ISO, tentar converter
           const tempDate = new Date(formattedEvent.date);
           if (!isNaN(tempDate.getTime())) {
-            formattedEvent.date = tempDate.toISOString();
-            console.log(`Evento ${formattedEvent.id} - convertido para formato ISO: ${formattedEvent.date}`);
+            // Remover a parte 'Z' para evitar problemas de fuso horário
+            formattedEvent.date = tempDate.toISOString().replace('Z', '');
+            console.log(`Evento ${formattedEvent.id} - convertido para formato ISO (sem Z): ${formattedEvent.date}`);
           }
+        }
+        
+        // Remover 'Z' do final se existir para preservar o fuso horário
+        if (formattedEvent.date.endsWith('Z')) {
+          formattedEvent.date = formattedEvent.date.substring(0, formattedEvent.date.length - 1);
+          console.log(`Evento ${formattedEvent.id} - removido Z da data: ${formattedEvent.date}`);
         }
         
         // Verificar se é uma data válida

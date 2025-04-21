@@ -42,9 +42,15 @@ export default function EventDetailsModal({
         ? "bg-blue-500/10"
         : "bg-purple-700/10";
 
-  // Format date for display
+  // Format date for display, adjusting for timezone
   const formattedDate = event.date
-    ? format(new Date(event.date), "EEEE, d 'de' MMMM yyyy", { locale: ptBR })
+    ? format(
+        new Date(typeof event.date === 'string' 
+          ? event.date.replace('Z', '') 
+          : event.date.toISOString().replace('Z', '')), // Remove Z to keep local time instead of UTC
+        "EEEE, d 'de' MMMM yyyy", 
+        { locale: ptBR }
+      )
     : "";
 
   // Duration calculation

@@ -62,10 +62,15 @@ export default function EditEventModal({
   useEffect(() => {
     if (isOpen && event) {
       setTitle(event.title);
+      
       // Format date from event.date which could be string or Date object
-      const eventDate =
-        event.date instanceof Date ? event.date : new Date(event.date);
+      // Remove 'Z' from the ISO string to prevent timezone shift
+      let dateStr = typeof event.date === 'string' ? event.date : event.date.toISOString();
+      dateStr = dateStr.replace('Z', '');
+      
+      const eventDate = new Date(dateStr);
       setDate(format(eventDate, "yyyy-MM-dd"));
+      
       setPeriod(event.period);
       setStartTime(event.startTime);
       setEndTime(event.endTime);
@@ -134,9 +139,13 @@ export default function EditEventModal({
     }
 
     // Prepare event data
+    // Cria um objeto Date a partir da string de data, garantindo que não haverá ajuste de fuso horário
+    const dateObj = new Date(date);
+    dateObj.setHours(12, 0, 0, 0); // Define meio-dia para evitar problemas de fuso horário
+    
     const eventData = {
       title,
-      date: new Date(date),
+      date: dateObj,
       period,
       startTime,
       endTime,
