@@ -772,12 +772,23 @@ export class DatabaseStorage implements IStorage {
         formattedEvent.date = new Date().toISOString();
       }
     } else if (typeof formattedEvent.date === 'string') {
-      // Se já for uma string, garantir que é uma string de data ISO válida
+      // Se for uma string, garantir formato adequado
       try {
-        // Adicionar 'T00:00:00Z' se for uma data sem hora
+        // Se a data estiver no formato YYYY-MM-DD (formato do PostgreSQL), adicionar a parte de hora
+        // Quando a data vem do banco em formato string YYYY-MM-DD temos que formatar para o ISO
         if (formattedEvent.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
           formattedEvent.date = `${formattedEvent.date}T00:00:00Z`;
-          console.log(`Evento ${formattedEvent.id} - data string formatada para ISO: ${formattedEvent.date}`);
+          console.log(`Evento ${formattedEvent.id} - data formatada de YYYY-MM-DD para ISO: ${formattedEvent.date}`);
+        }
+        
+        // Aqui vamos fazer uma conversão de segurança para ISO se não for formato ISO mas for válido
+        if (!formattedEvent.date.includes('T')) {
+          // Se não tem o 'T' que separa data e hora no formato ISO, tentar converter
+          const tempDate = new Date(formattedEvent.date);
+          if (!isNaN(tempDate.getTime())) {
+            formattedEvent.date = tempDate.toISOString();
+            console.log(`Evento ${formattedEvent.id} - convertido para formato ISO: ${formattedEvent.date}`);
+          }
         }
         
         // Verificar se é uma data válida
@@ -815,13 +826,23 @@ export class DatabaseStorage implements IStorage {
         }
       } else if (typeof formattedEvent.recurrenceEnd === 'string') {
         try {
-          // Adicionar 'T00:00:00Z' se for uma data sem hora
+          // Se a data estiver no formato YYYY-MM-DD (formato do PostgreSQL), adicionar a parte de hora
           if (formattedEvent.recurrenceEnd.match(/^\d{4}-\d{2}-\d{2}$/)) {
             formattedEvent.recurrenceEnd = `${formattedEvent.recurrenceEnd}T00:00:00Z`;
             console.log(`RecurrenceEnd formatado (string sem hora): ${formattedEvent.recurrenceEnd}`);
           }
           
-          // Verificar se a data agora é válida
+          // Aqui vamos fazer uma conversão de segurança para ISO se não for formato ISO mas for válido
+          if (!formattedEvent.recurrenceEnd.includes('T')) {
+            // Se não tem o 'T' que separa data e hora no formato ISO, tentar converter
+            const tempDate = new Date(formattedEvent.recurrenceEnd);
+            if (!isNaN(tempDate.getTime())) {
+              formattedEvent.recurrenceEnd = tempDate.toISOString();
+              console.log(`RecurrenceEnd convertido para formato ISO: ${formattedEvent.recurrenceEnd}`);
+            }
+          }
+          
+          // Verificar se a data é válida
           const tempDate = new Date(formattedEvent.recurrenceEnd);
           if (isNaN(tempDate.getTime())) {
             console.warn(`Evento ${formattedEvent.id} tem recurrenceEnd string inválida - definindo como null`);
