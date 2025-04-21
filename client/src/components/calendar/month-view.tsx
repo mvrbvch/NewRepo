@@ -2,6 +2,7 @@ import { EventType } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -65,8 +66,12 @@ export default function MonthView({
 
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 p-2">
-        <Skeleton className="h-full w-full rounded-lg" />
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-2 flex items-center justify-center">
+        <CoupleLoadingAnimation 
+          type="calendar" 
+          text="Carregando calendário..." 
+          size="lg" 
+        />
       </div>
     );
   }

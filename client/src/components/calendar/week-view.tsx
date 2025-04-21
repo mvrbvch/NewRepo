@@ -6,6 +6,7 @@ import { format, addDays, startOfWeek, subDays, subWeeks, addWeeks } from "date-
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 
 interface WeekViewProps {
   date: Date;
