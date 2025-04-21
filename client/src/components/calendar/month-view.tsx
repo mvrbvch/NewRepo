@@ -47,7 +47,17 @@ export default function MonthView({
     return {
       date: day,
       events: events.filter(event => {
-        const eventDate = new Date(event.date);
+        // Remover o 'Z' do final para preservar o fuso horário local
+        let dateStr = typeof event.date === 'string' 
+          ? event.date 
+          : event.date.toISOString();
+        
+        // Se terminar com Z, remove para preservar o fuso horário
+        if (dateStr.endsWith('Z')) {
+          dateStr = dateStr.substring(0, dateStr.length - 1);
+        }
+        
+        const eventDate = new Date(dateStr);
         return isSameDay(day, eventDate);
       })
     };
