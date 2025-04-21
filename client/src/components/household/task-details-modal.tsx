@@ -138,51 +138,51 @@ export default function TaskDetailsModal({
             )}
 
             <div className="flex flex-col gap-4 p-4 bg-card rounded-lg shadow-card border border-gray-100">
-              <h3 className="text-subtitle font-semibold text-dark mb-1">Detalhes da Tarefa</h3>
+              <h3 className="text-subtitle font-semibold text-dark mb-2">Detalhes da Tarefa</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-2 rounded-md bg-gray-50">
-                  <div className="bg-primary-light/30 p-2 rounded-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
+                  <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
                     <RefreshCw className="h-4 w-4 text-primary-dark" />
                   </div>
-                  <div>
+                  <div className="min-w-0 overflow-hidden">
                     <p className="text-xs text-medium">Frequência</p>
-                    <p className="font-medium text-dark">{getFrequencyText(task.frequency)}</p>
+                    <p className="font-medium text-dark truncate">{getFrequencyText(task.frequency)}</p>
                   </div>
                 </div>
 
                 {task.dueDate && (
-                  <div className="flex items-center gap-3 p-2 rounded-md bg-gray-50">
-                    <div className="bg-primary-light/30 p-2 rounded-full">
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
+                    <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
                       <CalendarIcon className="h-4 w-4 text-primary-dark" />
                     </div>
-                    <div>
+                    <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Data de vencimento</p>
-                      <p className="font-medium text-dark">{format(new Date(task.dueDate), 'PPP', { locale: ptBR })}</p>
+                      <p className="font-medium text-dark truncate">{format(new Date(task.dueDate), 'PPP', { locale: ptBR })}</p>
                     </div>
                   </div>
                 )}
 
                 {task.assignedTo && (
-                  <div className="flex items-center gap-3 p-2 rounded-md bg-gray-50">
-                    <div className="bg-primary-light/30 p-2 rounded-full">
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
+                    <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
                       <User className="h-4 w-4 text-primary-dark" />
                     </div>
-                    <div>
+                    <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Atribuída a</p>
-                      <p className="font-medium text-dark">{task.assignedTo === user?.id ? 'Você' : 'Seu parceiro'}</p>
+                      <p className="font-medium text-dark truncate">{task.assignedTo === user?.id ? 'Você' : 'Seu parceiro'}</p>
                     </div>
                   </div>
                 )}
 
                 {task.createdAt && (
-                  <div className="flex items-center gap-3 p-2 rounded-md bg-gray-50">
-                    <div className="bg-primary-light/30 p-2 rounded-full">
+                  <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
+                    <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
                       <Calendar className="h-4 w-4 text-primary-dark" />
                     </div>
-                    <div>
+                    <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Criada em</p>
-                      <p className="font-medium text-dark">{format(new Date(task.createdAt), 'PPP', { locale: ptBR })}</p>
+                      <p className="font-medium text-dark truncate">{format(new Date(task.createdAt), 'PPP', { locale: ptBR })}</p>
                     </div>
                   </div>
                 )}
@@ -190,19 +190,19 @@ export default function TaskDetailsModal({
             </div>
 
             <div className="mt-5 border-t pt-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer bg-gray-50" onClick={handleToggleComplete}>
+              <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer bg-gray-50" onClick={handleToggleComplete}>
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={handleToggleComplete}
                   disabled={updatingStatus || !canEdit}
-                  className={`h-5 w-5 rounded-sm ${
+                  className={`h-5 w-5 rounded-sm flex-shrink-0 ${
                     !task.completed 
                       ? "border-primary hover:border-primary-dark" 
                       : "text-green-600"
                   }`}
                 />
-                <div>
-                  <span className="text-dark font-medium">
+                <div className="min-w-0 flex-1">
+                  <span className="text-dark font-medium block text-sm">
                     Status: {task.completed ? 'Concluída' : 'Pendente'}
                   </span>
                   <p className="text-xs text-medium">
@@ -212,7 +212,7 @@ export default function TaskDetailsModal({
                     </span>
                   </p>
                 </div>
-                {updatingStatus && <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary" />}
+                {updatingStatus && <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary flex-shrink-0" />}
               </div>
             </div>
           </div>
@@ -286,12 +286,12 @@ export default function TaskDetailsModal({
           
           <div className="py-4">
             <div className="mb-4 p-4 bg-primary-light/20 rounded-lg border border-primary-light/30 shadow-card">
-              <h3 className="text-subtitle font-semibold mb-2 text-primary-dark">{task.title}</h3>
-              {task.description && <p className="text-small text-medium">{task.description}</p>}
+              <h3 className="text-subtitle font-semibold mb-2 text-primary-dark break-words">{task.title}</h3>
+              {task.description && <p className="text-small text-medium break-words">{task.description}</p>}
               {task.dueDate && (
                 <div className="mt-2 text-xs flex items-center">
-                  <CalendarIcon className="h-3 w-3 mr-1 text-primary" />
-                  <span className="font-medium text-primary-dark">
+                  <CalendarIcon className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
+                  <span className="font-medium text-primary-dark truncate">
                     {format(new Date(task.dueDate), 'PPP', { locale: ptBR })}
                   </span>
                 </div>
@@ -300,7 +300,7 @@ export default function TaskDetailsModal({
             
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                <p className="text-body text-medium">
+                <p className="text-body text-medium text-pretty">
                   Escreva uma mensagem personalizada para enviar junto com o lembrete dessa tarefa.
                   Seu parceiro receberá uma notificação com os detalhes da tarefa.
                 </p>
