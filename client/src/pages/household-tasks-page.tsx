@@ -14,6 +14,7 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import CreateTaskModal from "@/components/household/create-task-modal";
 import TaskDetailsModal from "@/components/household/task-details-modal";
+import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 import {
   Loader2,
   Calendar as CalendarIcon,
@@ -256,7 +257,11 @@ export default function HouseholdTasksPage() {
         <div className="mt-4 pb-16 overflow-y-auto flex-1">
           {isLoading ? (
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <CoupleLoadingAnimation 
+                type="tasks" 
+                text="Carregando tarefas domésticas..." 
+                size="lg" 
+              />
             </div>
           ) : filteredTasks.length > 0 ? (
             <div className="space-y-4 px-4">

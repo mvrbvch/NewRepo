@@ -1,6 +1,7 @@
 import { EventType } from "@/lib/types";
 import { formatTime, periodLabels } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 
 interface DayViewProps {
   date: Date;
@@ -22,20 +23,12 @@ export default function DayView({
   
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar p-4">
-        {[1, 2, 3].map((_, i) => (
-          <div key={i} className="mb-6">
-            <div className="flex items-center mb-3">
-              <Skeleton className="h-5 w-5 mr-2 rounded-full" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-            
-            <div className="space-y-3">
-              <Skeleton className="h-24 w-full rounded-lg" />
-              <Skeleton className="h-24 w-full rounded-lg" />
-            </div>
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar p-4 flex items-center justify-center">
+        <CoupleLoadingAnimation 
+          type="calendar" 
+          text="Carregando agenda do dia..." 
+          size="lg" 
+        />
       </div>
     );
   }

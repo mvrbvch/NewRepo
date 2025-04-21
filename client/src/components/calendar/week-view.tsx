@@ -66,15 +66,12 @@ export default function WeekView({
 
   if (isLoading) {
     return (
-      <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar">
-        <div className="grid grid-cols-7 bg-white border-b">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 m-1 rounded-md" />
-          ))}
-        </div>
-        <div className="min-h-[500px] p-4">
-          <Skeleton className="h-full w-full rounded-lg" />
-        </div>
+      <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar flex items-center justify-center">
+        <CoupleLoadingAnimation 
+          type="calendar" 
+          text="Carregando agenda da semana..." 
+          size="lg" 
+        />
       </div>
     );
   }
