@@ -82,6 +82,11 @@ export default function EditEventModal({
     }
   }, [isOpen, event]);
 
+  // Check if user has permission to edit the event
+  const isEditable =
+    user?.id === event.createdBy ||
+    (event.sharePermission === "edit" && event.isShared);
+
   // Handle period change to adjust default start/end times
   const handlePeriodChange = (value: string) => {
     setPeriod(value as "morning" | "afternoon" | "night" | "allday");
@@ -120,32 +125,32 @@ export default function EditEventModal({
       console.error("Erro ao atualizar evento:", error);
       toast({
         title: "Erro ao atualizar evento",
-        description: "Ocorreu um erro ao atualizar o evento. Tente novamente.",
+        description: "Não foi possível atualizar o evento. Tente novamente.",
         variant: "destructive",
       });
     },
   });
 
-  // Handle form submit
+  const handleRecurrenceChange = (value: string) => {
+    setRecurrence(value as any);
+  };
+
+  // Update event with form data
   const handleUpdateEvent = () => {
-    // Validation
-    if (!title.trim()) {
+    // Check if user has edit permission
+    if (!isEditable) {
       toast({
-        title: "Nome obrigatório",
-        description: "Por favor, insira um nome para o evento.",
+        title: "Permissão negada",
+        description: "Você não tem permissão para editar este evento.",
         variant: "destructive",
       });
       return;
     }
 
-    // Prepare event data
-    // Cria um objeto Date a partir da string de data, garantindo que não haverá ajuste de fuso horário
-    const dateObj = new Date(date);
-    dateObj.setHours(12, 0, 0, 0); // Define meio-dia para evitar problemas de fuso horário
-    
+    // Format the data for API request
     const eventData = {
       title,
-      date: dateObj,
+      date: new Date(date),
       period,
       startTime,
       endTime,
@@ -160,7 +165,7 @@ export default function EditEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar evento</DialogTitle>
         </DialogHeader>
@@ -176,8 +181,9 @@ export default function EditEventModal({
             />
           </div>
 
-          <div className="flex space-x-4">
-            <div className="flex-1">
+          {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <Label htmlFor="date">Data</Label>
               <Input
                 id="date"
@@ -187,7 +193,7 @@ export default function EditEventModal({
               />
             </div>
 
-            <div className="flex-1">
+            <div>
               <Label htmlFor="period">Período</Label>
               <Select value={period} onValueChange={handlePeriodChange}>
                 <SelectTrigger id="period">
@@ -202,8 +208,9 @@ export default function EditEventModal({
             </div>
           </div>
 
-          <div className="flex space-x-4">
-            <div className="flex-1">
+          {/* Horários de início e fim em uma linha para telas maiores, empilhados para mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <Label htmlFor="startTime">Hora início</Label>
               <Input
                 id="startTime"
@@ -212,7 +219,8 @@ export default function EditEventModal({
                 onChange={(e) => setStartTime(e.target.value)}
               />
             </div>
-            <div className="flex-1">
+
+            <div>
               <Label htmlFor="endTime">Hora fim</Label>
               <Input
                 id="endTime"
@@ -224,63 +232,52 @@ export default function EditEventModal({
           </div>
 
           <div>
-            <Label htmlFor="location">Local (opcional)</Label>
+            <Label htmlFor="location">Local</Label>
             <Input
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Ex: Sala de reuniões, Restaurante..."
+              placeholder="Digite o endereço ou local"
             />
           </div>
 
           <div>
-            <Label htmlFor="emoji">Emoji (opcional)</Label>
-            <Input
-              id="emoji"
-              value={emoji}
-              onChange={(e) => setEmoji(e.target.value)}
-              placeholder="Ex: 🎂, 🏋️‍♂️, 🍔..."
-              maxLength={2}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="recurrence">Repetição</Label>
-            <Select
-              value={recurrence}
-              onValueChange={(value: string) =>
-                setRecurrence(
-                  value as "never" | "daily" | "weekly" | "monthly" | "custom",
-                )
-              }
-            >
+            <Label htmlFor="recurrence">Repetir</Label>
+            <Select value={recurrence} onValueChange={handleRecurrenceChange}>
               <SelectTrigger id="recurrence">
-                <SelectValue placeholder="Selecione uma opção" />
+                <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="never">Não repetir</SelectItem>
-                <SelectItem value="daily">Todos os dias</SelectItem>
-                <SelectItem value="weekly">Todas as semanas</SelectItem>
-                <SelectItem value="monthly">Todos os meses</SelectItem>
+                <SelectItem value="never">Nunca</SelectItem>
+                <SelectItem value="daily">Diariamente</SelectItem>
+                <SelectItem value="weekly">Semanalmente</SelectItem>
+                <SelectItem value="monthly">Mensalmente</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="shareWithPartner"
-              checked={shareWithPartner}
-              onCheckedChange={(checked) => setShareWithPartner(!!checked)}
-            />
-            <Label htmlFor="shareWithPartner">Compartilhar com parceiro</Label>
-          </div>
+          {/* Partner sharing section */}
+          {isEditable && user?.partnerId && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="shareWithPartner" className="cursor-pointer">
+                  Compartilhar com parceiro
+                </Label>
+                <Switch
+                  id="shareWithPartner"
+                  checked={shareWithPartner}
+                  onCheckedChange={setShareWithPartner}
+                />
+              </div>
+            </div>
+          )}
 
           {shareWithPartner && (
-            <div className="bg-gray-50 p-3 rounded-lg flex items-center">
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm mr-3">
+            <div className="bg-gray-50 p-3 rounded-lg flex flex-wrap items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm">
                 {user?.name?.[0] || "P"}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-[120px]">
                 <div className="text-sm font-medium">Parceiro</div>
                 <div className="text-xs text-gray-500">Permissão:</div>
               </div>
@@ -290,7 +287,7 @@ export default function EditEventModal({
                   setPartnerPermission(value as "view" | "edit")
                 }
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[130px] lg:w-[140px]">
                   <SelectValue placeholder="Permissão" />
                 </SelectTrigger>
                 <SelectContent>
@@ -302,13 +299,14 @@ export default function EditEventModal({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancelar
           </Button>
           <Button
             onClick={handleUpdateEvent}
             disabled={updateEventMutation.isPending}
+            className="w-full sm:w-auto"
           >
             {updateEventMutation.isPending ? (
               <>

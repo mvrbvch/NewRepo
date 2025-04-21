@@ -150,7 +150,7 @@ export default function CreateEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo evento</DialogTitle>
         </DialogHeader>
@@ -166,8 +166,9 @@ export default function CreateEventModal({
             />
           </div>
 
-          <div className="flex space-x-4">
-            <div className="flex-1">
+          {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <Label htmlFor="date">Data</Label>
               <Input
                 id="date"
@@ -177,7 +178,7 @@ export default function CreateEventModal({
               />
             </div>
 
-            <div className="flex-1">
+            <div>
               <Label htmlFor="period">Período</Label>
               <Select value={period} onValueChange={handlePeriodChange}>
                 <SelectTrigger id="period">
@@ -193,9 +194,9 @@ export default function CreateEventModal({
             </div>
           </div>
           
-
-          <div className="flex space-x-4">
-            <div className="flex-1">
+          {/* Horários de início e fim em uma linha para telas maiores, empilhados para mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <Label htmlFor="startTime">Hora de início</Label>
               <Input
                 id="startTime"
@@ -205,7 +206,7 @@ export default function CreateEventModal({
               />
             </div>
 
-            <div className="flex-1">
+            <div>
               <Label htmlFor="endTime">Hora de fim</Label>
               <Input
                 id="endTime"
@@ -222,7 +223,8 @@ export default function CreateEventModal({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Digite o endereço ou local"
+              placeholder="Digite uma descrição para o evento"
+              className="min-h-[80px]"
             />
           </div>
 
@@ -254,7 +256,7 @@ export default function CreateEventModal({
 
           <div>
             <Label>Emoji</Label>
-            <div className="grid grid-cols-6 gap-2 border border-gray-200 rounded-lg p-2 mt-1">
+            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 border border-gray-200 rounded-lg p-2 mt-1">
               {commonEmojis.map((em) => (
                 <button
                   key={em}
@@ -285,11 +287,11 @@ export default function CreateEventModal({
               </div>
 
               {shareWithPartner && (
-                <div className="bg-gray-50 p-3 rounded-lg flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm mr-3">
+                <div className="bg-gray-50 p-3 rounded-lg flex flex-wrap items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm">
                     {user?.name?.[0] || "P"}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-[120px]">
                     <div className="text-sm font-medium">Parceiro</div>
                     <div className="text-xs text-gray-500">Permissão:</div>
                   </div>
@@ -297,7 +299,7 @@ export default function CreateEventModal({
                     value={partnerPermission}
                     onValueChange={setPartnerPermission}
                   >
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-[130px] lg:w-[140px]">
                       <SelectValue placeholder="Permissão" />
                     </SelectTrigger>
                     <SelectContent>
@@ -311,13 +313,14 @@ export default function CreateEventModal({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancelar
           </Button>
           <Button
             onClick={handleCreateEvent}
             disabled={createEventMutation.isPending}
+            className="w-full sm:w-auto"
           >
             {createEventMutation.isPending ? "Salvando..." : "Salvar evento"}
           </Button>
