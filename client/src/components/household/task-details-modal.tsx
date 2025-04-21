@@ -117,9 +117,9 @@ export default function TaskDetailsModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[500px] modal-card">
+        <DialogContent className="sm:max-w-[500px] modal-card max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-title flex items-center gap-2 title-gradient">
+            <DialogTitle className="text-title flex flex-wrap items-center gap-2 title-gradient">
               {task.title}
               {task.completed && (
                 <Badge variant="outline" className="status-completed">
@@ -217,13 +217,13 @@ export default function TaskDetailsModal({
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="flex flex-wrap gap-2 mt-4 justify-between sm:justify-end">
             {isCreatedByUser && (
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={handleDelete}
-                className="mr-auto shadow-hover"
+                className="shadow-hover sm:mr-auto"
               >
                 <Trash2 className="h-4 w-4 mr-1" />
                 Excluir
@@ -256,7 +256,7 @@ export default function TaskDetailsModal({
       </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="modal-card">
+        <AlertDialogContent className="modal-card max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-title text-alert">Você tem certeza?</AlertDialogTitle>
             <AlertDialogDescription className="text-body text-medium">
@@ -264,11 +264,11 @@ export default function TaskDetailsModal({
               tarefa <span className="font-medium">"{task.title}"</span> e todos os dados associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="shadow-hover">Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
+            <AlertDialogCancel className="shadow-hover w-full sm:w-auto">Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete} 
-              className="bg-red-600 hover:bg-red-700 shadow-hover"
+              className="bg-red-600 hover:bg-red-700 shadow-hover w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-1" />
               Excluir
@@ -279,7 +279,7 @@ export default function TaskDetailsModal({
       
       {/* Diálogo para enviar lembrete */}
       <Dialog open={reminderDialogOpen} onOpenChange={(open) => !open && setReminderDialogOpen(false)}>
-        <DialogContent className="sm:max-w-[500px] modal-card">
+        <DialogContent className="sm:max-w-[500px] modal-card max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-title title-gradient">Enviar lembrete para seu parceiro</DialogTitle>
           </DialogHeader>
@@ -315,18 +315,18 @@ export default function TaskDetailsModal({
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
             <Button
               variant="outline"
               onClick={() => setReminderDialogOpen(false)}
-              className="shadow-hover"
+              className="shadow-hover w-full sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSendReminder}
               disabled={sendingReminder}
-              className="btn-gradient shadow-hover"
+              className="btn-gradient shadow-hover w-full sm:w-auto"
             >
               {sendingReminder ? (
                 <>
