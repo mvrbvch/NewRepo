@@ -260,7 +260,6 @@ async function sendApplePushNotification(device: UserDevice, payload: PushNotifi
         referenceType: payload.referenceType || null,
         referenceId: payload.referenceId || null,
         isRead: false,
-        createdAt: new Date(),
         metadata: JSON.stringify(iosPayload)
       });
     } catch (dbError) {

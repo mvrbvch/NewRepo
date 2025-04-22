@@ -24,7 +24,7 @@ import {
   generateTaskReminderEmail,
   generatePartnerInviteEmail,
 } from "./email";
-import { sendPushToUser, PushNotificationPayload } from "./pushNotifications";
+import { sendPushToUser, sendPushToDevice, PushNotificationPayload } from "./pushNotifications";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
@@ -1382,40 +1382,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = req.user?.id as number;
+      
+      // Verificar dados da solicitação para personalização
+      const {
+        title = "Notificação de teste",
+        message = "Esta é uma notificação de teste do sistema NossaRotina!",
+        platform = null, // 'web', 'ios', ou null (todos)
+        icon = null,
+        sound = "default",
+        badge = 1,
+        requireInteraction = true,
+        actions = []
+      } = req.body;
 
-      // Criar uma notificação de teste
+      console.log(`Teste de notificação solicitado pelo usuário ${userId} para plataforma: ${platform || 'todas'}`);
+
+      // Criar uma notificação de teste no banco de dados
       const notification = await storage.createNotification({
         userId,
-        title: "Notificação de teste",
-        message: "Esta é uma notificação de teste do sistema NossaRotina!",
+        title,
+        message,
         type: "test",
-        referenceType: null,
+        referenceType: platform ? `test-${platform}` : "test-all",
         referenceId: null,
-        metadata: null,
-        isRead: false,
+        metadata: JSON.stringify({
+          platform,
+          icon,
+          sound,
+          badge,
+          requestedAt: new Date().toISOString(),
+          requireInteraction,
+          actions
+        }),
+        isRead: false
       });
 
-      // Enviar push para o próprio usuário
+      // Configurar payload da notificação
+      const pushPayload: PushNotificationPayload = {
+        title,
+        body: message,
+        icon: icon || undefined,
+        badge: badge ? String(badge) : undefined,
+        sound,
+        requireInteraction,
+        tag: `test-${Date.now()}`,
+        actions,
+        data: {
+          type: "test",
+          notificationId: notification.id
+        }
+      };
+
+      // Enviar push para dispositivos com base na plataforma solicitada
+      let sentCount = 0;
+      
       try {
-        const pushPayload: PushNotificationPayload = {
-          title: "Notificação de teste",
-          body: "Esta é uma notificação de teste do sistema NossaRotina!",
-          data: {
-            type: "test",
-          },
-        };
-
-        // Enviar push para todos os dispositivos do usuário
-        const sentCount = await sendPushToUser(userId, pushPayload);
-
-        console.log(
-          `Enviadas ${sentCount} notificações push de teste para o usuário`,
-        );
+        if (platform) {
+          // Buscar dispositivos da plataforma específica
+          const devices = await storage.getUserDevices(userId);
+          const filteredDevices = devices.filter(
+            device => device.deviceType === platform && device.pushEnabled
+          );
+          
+          if (filteredDevices.length === 0) {
+            res.status(400).json({
+              message: `No registered ${platform} devices found`,
+              notification,
+              pushSent: false
+            });
+            return;
+          }
+          
+          // Enviar para dispositivos específicos da plataforma
+          const results = await Promise.all(
+            filteredDevices.map(device => sendPushToDevice(device, pushPayload))
+          );
+          
+          sentCount = results.filter((result: boolean) => result).length;
+          console.log(`Enviadas ${sentCount} notificações push de teste para dispositivos ${platform}`);
+        } else {
+          // Enviar para todos os dispositivos
+          sentCount = await sendPushToUser(userId, pushPayload);
+          console.log(`Enviadas ${sentCount} notificações push de teste para todos os dispositivos`);
+        }
 
         res.status(201).json({
           message: "Test notification sent",
           notification,
           pushSent: sentCount > 0,
+          sentCount,
+          targetPlatform: platform || "all"
         });
       } catch (pushError) {
         console.error("Erro ao enviar notificação push de teste:", pushError);
@@ -1425,8 +1481,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Test notification created but push failed",
           notification,
           pushSent: false,
-          pushError:
-            pushError instanceof Error ? pushError.message : String(pushError),
+          error: pushError instanceof Error ? pushError.message : String(pushError),
+          targetPlatform: platform || "all"
         });
       }
     } catch (error) {
