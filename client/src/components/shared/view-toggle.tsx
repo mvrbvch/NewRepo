@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
-import { motion } from "framer-motion";
 
 interface ViewToggleProps {
   view: 'day' | 'week' | 'month';
@@ -12,43 +11,37 @@ interface ViewToggleProps {
 export default function ViewToggle({ view, onChange, onToday }: ViewToggleProps) {
   return (
     <div className="bg-white border-b px-4 py-2 flex justify-between items-center">
-      <div className="grid grid-cols-3 bg-gray-100 rounded-lg p-1 text-sm relative" style={{ minWidth: '280px' }}>
-        {/* Indicador deslizante animado */}
-        <motion.div 
-          className="absolute top-1 bottom-1 rounded-md bg-primary"
-          initial={false}
-          animate={{
-            left: view === 'day' ? '2px' : view === 'week' ? 'calc(33.33% + 2px)' : 'calc(66.66% + 2px)',
-          }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ width: 'calc(33.33% - 6px)' }}
-        />
-        
-        {/* Botões de visualização com efeito tátil */}
+      <div className="flex bg-gray-100 rounded-lg p-1 text-sm" style={{ minWidth: '280px' }}>
         <TactileFeedback>
           <button 
-            className="py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center text-gray-700"
+            className={`flex-1 py-1.5 px-3 rounded-md font-medium ${
+              view === 'day' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-200'
+            }`}
             onClick={() => onChange('day')}
           >
-            <span className={view === 'day' ? 'text-white' : 'text-gray-700'}>Dia</span>
+            Dia
           </button>
         </TactileFeedback>
         
         <TactileFeedback>
           <button 
-            className="py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center text-gray-700"
+            className={`flex-1 py-1.5 px-3 mx-1 rounded-md font-medium ${
+              view === 'week' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-200'
+            }`}
             onClick={() => onChange('week')}
           >
-            <span className={view === 'week' ? 'text-white' : 'text-gray-700'}>Semana</span>
+            Semana
           </button>
         </TactileFeedback>
         
         <TactileFeedback>
           <button 
-            className="py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center text-gray-700"
+            className={`flex-1 py-1.5 px-3 rounded-md font-medium ${
+              view === 'month' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-200'
+            }`}
             onClick={() => onChange('month')}
           >
-            <span className={view === 'month' ? 'text-white' : 'text-gray-700'}>Mês</span>
+            Mês
           </button>
         </TactileFeedback>
       </div>
