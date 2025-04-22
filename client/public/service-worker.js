@@ -133,16 +133,26 @@ self.addEventListener('fetch', event => {
 
 // Lidar com notificações push
 self.addEventListener('push', event => {
-  console.log('[Service Worker] Notificação push recebida', event);
-  console.log('[Service Worker] Dados recebidos:', event.data ? event.data.text() : 'Sem dados');
+  console.log('[Service Worker] Notificação push recebida', new Date().toISOString());
+  
+  // Logs detalhados do evento
+  try {
+    console.log('[Service Worker] Dados brutos:', event.data ? event.data.text() : 'Sem dados');
+    
+    if (event.data) {
+      const rawText = event.data.text();
+      console.log('[Service Worker] Comprimento dos dados:', rawText.length);
+      console.log('[Service Worker] Primeiros 100 caracteres:', rawText.substring(0, 100));
+    }
+  } catch (logError) {
+    console.error('[Service Worker] Erro ao registrar dados brutos:', logError);
+  }
 
   let payload;
   try {
     // Tentar extrair o payload como JSON
     payload = event.data ? event.data.json() : null;
-    console.log('[Service Worker] Payload JSON extraído:', payload);
-  } catch (e) {
-    console.error('[Service Worker] Erro ao extrair payload JSON:', e);
+    console.log('[Service Worker] Payload JSON extraído com sucesso:', JSON.stringify(payload));
     // Fallback para texto
     try {
       const textData = event.data ? event.data.text() : 'Notificação sem detalhes';

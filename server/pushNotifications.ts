@@ -2,9 +2,9 @@ import { storage } from "./storage";
 import { UserDevice } from "@shared/schema";
 import webpush from 'web-push';
 
-// Configurar as chaves VAPID para Web Push
-const vapidPublicKey = 'BDd3_hVL9bzn8xbpNV-0JecHiVhvQqMMn6SrTHce-cW6ogFLkP_rF9FKPkEVX-O-0FM-sgGh5cqEHVKgE3Ury_A';
-const vapidPrivateKey = 'WuX3vIWI_QNsK93rdUj7yxX1v7yH4fMV5Y8X7ZJD14A';
+// Configurar as chaves VAPID para Web Push (novas chaves geradas em formato P-256)
+const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
+const vapidPrivateKey = 'fL2y9O_U7J6ngIRr9dobfCuUpeSSncRdXxrT5lzn3no';
 
 // Configurar Web Push
 webpush.setVapidDetails(

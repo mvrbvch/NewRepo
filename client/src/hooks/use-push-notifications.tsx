@@ -384,7 +384,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         userVisibleOnly: true,
         // A chave pública VAPID deve ser configurada no backend
         applicationServerKey: urlBase64ToUint8Array(
-          "BDd3_hVL9bzn8xbpNV-0JecHiVhvQqMMn6SrTHce-cW6ogFLkP_rF9FKPkEVX-O-0FM-sgGh5cqEHVKgE3Ury_A",
+          "BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q",
         ),
       });
 
