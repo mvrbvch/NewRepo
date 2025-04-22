@@ -8,6 +8,7 @@ import {
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 // Definição da interface PushSubscriptionJSON que está faltando
 interface PushSubscriptionJSON {
@@ -86,15 +87,21 @@ export function usePushNotifications() {
 // Implementação real do hook, usado pelo provedor
 function usePushNotificationsHook(): PushNotificationsContextType {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isPending, setIsPending] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<PushSubscriptionStatus>(PushSubscriptionStatus.NOT_SUPPORTED);
   const [deviceType, setDeviceType] = useState<'web' | 'ios' | null>(null);
 
-  // Verificar o status inicial
+  // Verificar o status inicial e monitorar alterações no estado de autenticação
   useEffect(() => {
-    checkSubscriptionStatus();
-  }, []);
+    if (user) {
+      checkSubscriptionStatus();
+    } else {
+      // Se não estiver autenticado, definir como não inscrito
+      setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+    }
+  }, [user]);
 
   // Verifica se estamos no iOS - detecta dispositivos iOS independente da versão
   const isIOS = () => {
@@ -266,6 +273,16 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     try {
       setIsPending(true);
       
+      // Verificar se o usuário está autenticado
+      if (!user) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para ativar notificações.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Caso especial para iOS
       if (isIOS()) {
         console.log("Tentando registrar notificações em dispositivo iOS");
@@ -396,6 +413,16 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     try {
       setIsPending(true);
       
+      // Verificar se o usuário está autenticado
+      if (!user) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para gerenciar notificações.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Caso especial para iOS
       if (isIOS()) {
         console.log("Desativando notificações em dispositivo iOS");
@@ -472,6 +499,15 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   // Testar envio de notificação com opções personalizadas
   const testNotification = async (options?: NotificationTestOptions) => {
     try {
+      // Verificar se o usuário está autenticado
+      if (!user) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para testar notificações.",
+          variant: "destructive",
+        });
+        return;
+      }
       const payload: any = {};
       
       // Usar opções personalizadas ou valores padrão
