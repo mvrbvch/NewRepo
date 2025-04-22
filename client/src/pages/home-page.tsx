@@ -12,7 +12,18 @@ import { EventType } from "@/lib/types";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatDate } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from "date-fns";
+import { 
+  addDays, 
+  addWeeks, 
+  addMonths, 
+  subDays, 
+  subWeeks, 
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth 
+} from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
@@ -70,16 +81,50 @@ export default function HomePage() {
     }
   }, [view, selectedDate]);
   
-  // Filter events for the selected date (usado na visualização diária)
-  const filteredEvents = events.filter(event => {
+  // Calcular eventos com base na visualização atual
+  const getEventsForCurrentView = () => {
+    if (view === 'day') {
+      // Para visualização diária, apenas eventos do dia selecionado
+      return events.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate.toDateString() === selectedDate.toDateString();
+      });
+    } else if (view === 'week') {
+      // Para visualização semanal, eventos da semana selecionada
+      const start = startOfWeek(selectedDate, { weekStartsOn: 0 });
+      const end = endOfWeek(selectedDate, { weekStartsOn: 0 });
+      
+      return events.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate >= start && eventDate <= end;
+      });
+    } else if (view === 'month') {
+      // Para visualização mensal, eventos do mês selecionado
+      const start = startOfMonth(selectedDate);
+      const end = endOfMonth(selectedDate);
+      
+      return events.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate >= start && eventDate <= end;
+      });
+    }
+    
+    return [];
+  };
+  
+  // Obter eventos filtrados com base na visualização atual
+  const filteredEvents = getEventsForCurrentView();
+  
+  // Filtrar eventos apenas para o dia atual (usado na visualização diária)
+  const dailyEvents = events.filter(event => {
     const eventDate = new Date(event.date);
     return eventDate.toDateString() === selectedDate.toDateString();
   });
   
   // Group events by period for day view
-  const morningEvents = filteredEvents.filter(event => event.period === 'morning');
-  const afternoonEvents = filteredEvents.filter(event => event.period === 'afternoon');
-  const nightEvents = filteredEvents.filter(event => event.period === 'night');
+  const morningEvents = dailyEvents.filter(event => event.period === 'morning');
+  const afternoonEvents = dailyEvents.filter(event => event.period === 'afternoon');
+  const nightEvents = dailyEvents.filter(event => event.period === 'night');
   
   const handleOpenCreateModal = () => {
     setCreateModalOpen(true);
@@ -139,6 +184,7 @@ export default function HomePage() {
     else if (view === 'month') handleNextMonth();
   };
   
+  // Calcular quantos eventos são compartilhados no período atual
   const sharedEventsCount = filteredEvents.filter(event => event.isShared).length;
   
   return (
