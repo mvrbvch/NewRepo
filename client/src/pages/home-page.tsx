@@ -18,6 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
+import { motion, AnimatePresence } from "framer-motion";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
+import { RippleButton } from "@/components/ui/ripple-button";
+import { TransitionComponent } from "@/components/ui/transition-component";
 
 export default function HomePage() {
   const [view, setView] = useState<'day' | 'week' | 'month'>('day');
@@ -138,56 +142,102 @@ export default function HomePage() {
   const sharedEventsCount = filteredEvents.filter(event => event.isShared).length;
   
   return (
-    <div className="h-screen flex flex-col">
+    <motion.div 
+      className="h-screen flex flex-col"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <Header />
       
-      <DateNavigation 
-        date={selectedDate} 
-        eventCount={filteredEvents.length}
-        sharedCount={sharedEventsCount}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        calendarView={view}
-      />
-      
-      <ViewToggle 
-        view={view} 
-        onChange={setView} 
-        onToday={goToToday}
-      />
-      
-      {view === 'day' && (
-        <DayView 
-          date={selectedDate}
-          morningEvents={morningEvents}
-          afternoonEvents={afternoonEvents}
-          nightEvents={nightEvents}
-          isLoading={isLoading}
-          onEventClick={handleOpenEventDetails}
+      <motion.div
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <DateNavigation 
+          date={selectedDate} 
+          eventCount={filteredEvents.length}
+          sharedCount={sharedEventsCount}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          calendarView={view}
         />
-      )}
+      </motion.div>
       
-      {view === 'week' && (
-        <WeekView 
-          date={selectedDate}
-          events={events}
-          isLoading={isLoading}
-          onEventClick={handleOpenEventDetails}
-          onDayChange={setSelectedDate}
-          onWeekChange={setSelectedDate}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <ViewToggle 
+          view={view} 
+          onChange={setView} 
+          onToday={goToToday}
         />
-      )}
+      </motion.div>
       
-      {view === 'month' && (
-        <MonthView 
-          date={selectedDate}
-          events={events}
-          isLoading={isLoading}
-          onEventClick={handleOpenEventDetails}
-          onDayChange={setSelectedDate}
-          onMonthChange={setSelectedDate}
-        />
-      )}
+      <AnimatePresence mode="wait">
+        {view === 'day' && (
+          <motion.div
+            key="day-view"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
+          >
+            <DayView 
+              date={selectedDate}
+              morningEvents={morningEvents}
+              afternoonEvents={afternoonEvents}
+              nightEvents={nightEvents}
+              isLoading={isLoading}
+              onEventClick={handleOpenEventDetails}
+            />
+          </motion.div>
+        )}
+        
+        {view === 'week' && (
+          <motion.div
+            key="week-view"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
+          >
+            <WeekView 
+              date={selectedDate}
+              events={events}
+              isLoading={isLoading}
+              onEventClick={handleOpenEventDetails}
+              onDayChange={setSelectedDate}
+              onWeekChange={setSelectedDate}
+            />
+          </motion.div>
+        )}
+        
+        {view === 'month' && (
+          <motion.div
+            key="month-view"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
+          >
+            <MonthView 
+              date={selectedDate}
+              events={events}
+              isLoading={isLoading}
+              onEventClick={handleOpenEventDetails}
+              onDayChange={setSelectedDate}
+              onMonthChange={setSelectedDate}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <BottomNavigation 
         onCreateEvent={handleOpenCreateModal} 
@@ -199,37 +249,46 @@ export default function HomePage() {
         defaultDate={selectedDate}
       />
       
-      {selectedEvent && (
-        <EventDetailsModal 
-          event={selectedEvent}
-          isOpen={!!selectedEvent}
-          onClose={handleCloseEventDetails}
-        />
-      )}
+      <AnimatePresence>
+        {selectedEvent && (
+          <EventDetailsModal 
+            event={selectedEvent}
+            isOpen={!!selectedEvent}
+            onClose={handleCloseEventDetails}
+          />
+        )}
+      </AnimatePresence>
       
       {/* Botão de teste de notificação */}
       <div className="fixed bottom-20 right-4 z-50">
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center gap-2 bg-white shadow-md"
-          onClick={() => {
-            if (subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED) {
-              toast({
-                title: 'Notificações não ativadas',
-                description: 'Você precisa ativar as notificações primeiro',
-                variant: 'destructive',
-              });
-            } else {
-              testNotificationMutation.mutate();
-            }
-          }}
-          disabled={testNotificationMutation.isPending}
-        >
-          <Bell className="h-4 w-4" />
-          {testNotificationMutation.isPending ? 'Enviando...' : 'Testar Notificação'}
-        </Button>
+        <TactileFeedback>
+          <RippleButton
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-2 bg-white shadow-md"
+            onClick={() => {
+              if (subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED) {
+                toast({
+                  title: 'Notificações não ativadas',
+                  description: 'Você precisa ativar as notificações primeiro',
+                  variant: 'destructive',
+                });
+              } else {
+                testNotificationMutation.mutate();
+              }
+            }}
+            disabled={testNotificationMutation.isPending}
+          >
+            <motion.div
+              animate={testNotificationMutation.isPending ? { scale: [1, 1.2, 1] } : {}}
+              transition={{ repeat: Infinity, duration: 1 }}
+            >
+              <Bell className="h-4 w-4" />
+            </motion.div>
+            {testNotificationMutation.isPending ? 'Enviando...' : 'Testar Notificação'}
+          </RippleButton>
+        </TactileFeedback>
       </div>
-    </div>
+    </motion.div>
   );
 }

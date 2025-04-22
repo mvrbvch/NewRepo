@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { formatDate } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, isToday, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
+import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DateNavigationProps {
   date: Date;
@@ -65,45 +68,80 @@ export default function DateNavigation({
   }
   
   return (
-    <div className="px-4 py-3 bg-primary-light border-b border-primary-light flex items-center justify-between">
+    <motion.div 
+      className="px-4 py-3 bg-primary-light border-b border-primary-light flex items-center justify-between"
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <div>
-        <h2 className="text-lg font-semibold text-primary-dark">{displayDate}</h2>
-        <div className="flex items-center text-sm text-medium">
+        <motion.h2 
+          className="text-lg font-semibold text-primary-dark"
+          layout
+          key={displayDate}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          {displayDate}
+        </motion.h2>
+        <motion.div 
+          className="flex items-center text-sm text-medium"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
           <span>
             {eventCount} evento{eventCount !== 1 ? 's' : ''}
           </span>
           {sharedCount > 0 && (
             <>
               <span className="mx-1">•</span>
-              <span className="flex items-center">
-                <span className="material-icons text-sm text-primary mr-1">favorite</span>
+              <motion.span 
+                className="flex items-center"
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div 
+                  whileHover={{ scale: 1.2 }}
+                  className="text-primary mr-1"
+                >
+                  <Heart size={14} className="fill-primary" />
+                </motion.div>
                 <span>
                   {sharedCount} compartilhado{sharedCount !== 1 ? 's' : ''}
                 </span>
-              </span>
+              </motion.span>
             </>
           )}
-        </div>
+        </motion.div>
       </div>
       
       <div className="flex space-x-1">
-        <Button 
+        <RippleButton 
           variant="ghost" 
           size="icon" 
           onClick={onPrev}
           className="text-primary-dark hover:bg-white hover:text-primary"
+          rippleColor="rgba(79, 70, 229, 0.2)"
         >
-          <span className="material-icons">chevron_left</span>
-        </Button>
-        <Button 
+          <motion.div whileTap={{ x: -2 }}>
+            <ChevronLeft size={20} />
+          </motion.div>
+        </RippleButton>
+        <RippleButton 
           variant="ghost" 
           size="icon" 
           onClick={onNext}
           className="text-primary-dark hover:bg-white hover:text-primary"
+          rippleColor="rgba(79, 70, 229, 0.2)"
         >
-          <span className="material-icons">chevron_right</span>
-        </Button>
+          <motion.div whileTap={{ x: 2 }}>
+            <ChevronRight size={20} />
+          </motion.div>
+        </RippleButton>
       </div>
-    </div>
+    </motion.div>
   );
 }
