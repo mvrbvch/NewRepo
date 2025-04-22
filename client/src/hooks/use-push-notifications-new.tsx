@@ -1,5 +1,5 @@
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "./use-toast";
 import { apiRequest } from "../lib/queryClient";
 
 /**

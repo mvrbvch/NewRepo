@@ -162,8 +162,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota de diagnóstico para verificar as chaves VAPID
   app.get("/api/push/vapid-info", (req: Request, res: Response) => {
     try {
-      // Importar as chaves do arquivo pushNotifications.ts
-      const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
+      // Obter a chave pública VAPID das variáveis de ambiente
+      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
+      
+      if (!vapidPublicKey) {
+        return res.status(500).json({
+          status: "error",
+          message: "VAPID public key is not configured in environment variables"
+        });
+      }
       
       // Esta função converte a chave base64url para um array Uint8Array
       // É a mesma função utilizada no frontend
@@ -182,6 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.status(200).json({
         status: "ok",
+        publicKey: vapidPublicKey,
         vapidPublicKeyLength: vapidPublicKey.length,
         decodedKeyLength: decodedKey.length,
         isP256Curve: true, // Já sabemos que é P-256 porque geramos corretamente
@@ -1091,7 +1099,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== API para gerenciamento de dispositivos e notificações push =====
 
-  // Registra um novo dispositivo para receber notificações push
+  // Endpoint para registrar um dispositivo de navegador para notificações Web Push
+  app.post("/api/push/register-device", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user?.id as number;
+      const { deviceToken, deviceType, deviceName } = req.body;
+
+      if (!deviceToken) {
+        return res.status(400).json({ 
+          message: "Invalid request", 
+          error: "Device token is required" 
+        });
+      }
+
+      // Verificar se é um token de subscription válido (para web push)
+      if (deviceType === 'web') {
+        try {
+          const subscription = JSON.parse(deviceToken);
+          if (!subscription.endpoint || !subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
+            return res.status(400).json({ 
+              message: "Invalid web push subscription", 
+              error: "Subscription format is invalid" 
+            });
+          }
+        } catch (error) {
+          return res.status(400).json({ 
+            message: "Invalid web push subscription", 
+            error: "Could not parse subscription" 
+          });
+        }
+      }
+
+      // Verificar se o token já está registrado para este usuário
+      const existingDevice = await storage.getUserDeviceByToken(deviceToken);
+
+      // Se o dispositivo já existe e pertence a este usuário, apenas atualize-o
+      if (existingDevice && existingDevice.userId === userId) {
+        const updatedDevice = await storage.updateUserDevice(existingDevice.id, {
+          lastUsed: new Date(),
+          pushEnabled: true,
+          deviceName: deviceName || existingDevice.deviceName
+        });
+
+        console.log("Dispositivo atualizado para Web Push:", updatedDevice);
+        return res.status(200).json({
+          message: "Device updated",
+          device: updatedDevice
+        });
+      }
+      
+      // Se o dispositivo existe mas pertence a outro usuário, rejeite
+      if (existingDevice) {
+        return res.status(409).json({
+          message: "Device token already registered to another user"
+        });
+      }
+
+      // Registrar novo dispositivo
+      const newDevice = await storage.registerUserDevice({
+        userId,
+        deviceToken,
+        deviceType,
+        deviceName: deviceName || `Browser ${new Date().toLocaleDateString()}`,
+        pushEnabled: true
+      });
+
+      console.log("Novo dispositivo registrado para Web Push:", newDevice);
+      return res.status(201).json({
+        message: "Device registered successfully",
+        device: newDevice
+      });
+    } catch (error) {
+      console.error("Erro ao registrar dispositivo para Web Push:", error);
+      return res.status(500).json({
+        message: "Failed to register device",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Endpoint para cancelar registro de dispositivo para notificações Web Push
+  app.post("/api/push/unregister-device", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const userId = req.user?.id as number;
+      const { deviceToken } = req.body;
+
+      if (!deviceToken) {
+        return res.status(400).json({ 
+          message: "Invalid request", 
+          error: "Device token is required" 
+        });
+      }
+
+      // Verificar se o token está registrado
+      const device = await storage.getUserDeviceByToken(deviceToken);
+
+      // Se não encontrou o dispositivo, informe que a operação foi bem-sucedida
+      if (!device) {
+        return res.status(200).json({
+          message: "Device was not registered"
+        });
+      }
+
+      // Se o dispositivo pertence a outro usuário, não permita a remoção
+      if (device.userId !== userId) {
+        return res.status(403).json({
+          message: "You don't have permission to unregister this device"
+        });
+      }
+
+      // Desabilitar notificações para o dispositivo ou removê-lo
+      const removed = await storage.deleteUserDevice(device.id);
+
+      if (removed) {
+        return res.status(200).json({
+          message: "Device unregistered successfully"
+        });
+      } else {
+        return res.status(500).json({
+          message: "Failed to unregister device"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar registro de dispositivo:", error);
+      return res.status(500).json({
+        message: "Failed to unregister device",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Registra um novo dispositivo para receber notificações push (endpoint genérico)
   app.post("/api/devices", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

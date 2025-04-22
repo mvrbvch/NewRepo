@@ -3,16 +3,31 @@ import { UserDevice } from "@shared/schema";
 import webpush from 'web-push';
 import { sendFirebaseMessage } from './firebaseConfig';
 
-// Configurar as chaves VAPID para Web Push (novas chaves geradas em formato P-256)
-const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
-const vapidPrivateKey = 'fL2y9O_U7J6ngIRr9dobfCuUpeSSncRdXxrT5lzn3no';
+// Configurar as chaves VAPID para Web Push a partir das variáveis de ambiente
+// Fallback para chaves geradas se as variáveis de ambiente não estiverem disponíveis
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BJerKNPhdEJZ_Jvp9AJ_u-sI_fwcl6T-nnzqeX5pzyk7i-RKsQhOE0rQxSHVgop2881Coo3PEtRKy6idJFx9VqM';
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || 'eAsJm5sIpxIuS-XUwt16xHyhGdp1n3KnoJbnIPnbA3s';
+const webPushContact = process.env.WEB_PUSH_CONTACT || 'mailto:support@couplesapp.com';
 
-// Configurar Web Push
-webpush.setVapidDetails(
-  'mailto:contato@pornos.app', // Email de contato (não enviará emails reais)
-  vapidPublicKey,
-  vapidPrivateKey
-);
+// Verificar e registrar a configuração VAPID
+console.log('Configurando chaves VAPID:');
+console.log(`- Chave pública disponível: ${vapidPublicKey ? 'Sim' : 'Não'}`);
+console.log(`- Comprimento da chave pública: ${vapidPublicKey?.length || 0} caracteres`);
+console.log(`- Chave privada disponível: ${vapidPrivateKey ? 'Sim' : 'Não'}`);
+console.log(`- Contato de email: ${webPushContact}`);
+
+// Configurar Web Push (com verificação adicional de erro)
+try {
+  webpush.setVapidDetails(
+    webPushContact,
+    vapidPublicKey,
+    vapidPrivateKey
+  );
+  console.log('Configuração VAPID inicializada com sucesso');
+} catch (error) {
+  console.error('Erro ao configurar VAPID:', error);
+  throw new Error(`Falha na configuração VAPID: ${error instanceof Error ? error.message : String(error)}`);
+}
 
 // Possíveis plataformas de destino para notificações push
 export enum PushTargetPlatform {

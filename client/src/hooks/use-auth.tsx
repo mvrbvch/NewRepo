@@ -1,13 +1,8 @@
-import { createContext, ReactNode, useContext } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
-import { insertUserSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { UserType } from "@/lib/types";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
+import { useMutation, UseMutationResult } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "../lib/queryClient";
+import { useToast } from "./use-toast";
+import { UserType } from "../lib/types";
 import { z } from "zod";
 
 type AuthContextType = {
@@ -40,24 +35,24 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
-  const {
-    data: user,
-    error,
-    isLoading,
-    refetch: refetchUser
-  } = useQuery<UserType | null>({
-    queryKey: ["/api/user"],
-    queryFn: async ({ queryKey }) => {
+  // Verificar autenticação ao carregar o componente
+  useEffect(() => {
+    async function checkAuth() {
       try {
         console.log("Verificando autenticação do usuário...");
-        const res = await fetch(queryKey[0] as string, {
+        const res = await fetch("/api/user", {
           credentials: "include",
         });
         
         if (res.status === 401) {
           console.log("Usuário não autenticado");
-          return null;
+          setUser(null);
+          setIsLoading(false);
+          return;
         }
         
         if (!res.ok) {
@@ -67,33 +62,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const userData = await res.json();
         console.log("Usuário autenticado:", userData.username);
-        return userData;
+        setUser(userData);
       } catch (error) {
         console.error("Erro ao verificar autenticação:", error);
-        return null;
+        setError(error instanceof Error ? error : new Error(String(error)));
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    },
-    // Aumentar frequência de refetch para detectar mudanças no estado de autenticação
-    refetchInterval: 60000, // Verificar a cada minuto
-    refetchOnWindowFocus: true, // Verificar quando a janela ganha foco
-  });
+    }
+    
+    checkAuth();
+    
+    // Configurar um intervalo para verificar a autenticação periodicamente
+    const authCheckInterval = setInterval(checkAuth, 60000); // a cada minuto
+    
+    return () => clearInterval(authCheckInterval);
+  }, []);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: UserType) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (userData: UserType) => {
+      setUser(userData);
+      queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Login bem sucedido",
-        description: `Bem-vindo(a), ${user.name}!`,
+        description: `Bem-vindo(a), ${userData.name}!`,
       });
     },
-    onError: (error: Error) => {
+    onError: (err: Error) => {
+      setError(err);
       toast({
         title: "Erro ao entrar",
-        description: error.message,
+        description: err.message,
         variant: "destructive",
       });
     },
@@ -104,17 +108,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", userData);
       return await res.json();
     },
-    onSuccess: (user: UserType) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (userData: UserType) => {
+      setUser(userData);
+      queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Cadastro bem sucedido",
-        description: `Bem-vindo(a), ${user.name}!`,
+        description: `Bem-vindo(a), ${userData.name}!`,
       });
     },
-    onError: (error: Error) => {
+    onError: (err: Error) => {
+      setError(err);
       toast({
         title: "Erro ao cadastrar",
-        description: error.message,
+        description: err.message,
         variant: "destructive",
       });
     },
@@ -125,16 +131,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      setUser(null);
       queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Logout bem sucedido",
         description: "Você saiu da sua conta.",
       });
     },
-    onError: (error: Error) => {
+    onError: (err: Error) => {
+      setError(err);
       toast({
         title: "Erro ao sair",
-        description: error.message,
+        description: err.message,
         variant: "destructive",
       });
     },
@@ -144,8 +152,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshAuth = async (): Promise<UserType | null> => {
     try {
       console.log("Forçando atualização de autenticação do usuário...");
-      const { data } = await refetchUser();
-      return data || null;
+      const res = await fetch("/api/user", {
+        credentials: "include",
+      });
+      
+      if (res.status === 401) {
+        setUser(null);
+        return null;
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Error: ${res.status}`);
+      }
+      
+      const userData = await res.json();
+      setUser(userData);
+      return userData;
     } catch (error) {
       console.error("Erro ao atualizar autenticação:", error);
       return null;
