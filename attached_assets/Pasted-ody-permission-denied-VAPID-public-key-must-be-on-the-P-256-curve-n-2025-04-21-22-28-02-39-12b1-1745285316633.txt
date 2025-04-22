@@ -1,0 +1,121 @@
+ody: 'permission denied: VAPID public key must be on the P-256 curve\n',
+2025-04-21 22:28:02.39
+12b195ea
+User
+endpoint: 'https://fcm.googleapis.com/fcm/send/eiqvjfiPNL4:APA91bHbZROHz-SA3ZtvhCirNCg6unszhSVAnNn5ptvGEL_WR2-5-hMjtStIptad2pFdBewbPcOqVY3bfMedouogaFxaTpXT4qj2Dy1ookXVjaqS32YrKikKOp52keH7BfPG49CZuTsz'
+2025-04-21 22:28:02.39
+12b195ea
+User
+}
+2025-04-21 22:28:02.40
+12b195ea
+User
+Erro ao enviar notificação web push: WebPushError: Received unexpected response code
+2025-04-21 22:28:02.40
+12b195ea
+User
+at IncomingMessage. (/home/runner/workspace/node_modules/web-push/src/web-push-lib.js:378:20)
+2025-04-21 22:28:02.40
+12b195ea
+User
+at IncomingMessage.emit (node:events:530:35)
+2025-04-21 22:28:02.40
+12b195ea
+User
+at endReadableNT (node:internal/streams/readable:1698:12)
+2025-04-21 22:28:02.40
+12b195ea
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+2025-04-21 22:28:02.40
+12b195ea
+User
+statusCode: 403,
+2025-04-21 22:28:02.40
+12b195ea
+User
+headers: {
+2025-04-21 22:28:02.40
+12b195ea
+User
+'content-security-policy-report-only': "script-src 'none'; form-action 'none'; frame-src 'none'; report-uri https://csp.withgoogle.com/csp/goa-520bfc14_2",
+2025-04-21 22:28:02.40
+12b195ea
+User
+'content-type': 'text/plain; charset=utf-8',
+2025-04-21 22:28:02.40
+12b195ea
+User
+'cross-origin-opener-policy': 'same-origin',
+2025-04-21 22:28:02.40
+12b195ea
+User
+vary: 'Sec-Fetch-Site, Sec-Fetch-Mode, Sec-Fetch-Dest',
+2025-04-21 22:28:02.40
+12b195ea
+User
+'x-content-type-options': 'nosniff',
+2025-04-21 22:28:02.40
+12b195ea
+User
+'x-frame-options': 'SAMEORIGIN',
+2025-04-21 22:28:02.40
+12b195ea
+User
+'x-xss-protection': '0',
+2025-04-21 22:28:02.40
+12b195ea
+User
+date: 'Tue, 22 Apr 2025 01:28:02 GMT',
+2025-04-21 22:28:02.40
+12b195ea
+User
+'content-length': '63',
+2025-04-21 22:28:02.40
+12b195ea
+User
+'alt-svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'
+2025-04-21 22:28:02.40
+12b195ea
+User
+},
+2025-04-21 22:28:02.40
+12b195ea
+User
+body: 'permission denied: VAPID public key must be on the P-256 curve\n',
+2025-04-21 22:28:02.40
+12b195ea
+User
+endpoint: 'https://fcm.googleapis.com/fcm/send/fQa6fkzcvr0:APA91bFHPl5aTQ2UoQXv8JmMrqeF0K3NzG4u5cJU3H3Y52nsbbHtfT6IkWX9lfCSoqc3BdH3g9H0vwbE4A1vNSCHS-n0zKlQEbbH60P-3_3ZTXM-tus17CYNfZXJYKLouGRmwRqcDPLE'
+2025-04-21 22:28:02.40
+12b195ea
+User
+}
+2025-04-21 22:28:02.40
+12b195ea
+User
+7 de 9 notificações enviadas com sucesso
+2025-04-21 22:28:02.40
+12b195ea
+User
+Enviadas 7 notificações push de teste para todos os dispositivos
+2025-04-21 22:28:02.43
+12b195ea
+User
+1:28:02 AM [express] POST /api/notifications/test 201 in 164ms :: {"message":"Test notification sent…
+2025-04-21 22:28:18.03
+12b195ea
+User
+Data inválida (Date object): Invalid Date
+2025-04-21 22:28:18.03
+12b195ea
+User
+Data inválida (Date object): Invalid Date
+2025-04-21 22:28:18.05
+12b195ea
+User
+1:28:18 AM [express] GET /api/tasks 200 in 176ms :: [{"id":12,"title":"TRANSAR 😈","description":"Vo…
+2025-04-21 22:28:18.06
+12b195ea
+User
+1:28:18 AM [express] GET /api/partner-tasks 200 in 161ms

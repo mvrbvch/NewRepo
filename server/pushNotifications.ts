@@ -168,8 +168,12 @@ async function sendWebPushNotification(device: UserDevice, payload: PushNotifica
         publicKey: vapidPublicKey,
         privateKey: vapidPrivateKey
       },
-      contentEncoding: 'aes128gcm' // Usar a codificação mais moderna
+      // Usar a codificação aesgcm padrão que tem melhor compatibilidade
+      // do que aes128gcm, especialmente com service workers mais antigos
+      contentEncoding: 'aesgcm'
     };
+    
+    console.log(`[PUSH DEBUG] Enviando push para ${device.id} com encoding: ${options.contentEncoding}`);
 
     console.log(`Enviando notificação web push para o dispositivo ${device.id}`);
     console.log(`Título: ${payload.title}`);

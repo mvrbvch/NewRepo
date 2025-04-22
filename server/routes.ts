@@ -1421,21 +1421,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isRead: false
       });
 
-      // Configurar payload da notificação
+      // Configurar payload da notificação com formato explícito para compatibilidade com o service worker
       const pushPayload: PushNotificationPayload = {
         title,
         body: message,
-        icon: icon || undefined,
+        icon: icon || '/icons/icon-192x192.png', // Fornecer um ícone padrão
         badge: badge ? String(badge) : undefined,
         sound,
         requireInteraction,
         tag: `test-${Date.now()}`,
         actions,
+        // Garantir que estes dados estejam disponíveis para o service worker 
         data: {
           type: "test",
-          notificationId: notification.id
-        }
+          notificationId: notification.id,
+          timestamp: Date.now(),
+          referenceType: "test"
+        },
+        // Incluir referências explicitamente
+        referenceType: "test",
+        referenceId: notification.id
       };
+      
+      console.log("[NOTIF TEST] Payload configurado:", JSON.stringify(pushPayload));
 
       // Enviar push para dispositivos com base na plataforma solicitada
       let sentCount = 0;
