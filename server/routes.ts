@@ -24,16 +24,21 @@ import {
   generateTaskReminderEmail,
   generatePartnerInviteEmail,
 } from "./email";
-import { sendPushToUser, sendPushToDevice, PushNotificationPayload } from "./pushNotifications";
+import {
+  sendPushToUser,
+  sendPushToDevice,
+  PushNotificationPayload,
+} from "./pushNotifications";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
+import { getVapidPublicKey } from "./pushNotifications";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(
   events: Event[],
   startDate: Date,
-  endDate: Date,
+  endDate: Date
 ): Event[] {
   const result: Event[] = [];
 
@@ -158,35 +163,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-  
+
   // Rota de diagnóstico para verificar as chaves VAPID
   app.get("/api/push/vapid-info", (req: Request, res: Response) => {
     try {
-      // Obter a chave pública VAPID das variáveis de ambiente
-      const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
-      
+      // Obter a chave pública VAPID do módulo de notificações push
+      const vapidPublicKey = getVapidPublicKey();
       if (!vapidPublicKey) {
         return res.status(500).json({
           status: "error",
-          message: "VAPID public key is not configured in environment variables"
+          message:
+            "VAPID public key is not configured in environment variables",
         });
       }
-      
+
       // Esta função converte a chave base64url para um array Uint8Array
       // É a mesma função utilizada no frontend
-      function urlBase64ToUint8Array(base64String: string) {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
         const base64 = (base64String + padding)
-          .replace(/-/g, '+')
-          .replace(/_/g, '/');
-      
-        const rawData = Buffer.from(base64, 'base64');
+          .replace(/-/g, "+")
+          .replace(/_/g, "/");
+
+        const rawData = Buffer.from(base64, "base64");
         return new Uint8Array(rawData);
-      }
-      
+      };
       // Converter a chave para verificar se está correta
       const decodedKey = urlBase64ToUint8Array(vapidPublicKey);
-      
+
       return res.status(200).json({
         status: "ok",
         publicKey: vapidPublicKey,
@@ -194,13 +198,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         decodedKeyLength: decodedKey.length,
         isP256Curve: true, // Já sabemos que é P-256 porque geramos corretamente
         timestamp: new Date().toISOString(),
-        message: "Chaves VAPID configuradas corretamente"
+        message: "Chaves VAPID configuradas corretamente",
       });
     } catch (error) {
       console.error("Erro ao verificar chaves VAPID:", error);
       return res.status(500).json({
         status: "error",
         message: "Falha ao verificar chaves VAPID",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  // Endpoint para obter a chave pública VAPID para Web Push
+  app.get("/api/push/vapid-key", (req: Request, res: Response) => {
+    try {
+      // Obter a chave pública VAPID do módulo de notificações push
+      const { getVapidPublicKey } = require("./pushNotifications");
+      const vapidPublicKey = getVapidPublicKey();
+
+      if (!vapidPublicKey) {
+        return res.status(500).json({
+          status: "error",
+          message: "VAPID public key is not configured",
+        });
+      }
+
+      return res.status(200).json({
+        publicKey: vapidPublicKey,
+      });
+    } catch (error) {
+      console.error("Erro ao obter chave VAPID:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to get VAPID key",
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -230,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const expandedEvents = expandRecurringEvents(
         allEvents,
         startDate,
-        endDate,
+        endDate
       );
 
       res.json(expandedEvents);
@@ -356,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if event is shared with this user with edit permission
         const shares = await storage.getEventShares(eventId);
         const userShare = shares.find(
-          (share) => share.userId === userId && share.permission === "edit",
+          (share) => share.userId === userId && share.permission === "edit"
         );
 
         if (!userShare) {
@@ -483,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { html, text } = generatePartnerInviteEmail(
             email,
             inviter.name,
-            token,
+            token
           );
 
           // No ambiente de teste do Resend, só podemos enviar emails para o endereço autorizado
@@ -497,7 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           console.log(
-            `Email de convite ${emailSent ? "enviado com sucesso" : "falhou ao enviar"}`,
+            `Email de convite ${emailSent ? "enviado com sucesso" : "falhou ao enviar"}`
           );
         } catch (emailError) {
           console.error("Erro ao enviar email de convite:", emailError);
@@ -902,7 +933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedTask = await storage.markHouseholdTaskAsCompleted(
         taskId,
-        completed,
+        completed
       );
       res.json(updatedTask);
     } catch (error) {
@@ -967,7 +998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         task.title,
         task.description,
         message || null,
-        taskId,
+        taskId
       );
 
       // No ambiente de teste do Resend, só podemos enviar emails para o próprio email do usuário registrado
@@ -1049,7 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Esta é uma limitação da API gratuita do Resend
       const testEmail = "matheus.murbach@gmail.com"; // Email do usuário registrado no Resend
       console.log(
-        `Usando endereço autorizado pelo Resend em vez de ${partner.email}: ${testEmail}`,
+        `Usando endereço autorizado pelo Resend em vez de ${partner.email}: ${testEmail}`
       );
 
       // Sobrescrever o email do parceiro para o endereço de teste
@@ -1065,7 +1096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         task.title,
         task.description,
         "Este é um lembrete de teste da funcionalidade de notificação entre parceiros!",
-        taskId,
+        taskId
       );
 
       const emailSent = await sendEmail({
@@ -1110,26 +1141,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { deviceToken, deviceType, deviceName } = req.body;
 
       if (!deviceToken) {
-        return res.status(400).json({ 
-          message: "Invalid request", 
-          error: "Device token is required" 
+        return res.status(400).json({
+          message: "Invalid request",
+          error: "Device token is required",
         });
       }
 
       // Verificar se é um token de subscription válido (para web push)
-      if (deviceType === 'web') {
+      if (deviceType === "web") {
         try {
           const subscription = JSON.parse(deviceToken);
-          if (!subscription.endpoint || !subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
-            return res.status(400).json({ 
-              message: "Invalid web push subscription", 
-              error: "Subscription format is invalid" 
+          if (
+            !subscription.endpoint ||
+            !subscription.keys ||
+            !subscription.keys.p256dh ||
+            !subscription.keys.auth
+          ) {
+            return res.status(400).json({
+              message: "Invalid web push subscription",
+              error: "Subscription format is invalid",
             });
           }
         } catch (error) {
-          return res.status(400).json({ 
-            message: "Invalid web push subscription", 
-            error: "Could not parse subscription" 
+          return res.status(400).json({
+            message: "Invalid web push subscription",
+            error: "Could not parse subscription",
           });
         }
       }
@@ -1139,23 +1175,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Se o dispositivo já existe e pertence a este usuário, apenas atualize-o
       if (existingDevice && existingDevice.userId === userId) {
-        const updatedDevice = await storage.updateUserDevice(existingDevice.id, {
-          lastUsed: new Date(),
-          pushEnabled: true,
-          deviceName: deviceName || existingDevice.deviceName
-        });
+        const updatedDevice = await storage.updateUserDevice(
+          existingDevice.id,
+          {
+            lastUsed: new Date(),
+            pushEnabled: true,
+            deviceName: deviceName || existingDevice.deviceName,
+          }
+        );
 
         console.log("Dispositivo atualizado para Web Push:", updatedDevice);
         return res.status(200).json({
           message: "Device updated",
-          device: updatedDevice
+          device: updatedDevice,
         });
       }
-      
+
       // Se o dispositivo existe mas pertence a outro usuário, rejeite
       if (existingDevice) {
         return res.status(409).json({
-          message: "Device token already registered to another user"
+          message: "Device token already registered to another user",
         });
       }
 
@@ -1165,77 +1204,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deviceToken,
         deviceType,
         deviceName: deviceName || `Browser ${new Date().toLocaleDateString()}`,
-        pushEnabled: true
+        pushEnabled: true,
       });
 
       console.log("Novo dispositivo registrado para Web Push:", newDevice);
       return res.status(201).json({
         message: "Device registered successfully",
-        device: newDevice
+        device: newDevice,
       });
     } catch (error) {
       console.error("Erro ao registrar dispositivo para Web Push:", error);
       return res.status(500).json({
         message: "Failed to register device",
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   });
 
   // Endpoint para cancelar registro de dispositivo para notificações Web Push
-  app.post("/api/push/unregister-device", async (req: Request, res: Response) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    try {
-      const userId = req.user?.id as number;
-      const { deviceToken } = req.body;
-
-      if (!deviceToken) {
-        return res.status(400).json({ 
-          message: "Invalid request", 
-          error: "Device token is required" 
-        });
+  app.post(
+    "/api/push/unregister-device",
+    async (req: Request, res: Response) => {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Verificar se o token está registrado
-      const device = await storage.getUserDeviceByToken(deviceToken);
+      try {
+        const userId = req.user?.id as number;
+        const { deviceToken } = req.body;
 
-      // Se não encontrou o dispositivo, informe que a operação foi bem-sucedida
-      if (!device) {
-        return res.status(200).json({
-          message: "Device was not registered"
-        });
-      }
+        if (!deviceToken) {
+          return res.status(400).json({
+            message: "Invalid request",
+            error: "Device token is required",
+          });
+        }
 
-      // Se o dispositivo pertence a outro usuário, não permita a remoção
-      if (device.userId !== userId) {
-        return res.status(403).json({
-          message: "You don't have permission to unregister this device"
-        });
-      }
+        // Verificar se o token está registrado
+        const device = await storage.getUserDeviceByToken(deviceToken);
 
-      // Desabilitar notificações para o dispositivo ou removê-lo
-      const removed = await storage.deleteUserDevice(device.id);
+        // Se não encontrou o dispositivo, informe que a operação foi bem-sucedida
+        if (!device) {
+          return res.status(200).json({
+            message: "Device was not registered",
+          });
+        }
 
-      if (removed) {
-        return res.status(200).json({
-          message: "Device unregistered successfully"
-        });
-      } else {
+        // Se o dispositivo pertence a outro usuário, não permita a remoção
+        if (device.userId !== userId) {
+          return res.status(403).json({
+            message: "You don't have permission to unregister this device",
+          });
+        }
+
+        // Desabilitar notificações para o dispositivo ou removê-lo
+        const removed = await storage.deleteUserDevice(device.id);
+
+        if (removed) {
+          return res.status(200).json({
+            message: "Device unregistered successfully",
+          });
+        } else {
+          return res.status(500).json({
+            message: "Failed to unregister device",
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao cancelar registro de dispositivo:", error);
         return res.status(500).json({
-          message: "Failed to unregister device"
+          message: "Failed to unregister device",
+          error: error instanceof Error ? error.message : String(error),
         });
       }
-    } catch (error) {
-      console.error("Erro ao cancelar registro de dispositivo:", error);
-      return res.status(500).json({
-        message: "Failed to unregister device",
-        error: error instanceof Error ? error.message : String(error)
-      });
     }
-  });
+  );
 
   // Registra um novo dispositivo para receber notificações push (endpoint genérico)
   app.post("/api/devices", async (req, res) => {
@@ -1245,7 +1287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = req.user?.id as number;
-      
+
       // Criar um novo objeto com os dados do corpo da requisição + userId da sessão
       const deviceData = {
         ...req.body,
@@ -1261,10 +1303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: validationResult.error.format(),
         });
       }
-      
+
       // Verificar se o token já está registrado para este usuário
       const existingDevice = await storage.getUserDeviceByToken(
-        deviceData.deviceToken,
+        deviceData.deviceToken
       );
       if (existingDevice && existingDevice.userId === userId) {
         // Atualizar dispositivo existente
@@ -1273,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             ...deviceData,
             lastUsed: new Date(),
-          },
+          }
         );
         return res.json(updatedDevice);
       }
@@ -1532,7 +1574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Enviar push para todos os dispositivos do parceiro
         const sentCount = await sendPushToUser(
           currentUser.partnerId,
-          pushPayload,
+          pushPayload
         );
 
         console.log(`Enviadas ${sentCount} notificações push para o parceiro`);
@@ -1571,7 +1613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = req.user?.id as number;
-      
+
       // Verificar dados da solicitação para personalização
       const {
         title = "Notificação de teste",
@@ -1581,10 +1623,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sound = "default",
         badge = 1,
         requireInteraction = true,
-        actions = []
+        actions = [],
       } = req.body;
 
-      console.log(`Teste de notificação solicitado pelo usuário ${userId} para plataforma: ${platform || 'todas'}`);
+      console.log(
+        `Teste de notificação solicitado pelo usuário ${userId} para plataforma: ${platform || "todas"}`
+      );
 
       // Criar uma notificação de teste no banco de dados
       const notification = await storage.createNotification({
@@ -1601,66 +1645,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
           badge,
           requestedAt: new Date().toISOString(),
           requireInteraction,
-          actions
+          actions,
         }),
-        isRead: false
+        isRead: false,
       });
 
       // Configurar payload da notificação com formato explícito para compatibilidade com o service worker
       const pushPayload: PushNotificationPayload = {
         title,
         body: message,
-        icon: icon || '/icons/icon-192x192.png', // Fornecer um ícone padrão
+        icon: icon || "/icons/icon-192x192.png", // Fornecer um ícone padrão
         badge: badge ? String(badge) : undefined,
         sound,
         requireInteraction,
         tag: `test-${Date.now()}`,
         actions,
-        // Garantir que estes dados estejam disponíveis para o service worker 
+        // Garantir que estes dados estejam disponíveis para o service worker
         data: {
           type: "test",
           notificationId: notification.id,
           timestamp: Date.now(),
-          referenceType: "test"
+          referenceType: "test",
         },
         // Incluir referências explicitamente
         referenceType: "test",
-        referenceId: notification.id
+        referenceId: notification.id,
       };
-      
-      console.log("[NOTIF TEST] Payload configurado:", JSON.stringify(pushPayload));
+
+      console.log(
+        "[NOTIF TEST] Payload configurado:",
+        JSON.stringify(pushPayload)
+      );
 
       // Enviar push para dispositivos com base na plataforma solicitada
       let sentCount = 0;
-      
+
       try {
         if (platform) {
           // Buscar dispositivos da plataforma específica
           const devices = await storage.getUserDevices(userId);
           const filteredDevices = devices.filter(
-            device => device.deviceType === platform && device.pushEnabled
+            (device) => device.deviceType === platform && device.pushEnabled
           );
-          
+
           if (filteredDevices.length === 0) {
             res.status(400).json({
               message: `No registered ${platform} devices found`,
               notification,
-              pushSent: false
+              pushSent: false,
             });
             return;
           }
-          
+
           // Enviar para dispositivos específicos da plataforma
           const results = await Promise.all(
-            filteredDevices.map(device => sendPushToDevice(device, pushPayload))
+            filteredDevices.map((device) =>
+              sendPushToDevice(device, pushPayload)
+            )
           );
-          
+
           sentCount = results.filter((result: boolean) => result).length;
-          console.log(`Enviadas ${sentCount} notificações push de teste para dispositivos ${platform}`);
+          console.log(
+            `Enviadas ${sentCount} notificações push de teste para dispositivos ${platform}`
+          );
         } else {
           // Enviar para todos os dispositivos
           sentCount = await sendPushToUser(userId, pushPayload);
-          console.log(`Enviadas ${sentCount} notificações push de teste para todos os dispositivos`);
+          console.log(
+            `Enviadas ${sentCount} notificações push de teste para todos os dispositivos`
+          );
         }
 
         res.status(201).json({
@@ -1668,7 +1721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           notification,
           pushSent: sentCount > 0,
           sentCount,
-          targetPlatform: platform || "all"
+          targetPlatform: platform || "all",
         });
       } catch (pushError) {
         console.error("Erro ao enviar notificação push de teste:", pushError);
@@ -1678,8 +1731,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Test notification created but push failed",
           notification,
           pushSent: false,
-          error: pushError instanceof Error ? pushError.message : String(pushError),
-          targetPlatform: platform || "all"
+          error:
+            pushError instanceof Error ? pushError.message : String(pushError),
+          targetPlatform: platform || "all",
         });
       }
     } catch (error) {
