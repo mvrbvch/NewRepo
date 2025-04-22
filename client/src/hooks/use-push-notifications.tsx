@@ -30,9 +30,27 @@ export enum PushSubscriptionStatus {
 interface PushNotificationsContextType {
   subscriptionStatus: PushSubscriptionStatus;
   isPending: boolean;
+  isIOSDevice: boolean;
+  deviceType: 'web' | 'ios' | null;
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
-  testNotification: () => Promise<void>;
+  testNotification: (options?: NotificationTestOptions) => Promise<void>;
+}
+
+// Opções para teste de notificação personalizado
+interface NotificationTestOptions {
+  title?: string;
+  message?: string;
+  platform?: 'web' | 'ios' | null; // null = todos os dispositivos
+  icon?: string | null;
+  sound?: string;
+  badge?: number;
+  requireInteraction?: boolean;
+  actions?: Array<{
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
 }
 
 // Criação do contexto
@@ -71,6 +89,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   const [isPending, setIsPending] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<PushSubscriptionStatus>(PushSubscriptionStatus.NOT_SUPPORTED);
+  const [deviceType, setDeviceType] = useState<'web' | 'ios' | null>(null);
 
   // Verificar o status inicial
   useEffect(() => {
@@ -449,22 +468,42 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     }
   };
 
-  // Testar envio de notificação
-  const testNotification = async () => {
+  // Testar envio de notificação com opções personalizadas
+  const testNotification = async (options?: NotificationTestOptions) => {
     try {
-      const response = await apiRequest("POST", "/api/notifications/test");
+      const payload: any = {};
+      
+      // Usar opções personalizadas ou valores padrão
+      if (options) {
+        if (options.title) payload.title = options.title;
+        if (options.message) payload.message = options.message;
+        if (options.platform !== undefined) payload.platform = options.platform;
+        if (options.icon !== undefined) payload.icon = options.icon;
+        if (options.sound) payload.sound = options.sound;
+        if (options.badge !== undefined) payload.badge = options.badge;
+        if (options.requireInteraction !== undefined) payload.requireInteraction = options.requireInteraction;
+        if (options.actions) payload.actions = options.actions;
+      }
+      
+      // Adicionar informações da plataforma se não especificado
+      if (payload.platform === undefined && isIOSDevice) {
+        payload.platform = 'ios';
+      }
+      
+      console.log('Enviando notificação de teste com payload:', payload);
+      
+      const response = await apiRequest("POST", "/api/notifications/test", payload);
       const result = await response.json();
 
-      if (result.success) {
+      if (result.pushSent) {
         toast({
           title: "Notificação de teste enviada",
-          description: "Verifique se você recebeu a notificação.",
+          description: `Notificação enviada para ${result.targetPlatform === 'all' ? 'todos os dispositivos' : `dispositivos ${result.targetPlatform}`}.`,
         });
       } else {
         toast({
-          title: "Erro",
-          description:
-            result.message || "Não foi possível enviar a notificação de teste.",
+          title: "Notificação não enviada",
+          description: result.message || "Não foi possível enviar a notificação push de teste.",
           variant: "destructive",
         });
       }
@@ -478,9 +517,20 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     }
   };
 
+  // Detectar se o dispositivo é iOS
+  const isIOSDevice = isIOS();
+  
+  // Define o tipo de dispositivo
+  useEffect(() => {
+    // Atualizar tipo de dispositivo com base na detecção
+    setDeviceType(isIOSDevice ? 'ios' : 'web');
+  }, [isIOSDevice]);
+
   return {
     subscriptionStatus,
     isPending,
+    isIOSDevice,
+    deviceType,
     subscribe,
     unsubscribe,
     testNotification,

@@ -10,10 +10,13 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotificationTestPanel } from "./notification-test-panel";
 
 export default function NotificationButton({ className, ...props }: ButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
