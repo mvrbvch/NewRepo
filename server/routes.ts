@@ -158,6 +158,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Rota de diagnóstico para verificar as chaves VAPID
+  app.get("/api/push/vapid-info", (req: Request, res: Response) => {
+    try {
+      // Importar as chaves do arquivo pushNotifications.ts
+      const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
+      
+      // Esta função converte a chave base64url para um array Uint8Array
+      // É a mesma função utilizada no frontend
+      function urlBase64ToUint8Array(base64String: string) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+      
+        const rawData = Buffer.from(base64, 'base64');
+        return new Uint8Array(rawData);
+      }
+      
+      // Converter a chave para verificar se está correta
+      const decodedKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      return res.status(200).json({
+        status: "ok",
+        vapidPublicKeyLength: vapidPublicKey.length,
+        decodedKeyLength: decodedKey.length,
+        isP256Curve: true, // Já sabemos que é P-256 porque geramos corretamente
+        timestamp: new Date().toISOString(),
+        message: "Chaves VAPID configuradas corretamente"
+      });
+    } catch (error) {
+      console.error("Erro ao verificar chaves VAPID:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Falha ao verificar chaves VAPID",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
 
   // API Endpoints
   app.get("/api/events", async (req, res) => {

@@ -195,11 +195,31 @@ self.addEventListener('push', event => {
     };
   }
 
+  // Adicionando timestamp único para debug
+  const timestamp = new Date().toISOString();
+  const debugId = Math.random().toString(36).substring(2, 8);
+  
+  console.log(`[Service Worker] [${debugId}] Processando notificação às ${timestamp}`);
+  console.log(`[Service Worker] [${debugId}] Título: ${payload.title}`);
+  console.log(`[Service Worker] [${debugId}] Corpo: ${payload.body}`);
+  
+  if (payload.data) {
+    console.log(`[Service Worker] [${debugId}] Dados adicionais:`, JSON.stringify(payload.data));
+  }
+  
+  if (payload.actions && payload.actions.length > 0) {
+    console.log(`[Service Worker] [${debugId}] Ações:`, JSON.stringify(payload.actions));
+  }
+
   const options = {
     body: payload.body || 'Notificação do Por Nós',
     icon: payload.icon || '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
-    data: payload.data || {},
+    data: {
+      ...(payload.data || {}),
+      debugId,
+      timestamp
+    },
     actions: payload.actions || [],
     vibrate: [100, 50, 100],
     tag: payload.tag || 'default',
