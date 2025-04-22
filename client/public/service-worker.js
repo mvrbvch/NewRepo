@@ -134,14 +134,50 @@ self.addEventListener('fetch', event => {
 // Lidar com notificações push
 self.addEventListener('push', event => {
   console.log('[Service Worker] Notificação push recebida', event);
+  console.log('[Service Worker] Dados recebidos:', event.data ? event.data.text() : 'Sem dados');
 
   let payload;
   try {
-    payload = event.data.json();
+    // Tentar extrair o payload como JSON
+    payload = event.data ? event.data.json() : null;
+    console.log('[Service Worker] Payload JSON extraído:', payload);
   } catch (e) {
+    console.error('[Service Worker] Erro ao extrair payload JSON:', e);
+    // Fallback para texto
+    try {
+      const textData = event.data ? event.data.text() : 'Notificação sem detalhes';
+      console.log('[Service Worker] Dados de texto:', textData);
+      
+      // Tentar analisar manualmente como JSON
+      try {
+        payload = JSON.parse(textData);
+        console.log('[Service Worker] Payload convertido de texto para JSON:', payload);
+      } catch (jsonError) {
+        console.error('[Service Worker] Não foi possível converter texto para JSON:', jsonError);
+        // Usar o texto como corpo da notificação
+        payload = {
+          title: 'Por Nós',
+          body: textData,
+          icon: '/icons/icon-192x192.png'
+        };
+      }
+    } catch (textError) {
+      console.error('[Service Worker] Erro ao extrair texto:', textError);
+      // Fallback completo
+      payload = {
+        title: 'Por Nós',
+        body: 'Nova notificação recebida',
+        icon: '/icons/icon-192x192.png'
+      };
+    }
+  }
+
+  // Se não recebemos um payload válido, use valores padrão
+  if (!payload) {
+    console.warn('[Service Worker] Payload indefinido, usando valores padrão');
     payload = {
       title: 'Por Nós',
-      body: event.data ? event.data.text() : 'Notificação sem detalhes',
+      body: 'Nova notificação recebida',
       icon: '/icons/icon-192x192.png'
     };
   }
@@ -156,6 +192,8 @@ self.addEventListener('push', event => {
     tag: payload.tag || 'default',
     requireInteraction: payload.requireInteraction || false
   };
+  
+  console.log('[Service Worker] Opções de notificação configuradas:', options);
 
   event.waitUntil(
     self.registration.showNotification(payload.title || 'Por Nós', options)

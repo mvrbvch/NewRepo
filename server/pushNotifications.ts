@@ -140,7 +140,7 @@ async function sendWebPushNotification(device: UserDevice, payload: PushNotifica
       return false;
     }
 
-    // Preparar payload para Web Push
+    // Preparar payload para Web Push - IMPORTANTE: o Service Worker espera este formato
     const webPushPayload = {
       title: payload.title,
       body: payload.body,
@@ -157,6 +157,8 @@ async function sendWebPushNotification(device: UserDevice, payload: PushNotifica
       renotify: payload.renotify || false,
       silent: payload.silent || false
     };
+    
+    console.log(`[PUSH DEBUG] Payload formatado para Web Push:`, JSON.stringify(webPushPayload));
 
     // Configurar opções para Web Push
     const options: webpush.RequestOptions = {
