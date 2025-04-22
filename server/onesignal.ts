@@ -1,29 +1,42 @@
-import * as OneSignal from '@onesignal/node-onesignal';
 import { storage } from './storage';
 import { UserDevice } from '@shared/schema';
 import { PushNotificationPayload, PushTargetPlatform } from './pushNotifications';
 
 // Obtenção das chaves do OneSignal a partir das variáveis de ambiente
-const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || 'dbedbbbb-6fd5-4bdd-907c-8cde52bb2219';
-const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY || 'os_v2_app_3pw3xo3p2vf53ed4rtpffozcdfplduq663auhceaiebgtweusscsdpjmgokc355pu3qaog5spuuomjc4mncncejgm4dbga6r3fozuiy';
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '';
+const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY || '';
 
-// Criação do cliente OneSignal
-let client: any;
-
-try {
-  // Usando o construtor padrão
-  client = new OneSignal.DefaultApi();
-  console.log('[OneSignal] Cliente inicializado com sucesso');
-} catch (error) {
-  console.error('[OneSignal] Erro ao inicializar cliente:', error);
-  // Fallback para objeto simulado se houver erro
-  client = {
-    createNotification: async (notification: any) => {
-      console.log('[OneSignal] Mock notification:', notification);
-      return { id: 'mock-notification-id' };
+// Criação do cliente OneSignal simplesmente como interface
+let client: any = {
+  createNotification: async (notification: any) => {
+    try {
+      console.log('[OneSignal] Enviando notificação via API REST:', notification);
+      
+      // Implementação simples usando fetch para a API REST do OneSignal
+      const response = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+        },
+        body: JSON.stringify(notification)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro na API OneSignal: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('[OneSignal] Resposta recebida:', result);
+      return result;
+    } catch (error) {
+      console.error('[OneSignal] Erro ao enviar notificação:', error);
+      return { id: 'error', error: error instanceof Error ? error.message : String(error) };
     }
-  };
-}
+  }
+};
+
+console.log('[OneSignal] Cliente inicializado com sucesso');
 
 /**
  * Verifica se o OneSignal está configurado corretamente

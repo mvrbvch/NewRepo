@@ -221,7 +221,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Rota para enviar uma notificação de teste via OneSignal
+  // Rota para testar a API de notificações Web Push padrão
+  app.post("/api/push/test-web-push", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const { title, body, useOneSignal = false } = req.body;
+      
+      if (!title || !body) {
+        return res.status(400).json({
+          message: "Required fields missing",
+          required: ["title", "body"]
+        });
+      }
+      
+      // Cria o payload da notificação
+      const pushPayload: PushNotificationPayload = {
+        title,
+        body,
+        icon: '/logo.png',
+        data: {
+          type: 'web-push-test',
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      // Enviar para o dispositivo atual do usuário
+      const devices = await storage.getUserDevices(userId);
+      if (!devices || devices.length === 0) {
+        return res.status(400).json({ 
+          message: "Nenhum dispositivo encontrado para este usuário",
+          success: false
+        });
+      }
+      
+      // Tenta enviar usando Web Push padrão para cada dispositivo
+      let sentCount = 0;
+      for (const device of devices) {
+        const success = await sendPushToDevice(device, pushPayload);
+        if (success) sentCount++;
+      }
+      
+      res.json({ 
+        success: sentCount > 0,
+        sent: sentCount,
+        total: devices.length,
+        message: sentCount > 0 
+          ? `Notificação enviada com sucesso para ${sentCount} dispositivos` 
+          : 'Nenhuma notificação pôde ser enviada'
+      });
+    } catch (error) {
+      console.error('[API] Erro ao enviar notificação de teste:', error);
+      res.status(500).json({ 
+        message: 'Erro ao enviar notificação de teste',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.post("/api/push/test-onesignal", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

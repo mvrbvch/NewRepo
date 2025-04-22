@@ -9,6 +9,7 @@ import AuthPage from "@/pages/auth-page";
 import OnboardingPage from "@/pages/onboarding-page";
 import PartnerInvitePage from "@/pages/partner-invite-page";
 import HouseholdTasksPage from "@/pages/household-tasks-page";
+import NotificationTestPage from "@/pages/notification-test-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
@@ -21,6 +22,7 @@ function Router() {
       <ProtectedRoute path="/onboarding" component={OnboardingPage} />
       <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
       <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
+      <ProtectedRoute path="/notifications/test" component={NotificationTestPage} />
       <Route path="/accept-invite/:token" component={PartnerInvitePage} />
       <Route component={NotFound} />
     </Switch>
