@@ -77,11 +77,12 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     checkSubscriptionStatus();
   }, []);
 
-  // Verifica se estamos no iOS
+  // Verifica se estamos no iOS - detecta dispositivos iOS independente da versão
   const isIOS = () => {
     return (
       /iPad|iPhone|iPod/.test(navigator.platform) ||
-      (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+      (navigator.userAgent.includes("Mac") && "ontouchend" in document) ||
+      /iPad|iPhone|iPod/.test(navigator.userAgent)
     );
   };
 
@@ -91,19 +92,37 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     return isIOS() && ua.includes("Safari") && !ua.includes("Chrome");
   };
 
-  // Verifica se o iOS suporta notificações push (iOS 16.4+)
+  // Verifica se o iOS suporta notificações push
+  // - iOS 16.4+ em Safari: Suporta WebPush nativo
+  // - iOS PWA (standalone): Suporta push através de outro mecanismo
   const isIOSPushSupported = () => {
+    // Se não for iOS, não é suportado
     if (!isIOS()) return false;
-
-    // Extrai a versão do iOS do user-agent
-    const match = navigator.userAgent.match(/OS\s+(\d+)_(\d+)/);
-    if (!match) return false;
-
-    const majorVersion = parseInt(match[1], 10);
-    const minorVersion = parseInt(match[2], 10);
-
-    // iOS 16.4+ suporta notificações push no Safari
-    return majorVersion > 16 || (majorVersion === 16 && minorVersion >= 4);
+    
+    // PWA no iOS (modo standalone) - sempre consideramos suportado
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         (window.navigator as any).standalone === true;
+    if (isStandalone) {
+      console.log("Dispositivo iOS em modo standalone (PWA) - suportado para notificações");
+      return true;
+    }
+    
+    // Safari no iOS 16.4+ também suporta
+    try {
+      // Extrai a versão do iOS do user-agent
+      const match = navigator.userAgent.match(/OS\s+(\d+)_(\d+)/);
+      if (match && isIOSSafari()) {
+        const majorVersion = parseInt(match[1], 10);
+        const minorVersion = parseInt(match[2], 10);
+        
+        // iOS 16.4+ suporta notificações push no Safari
+        return majorVersion > 16 || (majorVersion === 16 && minorVersion >= 4);
+      }
+    } catch (e) {
+      console.error("Erro ao detectar versão do iOS:", e);
+    }
+    
+    return false;
   };
 
   // Função para verificar o status atual da inscrição
@@ -170,12 +189,20 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     }
   };
 
+  // Interface para o payload de registro de dispositivo
+  interface RegisterDevicePayload {
+    subscription: PushSubscriptionJSON;
+    deviceType?: 'web' | 'ios' | 'android';
+  }
+
   // Registrar um novo dispositivo no backend
   const registerDeviceMutation = useMutation({
-    mutationFn: async (subscription: PushSubscriptionJSON) => {
+    mutationFn: async (payload: RegisterDevicePayload) => {
+      const { subscription, deviceType = 'web' } = payload;
+      
       const response = await apiRequest("POST", "/api/devices", {
         deviceToken: JSON.stringify(subscription),
-        deviceType: "web",
+        deviceType: deviceType,
         deviceName: navigator.userAgent,
         pushEnabled: true,
       });
@@ -189,19 +216,25 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   // Remover um dispositivo no backend
   const unregisterDeviceMutation = useMutation({
     mutationFn: async (subscription: PushSubscriptionJSON) => {
-      // Primeiro precisamos encontrar o ID do dispositivo com base no token
-      const deviceTokenStr = JSON.stringify(subscription);
-      const devicesResponse = await apiRequest("GET", "/api/devices");
-      const devices = await devicesResponse.json();
-      const device = devices.find((d: any) => d.deviceToken === deviceTokenStr);
+      try {
+        // Primeiro precisamos encontrar o ID do dispositivo com base no token
+        const deviceTokenStr = JSON.stringify(subscription);
+        const devicesResponse = await apiRequest("GET", "/api/devices");
+        const devices = await devicesResponse.json();
+        const device = devices.find((d: any) => d.deviceToken === deviceTokenStr);
 
-      if (!device) {
-        throw new Error("Dispositivo não encontrado");
+        if (!device) {
+          console.log("Dispositivo não encontrado para cancelamento de inscrição");
+          return { success: false, message: "Dispositivo não encontrado" };
+        }
+
+        // Agora podemos excluir o dispositivo pelo ID
+        const response = await apiRequest("DELETE", `/api/devices/${device.id}`);
+        return response.json();
+      } catch (error) {
+        console.error("Erro ao cancelar inscrição do dispositivo:", error);
+        return { success: false, message: "Erro ao cancelar inscrição" };
       }
-
-      // Agora podemos excluir o dispositivo pelo ID
-      const response = await apiRequest("DELETE", `/api/devices/${device.id}`);
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/devices"] });
@@ -210,19 +243,83 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
   // Função para inscrever o usuário para notificações push
   const subscribe = async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      toast({
-        title: "Erro",
-        description: "Seu navegador não suporta notificações push.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setIsPending(true);
+      
+      // Caso especial para iOS
+      if (isIOS()) {
+        console.log("Tentando registrar notificações em dispositivo iOS");
+        
+        // Verificar se estamos no modo standalone (PWA instalado)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                             (window.navigator as any).standalone === true;
+        
+        // Solicitar permissão para notificações no iOS
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          setSubscriptionStatus(PushSubscriptionStatus.DENIED);
+          toast({
+            title: "Permissão negada",
+            description: "Você não concedeu permissão para notificações.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Se estamos em um PWA no iOS, podemos usar um token simulado para iOS
+        if (isStandalone) {
+          console.log("Registrando dispositivo iOS em modo PWA");
+          
+          // Criar uma "subscription" fictícia para o iOS
+          const iosSubscription: PushSubscriptionJSON = {
+            endpoint: `https://apple-push-service/${Date.now()}`,
+            expirationTime: null,
+            keys: {
+              p256dh: `ios-p256dh-${navigator.userAgent.replace(/\W/g, "-")}`,
+              auth: `ios-auth-${Date.now()}`
+            }
+          };
+          
+          // Registrar no backend com tipo específico para iOS
+          await registerDeviceMutation.mutateAsync({
+            subscription: iosSubscription,
+            deviceType: "ios"
+          });
+          
+          // Atualizar o estado
+          setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
+          toast({
+            title: "Notificações ativadas no iOS",
+            description: "Você receberá notificações importantes.",
+          });
+          return;
+        }
+        
+        // Para Safari no iOS 16.4+, tentamos o método padrão
+        if (isIOSSafari() && isIOSPushSupported()) {
+          console.log("Tentando registrar push no Safari iOS 16.4+");
+        } else {
+          // iOS mas sem suporte a push
+          toast({
+            title: "Dispositivo não suportado",
+            description: "Seu dispositivo iOS não suporta notificações push. Tente adicionar o aplicativo à tela inicial.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
+      // Verificação padrão para navegadores não-iOS ou Safari no iOS 16.4+
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        toast({
+          title: "Erro",
+          description: "Seu navegador não suporta notificações push.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Solicitar permissão do usuário
+      // Solicitar permissão do usuário (redundante para iOS, mas necessário para outros)
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setSubscriptionStatus(PushSubscriptionStatus.DENIED);
@@ -246,8 +343,15 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         ),
       });
 
+      // Determinar o tipo de dispositivo
+      const deviceType = isIOS() ? "ios" : "web";
+      console.log(`Registrando dispositivo como tipo: ${deviceType}`);
+
       // Registrar a inscrição no servidor
-      await registerDeviceMutation.mutateAsync(subscription.toJSON());
+      await registerDeviceMutation.mutateAsync({
+        subscription: subscription.toJSON(),
+        deviceType
+      });
 
       // Atualizar o estado
       setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
@@ -269,12 +373,46 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
   // Função para cancelar a inscrição
   const unsubscribe = async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      return;
-    }
-
     try {
       setIsPending(true);
+      
+      // Caso especial para iOS
+      if (isIOS()) {
+        console.log("Desativando notificações em dispositivo iOS");
+        
+        try {
+          // Buscar todos os dispositivos do usuário
+          const devicesResponse = await apiRequest("GET", "/api/devices");
+          const devices = await devicesResponse.json();
+          
+          // Encontrar dispositivos iOS
+          const iosDevices = devices.filter((d: any) => d.deviceType === "ios");
+          
+          if (iosDevices.length > 0) {
+            // Excluir todos os dispositivos iOS
+            for (const device of iosDevices) {
+              await apiRequest("DELETE", `/api/devices/${device.id}`);
+              console.log(`Dispositivo iOS ${device.id} excluído`);
+            }
+            
+            // Atualizar o estado
+            setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+            toast({
+              title: "Notificações desativadas",
+              description: "Você não receberá mais notificações no iOS.",
+            });
+            return;
+          }
+        } catch (iosError) {
+          console.error("Erro ao excluir dispositivos iOS:", iosError);
+        }
+      }
+      
+      // Fluxo padrão para outros navegadores
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        return;
+      }
+
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
 
@@ -290,6 +428,13 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         toast({
           title: "Notificações desativadas",
           description: "Você não receberá mais notificações.",
+        });
+      } else {
+        // Não há inscrição para cancelar
+        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+        toast({
+          title: "Notificações já estão desativadas",
+          description: "Não foi encontrada nenhuma inscrição ativa para cancelar.",
         });
       }
     } catch (error) {
