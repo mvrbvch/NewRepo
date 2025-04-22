@@ -87,7 +87,7 @@ export function usePushNotifications() {
 // Implementação real do hook, usado pelo provedor
 function usePushNotificationsHook(): PushNotificationsContextType {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, refreshAuth, isAuthenticated } = useAuth();
   const [isPending, setIsPending] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<PushSubscriptionStatus>(PushSubscriptionStatus.NOT_SUPPORTED);
@@ -273,14 +273,22 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     try {
       setIsPending(true);
       
-      // Verificar se o usuário está autenticado
-      if (!user) {
-        toast({
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para ativar notificações.",
-          variant: "destructive",
-        });
-        return;
+      // Verificar se o usuário está autenticado e atualizar estado de autenticação
+      if (!isAuthenticated) {
+        console.log("Tentando atualizar estado de autenticação antes de ativar notificações...");
+        const refreshedUser = await refreshAuth();
+        
+        if (!refreshedUser) {
+          console.error("Falha ao atualizar autenticação - usuário continua não autenticado");
+          toast({
+            title: "Erro de autenticação",
+            description: "Você precisa estar logado para ativar notificações. Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          return;
+        } else {
+          console.log("Autenticação atualizada com sucesso:", refreshedUser.username);
+        }
       }
       
       // Caso especial para iOS
@@ -413,14 +421,22 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     try {
       setIsPending(true);
       
-      // Verificar se o usuário está autenticado
-      if (!user) {
-        toast({
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para gerenciar notificações.",
-          variant: "destructive",
-        });
-        return;
+      // Verificar se o usuário está autenticado e atualizar estado se necessário
+      if (!isAuthenticated) {
+        console.log("Tentando atualizar estado de autenticação antes de cancelar notificações...");
+        const refreshedUser = await refreshAuth();
+        
+        if (!refreshedUser) {
+          console.error("Falha ao atualizar autenticação para cancelamento de notificações");
+          toast({
+            title: "Erro de autenticação",
+            description: "Você precisa estar logado para gerenciar notificações. Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          return;
+        } else {
+          console.log("Autenticação atualizada com sucesso para cancelamento:", refreshedUser.username);
+        }
       }
       
       // Caso especial para iOS
@@ -499,14 +515,22 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   // Testar envio de notificação com opções personalizadas
   const testNotification = async (options?: NotificationTestOptions) => {
     try {
-      // Verificar se o usuário está autenticado
-      if (!user) {
-        toast({
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para testar notificações.",
-          variant: "destructive",
-        });
-        return;
+      // Verificar se o usuário está autenticado e atualizar estado de autenticação se necessário
+      if (!isAuthenticated) {
+        console.log("Tentando atualizar estado de autenticação antes de testar notificações...");
+        const refreshedUser = await refreshAuth();
+        
+        if (!refreshedUser) {
+          console.error("Falha ao atualizar autenticação para teste de notificação");
+          toast({
+            title: "Erro de autenticação",
+            description: "Você precisa estar logado para testar notificações. Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          return;
+        } else {
+          console.log("Autenticação atualizada com sucesso para teste:", refreshedUser.username);
+        }
       }
       const payload: any = {};
       
