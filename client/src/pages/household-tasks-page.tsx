@@ -204,20 +204,44 @@ export default function HouseholdTasksPage() {
     }
   };
 
+  // Função para atualizar manualmente os dados
+  const handleManualRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    if (user?.partnerId) {
+      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
+    }
+    toast({
+      title: "Atualizando...",
+      description: "Buscando as tarefas mais recentes.",
+      duration: 2000,
+    });
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <Header title="Tarefas Domésticas" />
 
       <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
         <h2 className="text-xl font-semibold text-primary-dark">Minhas Tarefas</h2>
-        <Button 
-          onClick={handleOpenCreateModal}
-          variant="default"
-          size="sm"
-          className="flex items-center gap-1 bg-primary-dark hover:bg-primary text-white transition-colors"
-        >
-          <span className="text-lg">+</span> Nova Tarefa
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleManualRefresh}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+          <Button 
+            onClick={handleOpenCreateModal}
+            variant="default"
+            size="sm"
+            className="flex items-center gap-1 bg-primary-dark hover:bg-primary text-white transition-colors"
+          >
+            <span className="text-lg">+</span> Nova Tarefa
+          </Button>
+        </div>
       </div>
 
       <Tabs
@@ -277,7 +301,7 @@ export default function HouseholdTasksPage() {
                 >
                   <div className="flex items-start gap-4">
                     <div
-                      className="mt-1"
+                      className="mt-1 flex-shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleTaskComplete(task);
@@ -292,10 +316,10 @@ export default function HouseholdTasksPage() {
                         }`} 
                       />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h3
-                          className={`font-semibold text-lg ${
+                          className={`font-semibold text-lg break-words ${
                             task.completed 
                               ? "line-through text-gray-500" 
                               : "text-dark"
@@ -304,8 +328,8 @@ export default function HouseholdTasksPage() {
                           {task.title}
                         </h3>
                         {task.frequency !== "once" && (
-                          <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium">
-                            <RefreshCw className="h-3 w-3 mr-1 text-primary" />
+                          <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium flex-shrink-0">
+                            <RefreshCw className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
                             {getFrequencyText(task.frequency)}
                           </div>
                         )}
@@ -313,7 +337,7 @@ export default function HouseholdTasksPage() {
 
                       {task.description && (
                         <p
-                          className={`text-sm mt-2 ${
+                          className={`text-sm mt-2 break-words ${
                             task.completed 
                               ? "text-gray-500" 
                               : "text-medium"
@@ -326,18 +350,18 @@ export default function HouseholdTasksPage() {
                       <div className="mt-3 flex flex-wrap gap-2 items-center">
                         {task.dueDate && (
                           <div className="text-xs flex items-center">
-                            <CalendarIcon className="h-3 w-3 mr-1 text-gray-500" />
+                            <CalendarIcon className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
                             {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
                               <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
-                                <AlertCircle size={12} />
-                                <span>{getFormattedDueDate(task.dueDate)}</span>
+                                <AlertCircle size={12} className="flex-shrink-0" />
+                                <span className="truncate">{getFormattedDueDate(task.dueDate)}</span>
                               </Badge>
                             ) : (
                               <span className={`${
                                 task.completed 
                                   ? "text-gray-500 bg-gray-100" 
                                   : "text-dark font-medium bg-primary-light/20"
-                                } px-2 py-0.5 rounded-full`}
+                                } px-2 py-0.5 rounded-full truncate`}
                               >
                                 {getFormattedDueDate(task.dueDate)}
                               </span>
@@ -347,12 +371,12 @@ export default function HouseholdTasksPage() {
 
                         {task.completed ? (
                           <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
-                            <Check className="h-3 w-3 mr-1" />
+                            <Check className="h-3 w-3 mr-1 flex-shrink-0" />
                             Concluída
                           </div>
                         ) : task.assignedTo && task.assignedTo === user?.partnerId && (
                           <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
-                            <UserIcon className="h-3 w-3 mr-1" />
+                            <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
                             Atribuída ao parceiro
                           </div>
                         )}

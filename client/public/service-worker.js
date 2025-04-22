@@ -1,5 +1,5 @@
 // Nome do cache para armazenar arquivos offline
-const CACHE_NAME = 'por-nos-v1';
+const CACHE_NAME = 'por-nos-v2';
 
 // Lista de URLs para pré-cachear (recursos estáticos principais)
 const ASSETS_TO_CACHE = [
