@@ -24,7 +24,8 @@ import {
   generateTaskReminderEmail,
   generatePartnerInviteEmail,
 } from "./email";
-import { sendPushToUser, sendPushToDevice, PushNotificationPayload } from "./pushNotifications";
+import { sendPushToUser, sendPushToDevice, PushNotificationPayload, vapidPublicKey } from "./pushNotifications";
+import { isOneSignalConfigured, sendOneSignalToUser } from "./onesignal";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
@@ -162,9 +163,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rota de diagnóstico para verificar as chaves VAPID
   app.get("/api/push/vapid-info", (req: Request, res: Response) => {
     try {
-      // Importar as chaves do arquivo pushNotifications.ts
-      const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
-      
       // Esta função converte a chave base64url para um array Uint8Array
       // É a mesma função utilizada no frontend
       function urlBase64ToUint8Array(base64String: string) {
@@ -193,6 +191,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         status: "error",
         message: "Falha ao verificar chaves VAPID",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  
+  // Rota de diagnóstico para verificar as configurações do OneSignal
+  app.get("/api/push/onesignal-info", (req: Request, res: Response) => {
+    try {
+      const isConfigured = isOneSignalConfigured();
+      
+      return res.status(200).json({
+        status: "ok",
+        isConfigured,
+        appId: process.env.ONESIGNAL_APP_ID,
+        apiKeyPresent: Boolean(process.env.ONESIGNAL_API_KEY),
+        timestamp: new Date().toISOString(),
+        message: isConfigured 
+          ? "OneSignal está configurado corretamente" 
+          : "OneSignal não está configurado completamente"
+      });
+    } catch (error) {
+      console.error("Erro ao verificar configurações do OneSignal:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Falha ao verificar configurações do OneSignal",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+  
+  // Rota para enviar uma notificação de teste via OneSignal
+  app.post("/api/push/test-onesignal", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user?.id as number;
+      const { title, message } = req.body;
+      
+      if (!title || !message) {
+        return res.status(400).json({
+          message: "Required fields missing",
+          required: ["title", "message"]
+        });
+      }
+      
+      const pushPayload: PushNotificationPayload = {
+        title,
+        body: message,
+        data: {
+          source: "onesignal-test",
+          timestamp: new Date().toISOString()
+        }
+      };
+      
+      // Tentar enviar via OneSignal
+      const oneSignalSentCount = await sendOneSignalToUser(userId, pushPayload);
+      
+      // Registrar informações sobre o teste
+      console.log(`[TEST] OneSignal enviou ${oneSignalSentCount} notificações`);
+      
+      // Também tentar enviar via método tradicional para comparação
+      const regularSentCount = await sendPushToUser(userId, pushPayload);
+      
+      console.log(`[TEST] Método tradicional enviou ${regularSentCount} notificações`);
+      
+      return res.status(200).json({
+        status: "ok",
+        oneSignalSent: oneSignalSentCount,
+        regularSent: regularSentCount,
+        oneSignalConfigured: isOneSignalConfigured(),
+        message: "Notificações de teste enviadas com sucesso",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Erro ao enviar notificação de teste:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Falha ao enviar notificação de teste",
         error: error instanceof Error ? error.message : String(error),
       });
     }

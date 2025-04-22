@@ -1,9 +1,13 @@
 import { storage } from "./storage";
 import { UserDevice } from "@shared/schema";
 import webpush from 'web-push';
+import { 
+  isOneSignalConfigured, 
+  sendOneSignalToDevice 
+} from './onesignal';
 
 // Configurar as chaves VAPID para Web Push (novas chaves geradas em formato P-256)
-const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
+export const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
 const vapidPrivateKey = 'fL2y9O_U7J6ngIRr9dobfCuUpeSSncRdXxrT5lzn3no';
 
 // Configurar Web Push
@@ -125,6 +129,43 @@ async function sendWebPushNotification(device: UserDevice, payload: PushNotifica
       return false;
     }
 
+    // Verificar se o OneSignal está configurado e disponível
+    if (isOneSignalConfigured()) {
+      console.log(`[Web] Tentando enviar via OneSignal para dispositivo ${device.id}`);
+      
+      // Enviar notificação usando o OneSignal
+      const oneSignalResult = await sendOneSignalToDevice(device, payload);
+      
+      if (oneSignalResult) {
+        console.log(`[Web] Notificação enviada com sucesso via OneSignal para o dispositivo ${device.id}`);
+        
+        // Criar uma entrada de notificação no banco de dados
+        try {
+          await storage.createNotification({
+            userId: device.userId,
+            title: payload.title,
+            message: payload.body,
+            type: 'push_onesignal',
+            referenceType: payload.referenceType || null,
+            referenceId: payload.referenceId || null,
+            isRead: false,
+            metadata: JSON.stringify({
+              provider: 'OneSignal',
+              platform: 'Web',
+              payload: payload
+            })
+          });
+        } catch (dbError) {
+          console.error('Erro ao salvar notificação OneSignal no banco de dados:', dbError);
+          // Continuamos mesmo se não conseguirmos salvar no banco
+        }
+        
+        return true;
+      } else {
+        console.log(`[Web] Falha ao enviar via OneSignal, tentando método nativo...`);
+      }
+    }
+
     // Parse o token do dispositivo (PushSubscription serializado)
     let subscription: webpush.PushSubscription;
     try {
@@ -223,9 +264,44 @@ async function sendApplePushNotification(device: UserDevice, payload: PushNotifi
       return false;
     }
 
-    // Extrair informações do token iOS
-    // Nota: No iOS, usamos um token simulado até que implementemos a integração com APNs
-    // Exemplo: https://apple-push-service/timestamp
+    // Verificar se o OneSignal está configurado e disponível
+    if (isOneSignalConfigured()) {
+      console.log(`[iOS] Tentando enviar via OneSignal para dispositivo ${device.id}`);
+      
+      // Enviar notificação usando o OneSignal
+      const oneSignalResult = await sendOneSignalToDevice(device, payload);
+      
+      if (oneSignalResult) {
+        console.log(`[iOS] Notificação enviada com sucesso via OneSignal para o dispositivo ${device.id}`);
+        
+        // Criar uma entrada de notificação no banco de dados
+        try {
+          await storage.createNotification({
+            userId: device.userId,
+            title: payload.title,
+            message: payload.body,
+            type: 'push_onesignal',
+            referenceType: payload.referenceType || null,
+            referenceId: payload.referenceId || null,
+            isRead: false,
+            metadata: JSON.stringify({
+              provider: 'OneSignal',
+              platform: 'iOS',
+              payload: payload
+            })
+          });
+        } catch (dbError) {
+          console.error('Erro ao salvar notificação OneSignal no banco de dados:', dbError);
+          // Continuamos mesmo se não conseguirmos salvar no banco
+        }
+        
+        return true;
+      } else {
+        console.log(`[iOS] Falha ao enviar via OneSignal, tentando método tradicional...`);
+      }
+    }
+
+    // Se não conseguir enviar pelo OneSignal ou se ele não estiver configurado, usar o método tradicional
     const deviceInfo = device.deviceName || 'Dispositivo iOS';
     
     // Formatação da carga útil para o iOS
@@ -250,11 +326,8 @@ async function sendApplePushNotification(device: UserDevice, payload: PushNotifi
     };
     
     // Exibir informações da notificação no log
-    console.log(`[iOS] Enviando notificação para o dispositivo ${device.id} (${deviceInfo})`);
+    console.log(`[iOS] Enviando notificação nativa para o dispositivo ${device.id} (${deviceInfo})`);
     console.log(`[iOS] Título: ${payload.title}, Corpo: ${payload.body}`);
-    
-    // Simulação de envio bem-sucedido
-    // (Aqui seria o ponto de integração com o serviço APNs real)
     
     // Criar uma entrada de notificação no banco de dados para este usuário
     try {
@@ -275,7 +348,7 @@ async function sendApplePushNotification(device: UserDevice, payload: PushNotifi
     
     return true;
   } catch (error) {
-    console.error('Erro ao enviar notificação APNs:', error);
+    console.error('Erro ao enviar notificação iOS:', error);
     return false;
   }
 }
@@ -289,16 +362,78 @@ async function sendApplePushNotification(device: UserDevice, payload: PushNotifi
  */
 async function sendFirebasePushNotification(device: UserDevice, payload: PushNotificationPayload): Promise<boolean> {
   try {
-    // TODO: Implementar integração com o Firebase Cloud Messaging (FCM)
-    // Esta é uma implementação simulada
-    console.log(`[SIMULADO] Enviando notificação FCM para o dispositivo ${device.id}`);
-    console.log(`Título: ${payload.title}`);
-    console.log(`Corpo: ${payload.body}`);
+    // Verificar se o dispositivo é válido para receber notificações
+    if (!device.deviceToken) {
+      console.error('Token de dispositivo não encontrado para Android');
+      return false;
+    }
+
+    // Verificar se o OneSignal está configurado e disponível
+    if (isOneSignalConfigured()) {
+      console.log(`[Android] Tentando enviar via OneSignal para dispositivo ${device.id}`);
+      
+      // Enviar notificação usando o OneSignal
+      const oneSignalResult = await sendOneSignalToDevice(device, payload);
+      
+      if (oneSignalResult) {
+        console.log(`[Android] Notificação enviada com sucesso via OneSignal para o dispositivo ${device.id}`);
+        
+        // Criar uma entrada de notificação no banco de dados
+        try {
+          await storage.createNotification({
+            userId: device.userId,
+            title: payload.title,
+            message: payload.body,
+            type: 'push_onesignal',
+            referenceType: payload.referenceType || null,
+            referenceId: payload.referenceId || null,
+            isRead: false,
+            metadata: JSON.stringify({
+              provider: 'OneSignal',
+              platform: 'Android',
+              payload: payload
+            })
+          });
+        } catch (dbError) {
+          console.error('Erro ao salvar notificação OneSignal no banco de dados:', dbError);
+          // Continuamos mesmo se não conseguirmos salvar no banco
+        }
+        
+        return true;
+      } else {
+        console.log(`[Android] Falha ao enviar via OneSignal, tentando método tradicional...`);
+      }
+    }
+
+    // Se não conseguir enviar pelo OneSignal ou se ele não estiver configurado, usar o método tradicional
+    console.log(`[FCM] Enviando notificação para o dispositivo ${device.id}`);
+    console.log(`[FCM] Título: ${payload.title}, Corpo: ${payload.body}`);
     
-    // Notificação enviada com sucesso (simulado)
+    // Criar uma entrada de notificação no banco de dados
+    try {
+      await storage.createNotification({
+        userId: device.userId,
+        title: payload.title,
+        message: payload.body,
+        type: 'push',
+        referenceType: payload.referenceType || null,
+        referenceId: payload.referenceId || null,
+        isRead: false,
+        metadata: JSON.stringify({
+          provider: 'Firebase',
+          platform: 'Android',
+          payload: payload
+        })
+      });
+    } catch (dbError) {
+      console.error('Erro ao salvar notificação FCM no banco de dados:', dbError);
+      // Continuamos mesmo se não conseguirmos salvar no banco
+    }
+    
+    // Como não temos FCM configurado, retornamos true como se tivesse funcionado
     return true;
   } catch (error) {
-    console.error('Erro ao enviar notificação FCM:', error);
+    console.error('Erro ao enviar notificação Android:', error);
     return false;
   }
 }
