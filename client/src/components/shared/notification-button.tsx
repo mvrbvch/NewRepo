@@ -121,37 +121,55 @@ export default function NotificationButton({ className, ...props }: ButtonProps)
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
-            <div className="text-sm space-y-4">
-              <p>
-                As notificações permitem que você e seu parceiro comuniquem-se sobre:
-              </p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Lembretes de tarefas domésticas</li>
-                <li>Eventos importantes no calendário</li>
-                <li>Mensagens diretas do seu parceiro</li>
-              </ul>
-              
-              {subscriptionStatus === PushSubscriptionStatus.DENIED && (
-                <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-md">
-                  <p className="font-medium">Notificações bloqueadas pelo navegador</p>
-                  <p className="text-xs mt-1">
-                    Para ativar: acesse as configurações do seu navegador, 
-                    encontre as permissões deste site e permita notificações.
-                  </p>
-                </div>
-              )}
-              
-              {subscriptionStatus === PushSubscriptionStatus.NOT_SUPPORTED && (
-                <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 rounded-md">
-                  <p className="font-medium">Notificações push indisponíveis</p>
-                  <p className="text-xs mt-1">
-                    As notificações push podem não estar disponíveis neste ambiente devido a restrições do navegador ou limitações do servidor. No modo PWA instalado em um dispositivo móvel, elas funcionarão normalmente.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <Tabs defaultValue="info" className="w-full mt-2">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger 
+                value="test" 
+                disabled={subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED}
+              >
+                Testar
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="info" className="py-4">
+              <div className="text-sm space-y-4">
+                <p>
+                  As notificações permitem que você e seu parceiro comuniquem-se sobre:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Lembretes de tarefas domésticas</li>
+                  <li>Eventos importantes no calendário</li>
+                  <li>Mensagens diretas do seu parceiro</li>
+                </ul>
+                
+                {subscriptionStatus === PushSubscriptionStatus.DENIED && (
+                  <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-md">
+                    <p className="font-medium">Notificações bloqueadas pelo navegador</p>
+                    <p className="text-xs mt-1">
+                      Para ativar: acesse as configurações do seu navegador, 
+                      encontre as permissões deste site e permita notificações.
+                    </p>
+                  </div>
+                )}
+                
+                {subscriptionStatus === PushSubscriptionStatus.NOT_SUPPORTED && (
+                  <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 rounded-md">
+                    <p className="font-medium">Notificações push indisponíveis</p>
+                    <p className="text-xs mt-1">
+                      As notificações push podem não estar disponíveis neste ambiente devido a restrições do navegador ou limitações do servidor. No modo PWA instalado em um dispositivo móvel, elas funcionarão normalmente.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="test">
+              <div className="py-2">
+                <NotificationTestPanel />
+              </div>
+            </TabsContent>
+          </Tabs>
           
           <DialogFooter className="sm:justify-between">
             <DialogClose asChild>

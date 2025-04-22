@@ -4,11 +4,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
-import { AnimatedList } from "@/components/ui/animated-list";
 import { motion } from "framer-motion";
 
 // Componente para testar notificações push com opções avançadas
@@ -61,7 +59,11 @@ export function NotificationTestPanel() {
       
       <CardContent>
         {expanded ? (
-          <AnimatedList>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             <Tabs defaultValue={isIOSDevice ? "ios" : "web"} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger 
@@ -163,7 +165,7 @@ export function NotificationTestPanel() {
                 Enviar Notificação de Teste
               </Button>
             </motion.div>
-          </AnimatedList>
+          </motion.div>
         ) : (
           <div className="text-center py-2">
             <p className="text-sm text-muted-foreground mb-4">
