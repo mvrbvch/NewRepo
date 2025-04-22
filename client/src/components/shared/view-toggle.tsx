@@ -27,34 +27,28 @@ export default function ViewToggle({ view, onChange, onToday }: ViewToggleProps)
         {/* Botões de visualização com efeito tátil */}
         <TactileFeedback>
           <button 
-            className={`py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center ${
-              view === 'day' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
-            }`}
+            className="py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center text-gray-700"
             onClick={() => onChange('day')}
           >
-            Dia
+            <span className={view === 'day' ? 'text-white' : 'text-gray-700'}>Dia</span>
           </button>
         </TactileFeedback>
         
         <TactileFeedback>
           <button 
-            className={`py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center ${
-              view === 'week' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
-            }`}
+            className="py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center text-gray-700"
             onClick={() => onChange('week')}
           >
-            Semana
+            <span className={view === 'week' ? 'text-white' : 'text-gray-700'}>Semana</span>
           </button>
         </TactileFeedback>
         
         <TactileFeedback>
           <button 
-            className={`py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center ${
-              view === 'month' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
-            }`}
+            className="py-1 rounded-md font-medium z-10 transition-colors duration-200 w-full flex justify-center items-center text-gray-700"
             onClick={() => onChange('month')}
           >
-            Mês
+            <span className={view === 'month' ? 'text-white' : 'text-gray-700'}>Mês</span>
           </button>
         </TactileFeedback>
       </div>
