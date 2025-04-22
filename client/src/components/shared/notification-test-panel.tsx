@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { usePushNotifications, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
 import { BellIcon, InfoIcon, AlertCircleIcon, CheckCircleIcon } from "lucide-react";
 
 /**
@@ -25,15 +25,22 @@ export function NotificationTestPanel() {
   const [useOneSignal, setUseOneSignal] = useState(true);
   
   const {
+    subscriptionStatus,
+    isPending,
+    isIOSDevice,
+    deviceType,
     subscribe,
     unsubscribe,
-    subscription,
-    isPushSupported,
-    isSubscribed,
-    pushError,
-    permissionState,
-    registerServiceWorker,
+    testNotification
   } = usePushNotifications();
+  
+  // Propriedades derivadas para compatibilidade
+  const isPushSupported = subscriptionStatus !== PushSubscriptionStatus.NOT_SUPPORTED;
+  const isSubscribed = subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED;
+  const pushError = subscriptionStatus === PushSubscriptionStatus.DENIED ? 
+    "Permissão para notificações foi negada pelo navegador" : null;
+  const permissionState = subscriptionStatus === PushSubscriptionStatus.DENIED ? 
+    "denied" : (isSubscribed ? "granted" : "default");
 
   async function handleTestWebPush() {
     if (!isSubscribed) {
@@ -46,22 +53,13 @@ export function NotificationTestPanel() {
     setError(null);
 
     try {
-      const response = await fetch("/api/push/test-web-push", {
-        method: "POST",
-        body: JSON.stringify({
-          title,
-          body,
-          useOneSignal
-        }),
-        headers: {
-          "Content-Type": "application/json"
-        }
+      // Usar a função de teste de notificação do hook
+      await testNotification({
+        title,
+        message: body,
+        platform: deviceType || 'web'
       });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao enviar notificação: ${response.statusText}`);
-      }
-
+      
       setSuccess("Notificação enviada com sucesso!");
     } catch (err) {
       setError(`Falha ao enviar notificação: ${err instanceof Error ? err.message : String(err)}`);
@@ -80,7 +78,7 @@ export function NotificationTestPanel() {
         method: "POST",
         body: JSON.stringify({
           title,
-          body
+          message: body // O endpoint espera 'message' em vez de 'body'
         }),
         headers: {
           "Content-Type": "application/json"
@@ -90,9 +88,11 @@ export function NotificationTestPanel() {
       if (!response.ok) {
         throw new Error(`Erro ao enviar notificação: ${response.statusText}`);
       }
-
-      if (response.oneSignalSent || response.regularSent) {
-        setSuccess(`Notificação enviada com sucesso! ${response.oneSignalSent ? 'OneSignal: Sim' : ''} ${response.regularSent ? 'WebPush: Sim' : ''}`);
+      
+      const data = await response.json();
+      
+      if (data.oneSignalSent || data.regularSent) {
+        setSuccess(`Notificação enviada com sucesso! ${data.oneSignalSent ? 'OneSignal: Sim' : ''} ${data.regularSent ? 'WebPush: Sim' : ''}`);
       } else {
         setSuccess("Solicitação enviada, mas nenhuma notificação foi entregue. Verifique se o dispositivo está registrado.");
       }
@@ -116,8 +116,10 @@ export function NotificationTestPanel() {
       if (!response.ok) {
         throw new Error(`Erro ao verificar configuração: ${response.statusText}`);
       }
+      
+      const data = await response.json();
 
-      if (response.isConfigured) {
+      if (data.isConfigured) {
         setSuccess("OneSignal está configurado corretamente!");
       } else {
         setError("OneSignal não está configurado. Verifique se as chaves de API estão presentes.");
@@ -171,7 +173,7 @@ export function NotificationTestPanel() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="notification-status" className="flex items-center">
                     Notificações Web
-                    <Badge variant={isSubscribed ? "success" : "outline"} className="ml-2">
+                    <Badge variant={isSubscribed ? "outline" : "outline"} className={`ml-2 ${isSubscribed ? 'bg-green-100 text-green-800 hover:bg-green-200' : ''}`}>
                       {isSubscribed ? "Ativadas" : "Desativadas"}
                     </Badge>
                   </Label>
@@ -260,7 +262,20 @@ export function NotificationTestPanel() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => registerServiceWorker()}
+                    onClick={() => {
+                      // Registrar o service worker manualmente se necessário
+                      if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/service-worker.js')
+                          .then(registration => {
+                            setSuccess('Service Worker registrado com sucesso!');
+                          })
+                          .catch(err => {
+                            setError(`Falha ao registrar Service Worker: ${err.message}`);
+                          });
+                      } else {
+                        setError('Service Worker não é suportado neste navegador');
+                      }
+                    }}
                     disabled={loading}
                   >
                     Registrar Service Worker

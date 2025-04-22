@@ -1,7 +1,6 @@
-import React from 'react';
-import { NotificationTestPanel } from '@/components/shared/notification-test-panel';
-import { PageContainer } from '../components/shared/page-container';
-import { Separator } from '@/components/ui/separator';
+import React from "react";
+import { NotificationTestPanel } from "@/components/shared/notification-test-panel";
+import { PageContainer } from "@/components/shared/page-container";
 
 /**
  * Página para testar e diagnosticar o sistema de notificações
@@ -9,12 +8,11 @@ import { Separator } from '@/components/ui/separator';
 export default function NotificationTestPage() {
   return (
     <PageContainer>
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-4">Teste de Notificações</h1>
-        <Separator className="my-4" />
-        <p className="mb-6 text-muted-foreground">
-          Use esta página para testar o funcionamento das notificações push no aplicativo.
-          Você pode enviar notificações de teste para seu próprio dispositivo e verificar a configuração do sistema.
+      <div className="max-w-3xl mx-auto py-6">
+        <h1 className="text-2xl font-bold mb-6">Teste de Notificações</h1>
+        <p className="text-muted-foreground mb-8">
+          Use esta página para testar o sistema de notificações push da aplicação e diagnosticar problemas.
+          Você pode enviar notificações de teste para o seu dispositivo atual e verificar a configuração do sistema.
         </p>
         
         <NotificationTestPanel />
