@@ -219,17 +219,8 @@ function usePushNotificationsHook(): PushNotificationsContextType {
     mutationFn: async (payload: RegisterDevicePayload) => {
       const { subscription, deviceType = 'web' } = payload;
       
-      // Obter o ID do usuário atual
-      const userResponse = await apiRequest("GET", "/api/user");
-      const userData = await userResponse.json();
-      const userId = userData.id;
-      
-      if (!userId) {
-        throw new Error("Usuário não autenticado");
-      }
-      
+      // O servidor pegará o userId da sessão, não precisamos enviar
       const response = await apiRequest("POST", "/api/devices", {
-        userId: userId,
         deviceToken: JSON.stringify(subscription),
         deviceType: deviceType,
         deviceName: navigator.userAgent,

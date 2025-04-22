@@ -1060,37 +1060,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = req.user?.id as number;
+      
+      // Criar um novo objeto com os dados do corpo da requisição + userId da sessão
+      const deviceData = {
+        ...req.body,
+        userId, // Atribua o ID do usuário da sessão
+      };
 
-      // Validar dados do corpo da requisição
-      const validationResult = insertUserDeviceSchema.safeParse(req.body);
+      // Validar dados do dispositivo com o userId já atribuído
+      const validationResult = insertUserDeviceSchema.safeParse(deviceData);
       if (!validationResult.success) {
+        console.log("Erro de validação:", validationResult.error.format());
         return res.status(400).json({
           message: "Invalid device data",
           errors: validationResult.error.format(),
         });
       }
-
+      
       // Verificar se o token já está registrado para este usuário
       const existingDevice = await storage.getUserDeviceByToken(
-        req.body.deviceToken,
+        deviceData.deviceToken,
       );
       if (existingDevice && existingDevice.userId === userId) {
         // Atualizar dispositivo existente
         const updatedDevice = await storage.updateUserDevice(
           existingDevice.id,
           {
-            ...req.body,
+            ...deviceData,
             lastUsed: new Date(),
           },
         );
         return res.json(updatedDevice);
       }
 
-      // Registrar novo dispositivo
-      const device = await storage.registerUserDevice({
-        ...req.body,
-        userId,
-      });
+      // Registrar novo dispositivo com dados validados
+      const device = await storage.registerUserDevice(validationResult.data);
 
       res.status(201).json(device);
     } catch (error) {
