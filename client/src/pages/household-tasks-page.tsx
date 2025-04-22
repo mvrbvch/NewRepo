@@ -15,6 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 import CreateTaskModal from "@/components/household/create-task-modal";
 import TaskDetailsModal from "@/components/household/task-details-modal";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
+import { AnimatedList } from "@/components/ui/animated-list";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
+import { RippleButton } from "@/components/ui/ripple-button";
+import { motion } from "framer-motion";
 import {
   Loader2,
   Calendar as CalendarIcon,
@@ -288,115 +292,127 @@ export default function HouseholdTasksPage() {
               />
             </div>
           ) : filteredTasks.length > 0 ? (
-            <div className="space-y-4 px-4">
-              {filteredTasks.map((task) => (
-                <Card
-                  key={task.id}
-                  className={`p-4 relative ${
-                    task.completed 
-                      ? "bg-gray-50 border-gray-200" 
-                      : "bg-white hover:bg-primary-light/10 border-primary-light"
-                  } shadow-sm hover:shadow-md transition-all cursor-pointer`}
-                  onClick={() => handleOpenTaskDetails(task)}
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className="mt-1 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleTaskComplete(task);
-                      }}
+            <div className="px-4">
+              <AnimatedList
+                items={filteredTasks}
+                keyExtractor={(task) => task.id}
+                staggerDelay={0.05}
+                className="space-y-4"
+                renderItem={(task) => (
+                  <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
+                    <Card
+                      className={`p-4 relative ${
+                        task.completed 
+                          ? "bg-gray-50 border-gray-200" 
+                          : "bg-white hover:bg-primary-light/10 border-primary-light"
+                      } shadow-sm hover:shadow-md transition-all`}
                     >
-                      <Checkbox 
-                        checked={task.completed} 
-                        className={`h-5 w-5 rounded-sm ${
-                          !task.completed 
-                            ? "border-primary hover:border-primary-dark" 
-                            : "text-green-600"
-                        }`} 
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <h3
-                          className={`font-semibold text-lg break-words ${
-                            task.completed 
-                              ? "line-through text-gray-500" 
-                              : "text-dark"
-                          }`}
+                      <div className="flex items-start gap-4">
+                        <motion.div
+                          className="mt-1 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleTaskComplete(task);
+                          }}
+                          whileTap={{ scale: 0.8 }}
                         >
-                          {task.title}
-                        </h3>
-                        {task.frequency !== "once" && (
-                          <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium flex-shrink-0">
-                            <RefreshCw className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-                            {getFrequencyText(task.frequency)}
-                          </div>
-                        )}
-                      </div>
-
-                      {task.description && (
-                        <p
-                          className={`text-sm mt-2 break-words ${
-                            task.completed 
-                              ? "text-gray-500" 
-                              : "text-medium"
-                          }`}
-                        >
-                          {task.description}
-                        </p>
-                      )}
-
-                      <div className="mt-3 flex flex-wrap gap-2 items-center">
-                        {task.dueDate && (
-                          <div className="text-xs flex items-center">
-                            <CalendarIcon className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
-                            {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
-                              <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
-                                <AlertCircle size={12} className="flex-shrink-0" />
-                                <span className="truncate">{getFormattedDueDate(task.dueDate)}</span>
-                              </Badge>
-                            ) : (
-                              <span className={`${
+                          <Checkbox 
+                            checked={task.completed} 
+                            className={`h-5 w-5 rounded-sm ${
+                              !task.completed 
+                                ? "border-primary hover:border-primary-dark" 
+                                : "text-green-600"
+                            }`} 
+                          />
+                        </motion.div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <h3
+                              className={`font-semibold text-lg break-words ${
                                 task.completed 
-                                  ? "text-gray-500 bg-gray-100" 
-                                  : "text-dark font-medium bg-primary-light/20"
-                                } px-2 py-0.5 rounded-full truncate`}
-                              >
-                                {getFormattedDueDate(task.dueDate)}
-                              </span>
+                                  ? "line-through text-gray-500" 
+                                  : "text-dark"
+                              }`}
+                            >
+                              {task.title}
+                            </h3>
+                            {task.frequency !== "once" && (
+                              <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium flex-shrink-0">
+                                <RefreshCw className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
+                                {getFrequencyText(task.frequency)}
+                              </div>
                             )}
                           </div>
-                        )}
 
-                        {task.completed ? (
-                          <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
-                            <Check className="h-3 w-3 mr-1 flex-shrink-0" />
-                            Concluída
+                          {task.description && (
+                            <p
+                              className={`text-sm mt-2 break-words ${
+                                task.completed 
+                                  ? "text-gray-500" 
+                                  : "text-medium"
+                              }`}
+                            >
+                              {task.description}
+                            </p>
+                          )}
+
+                          <div className="mt-3 flex flex-wrap gap-2 items-center">
+                            {task.dueDate && (
+                              <div className="text-xs flex items-center">
+                                <CalendarIcon className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
+                                {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
+                                  <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
+                                    <AlertCircle size={12} className="flex-shrink-0" />
+                                    <span className="truncate">{getFormattedDueDate(task.dueDate)}</span>
+                                  </Badge>
+                                ) : (
+                                  <span className={`${
+                                    task.completed 
+                                      ? "text-gray-500 bg-gray-100" 
+                                      : "text-dark font-medium bg-primary-light/20"
+                                    } px-2 py-0.5 rounded-full truncate`}
+                                  >
+                                    {getFormattedDueDate(task.dueDate)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {task.completed ? (
+                              <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                                <Check className="h-3 w-3 mr-1 flex-shrink-0" />
+                                Concluída
+                              </div>
+                            ) : task.assignedTo && task.assignedTo === user?.partnerId && (
+                              <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                                <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                                Atribuída ao parceiro
+                              </div>
+                            )}
                           </div>
-                        ) : task.assignedTo && task.assignedTo === user?.partnerId && (
-                          <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
-                            <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
-                            Atribuída ao parceiro
-                          </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                    </Card>
+                  </TactileFeedback>
+                )}
+              />
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-gray-500">
+            <motion.div 
+              className="flex flex-col items-center justify-center h-48 text-gray-500"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <p>Nenhuma tarefa encontrada</p>
-              <Button
+              <RippleButton
                 variant="link"
                 onClick={handleOpenCreateModal}
                 className="mt-2"
               >
                 Criar uma nova tarefa
-              </Button>
-            </div>
+              </RippleButton>
+            </motion.div>
           )}
         </div>
       </Tabs>
