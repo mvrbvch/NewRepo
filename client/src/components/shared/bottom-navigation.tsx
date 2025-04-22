@@ -18,7 +18,7 @@ export default function BottomNavigation({
   const { subscriptionStatus } = usePushNotifications();
 
   return (
-    <div className="bg-white border-t border-gray-200 flex items-center justify-around p-2 z-10 shadow-sm">
+    <div className="bg-white border-t border-gray-200 flex items-center justify-around p-2 z-10 shadow-sm pb-5 fixed bottom-0 left-0 right-0">
       <Link href="/">
         <Button
           variant="ghost"
