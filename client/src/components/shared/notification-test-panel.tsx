@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { usePushNotifications, DeviceType, PushSubscriptionStatus } from "@/hooks/use-push-notifications";
 import { motion } from "framer-motion";
 
 // Componente para testar notificações push com opções avançadas
@@ -17,7 +17,7 @@ export function NotificationTestPanel() {
   // Estado para as opções de notificação
   const [title, setTitle] = useState("Notificação de teste");
   const [message, setMessage] = useState("Esta é uma notificação de teste personalizada!");
-  const [platform, setPlatform] = useState<'ios' | 'web' | null>(isIOSDevice ? 'ios' : 'web');
+  const [platform, setPlatform] = useState<DeviceType | null>(isIOSDevice ? DeviceType.IOS : DeviceType.WEB);
   const [sound, setSound] = useState(isIOSDevice ? "default" : "");
   const [badge, setBadge] = useState<number>(1);
   const [requireInteraction, setRequireInteraction] = useState(true);
@@ -68,15 +68,15 @@ export function NotificationTestPanel() {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger 
                   value="web" 
-                  onClick={() => setPlatform('web')}
-                  disabled={subscriptionStatus !== 'subscribed'}
+                  onClick={() => setPlatform(DeviceType.WEB)}
+                  disabled={subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED}
                 >
                   Web
                 </TabsTrigger>
                 <TabsTrigger 
                   value="ios" 
-                  onClick={() => setPlatform('ios')}
-                  disabled={subscriptionStatus !== 'subscribed'}
+                  onClick={() => setPlatform(DeviceType.IOS)}
+                  disabled={subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED}
                 >
                   iOS
                 </TabsTrigger>
@@ -160,7 +160,7 @@ export function NotificationTestPanel() {
               <Button 
                 className="w-full" 
                 onClick={handleSendTestNotification}
-                disabled={subscriptionStatus !== 'subscribed'}
+                disabled={subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED}
               >
                 Enviar Notificação de Teste
               </Button>
@@ -169,13 +169,19 @@ export function NotificationTestPanel() {
         ) : (
           <div className="text-center py-2">
             <p className="text-sm text-muted-foreground mb-4">
-              {subscriptionStatus === 'subscribed' 
-                ? `Dispositivo atual detectado como: ${deviceType === 'ios' ? 'iOS' : 'Web'}`
+              {subscriptionStatus === PushSubscriptionStatus.SUBSCRIBED 
+                ? `Dispositivo atual detectado como: ${
+                    deviceType === DeviceType.IOS 
+                      ? 'iOS' 
+                      : deviceType === DeviceType.FIREBASE 
+                        ? 'Firebase' 
+                        : 'Web'
+                  }`
                 : 'Você precisa ativar as notificações primeiro'}
             </p>
             <Button 
               onClick={handleQuickTest}
-              disabled={subscriptionStatus !== 'subscribed'}
+              disabled={subscriptionStatus !== PushSubscriptionStatus.SUBSCRIBED}
               className="w-full mb-2"
             >
               Enviar Notificação Rápida

@@ -9,6 +9,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { 
+  requestNotificationPermission, 
+  initializeFirebase, 
+  getFirebaseToken 
+} from "@/lib/firebase";
 
 // Definição da interface PushSubscriptionJSON que está faltando
 interface PushSubscriptionJSON {
@@ -27,12 +32,20 @@ export enum PushSubscriptionStatus {
   SUBSCRIBED = "subscribed",
 }
 
+// Tipos de dispositivos suportados
+export enum DeviceType {
+  WEB = 'web',
+  IOS = 'ios',
+  ANDROID = 'android',
+  FIREBASE = 'firebase'
+}
+
 // Interface para o contexto de notificações push
 interface PushNotificationsContextType {
   subscriptionStatus: PushSubscriptionStatus;
   isPending: boolean;
   isIOSDevice: boolean;
-  deviceType: 'web' | 'ios' | null;
+  deviceType: DeviceType | null;
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
   testNotification: (options?: NotificationTestOptions) => Promise<void>;
@@ -42,7 +55,7 @@ interface PushNotificationsContextType {
 interface NotificationTestOptions {
   title?: string;
   message?: string;
-  platform?: 'web' | 'ios' | null; // null = todos os dispositivos
+  platform?: DeviceType | null; // null = todos os dispositivos
   icon?: string | null;
   sound?: string;
   badge?: number;
@@ -91,7 +104,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   const [isPending, setIsPending] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] =
     useState<PushSubscriptionStatus>(PushSubscriptionStatus.NOT_SUPPORTED);
-  const [deviceType, setDeviceType] = useState<'web' | 'ios' | null>(null);
+  const [deviceType, setDeviceType] = useState<DeviceType | null>(null);
 
   // Verificar o status inicial e monitorar alterações no estado de autenticação
   useEffect(() => {
@@ -217,8 +230,8 @@ function usePushNotificationsHook(): PushNotificationsContextType {
 
   // Interface para o payload de registro de dispositivo
   interface RegisterDevicePayload {
-    subscription: PushSubscriptionJSON;
-    deviceType?: 'web' | 'ios' | 'android';
+    subscription: PushSubscriptionJSON | string;
+    deviceType?: DeviceType;
   }
 
   // Registrar um novo dispositivo no backend
@@ -328,7 +341,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
           // Registrar no backend com tipo específico para iOS
           await registerDeviceMutation.mutateAsync({
             subscription: iosSubscription,
-            deviceType: "ios"
+            deviceType: DeviceType.IOS
           });
           
           // Atualizar o estado
@@ -376,26 +389,61 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         return;
       }
 
-      // Registrar o service worker, se ainda não estiver registrado
-      const registration = await navigator.serviceWorker.ready;
+      // Tentar obter token Firebase primeiro
+      console.log("Tentando obter token Firebase...");
+      let firebaseToken = null;
+      let subscriptionType = DeviceType.WEB;
+      let subscriptionData: any = null;
 
-      // Gerar as chaves de inscrição com VAPID
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        // A chave pública VAPID deve ser configurada no backend
-        applicationServerKey: urlBase64ToUint8Array(
-          "BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q",
-        ),
-      });
+      try {
+        // Inicializar Firebase se necessário
+        initializeFirebase();
+        
+        // Tentar obter token FCM
+        firebaseToken = await getFirebaseToken();
+        
+        if (firebaseToken) {
+          console.log("Token Firebase obtido com sucesso!");
+          subscriptionType = DeviceType.FIREBASE;
+          subscriptionData = firebaseToken;
+        } else {
+          console.log("Nenhum token Firebase obtido, tentando Web Push padrão...");
+        }
+      } catch (firebaseError) {
+        console.error("Erro ao obter token Firebase:", firebaseError);
+        console.log("Continuando com Web Push padrão...");
+      }
 
-      // Determinar o tipo de dispositivo
-      const deviceType = isIOS() ? "ios" : "web";
-      console.log(`Registrando dispositivo como tipo: ${deviceType}`);
+      // Se não foi possível obter token Firebase, tenta o método padrão com Web Push
+      if (!firebaseToken) {
+        try {
+          // Registrar o service worker, se ainda não estiver registrado
+          const registration = await navigator.serviceWorker.ready;
+
+          // Gerar as chaves de inscrição com VAPID
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            // A chave pública VAPID deve ser configurada no backend
+            applicationServerKey: urlBase64ToUint8Array(
+              "BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q",
+            ),
+          });
+
+          // Determinar o tipo de dispositivo para Web Push padrão
+          subscriptionType = isIOS() ? DeviceType.IOS : DeviceType.WEB;
+          subscriptionData = subscription.toJSON();
+        } catch (webPushError) {
+          console.error("Erro ao obter inscrição Web Push:", webPushError);
+          throw new Error("Não foi possível obter inscrição para notificações push através de nenhum método disponível");
+        }
+      }
+
+      console.log(`Registrando dispositivo como tipo: ${subscriptionType}`);
 
       // Registrar a inscrição no servidor
       await registerDeviceMutation.mutateAsync({
-        subscription: subscription.toJSON(),
-        deviceType
+        subscription: subscriptionData,
+        deviceType: subscriptionType
       });
 
       // Atualizar o estado
@@ -439,66 +487,145 @@ function usePushNotificationsHook(): PushNotificationsContextType {
         }
       }
       
-      // Caso especial para iOS
-      if (isIOS()) {
-        console.log("Desativando notificações em dispositivo iOS");
+      try {
+        // Buscar todos os dispositivos do usuário atual
+        console.log("Buscando todos os dispositivos registrados para o usuário atual...");
+        const devicesResponse = await apiRequest("GET", "/api/devices");
+        const devices = await devicesResponse.json();
         
-        try {
-          // Buscar todos os dispositivos do usuário
-          const devicesResponse = await apiRequest("GET", "/api/devices");
-          const devices = await devicesResponse.json();
+        // Se não encontrou dispositivos, não há o que cancelar
+        if (!devices || devices.length === 0) {
+          console.log("Nenhum dispositivo encontrado para cancelar");
+          setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+          toast({
+            title: "Notificações já estão desativadas",
+            description: "Não foi encontrada nenhuma inscrição ativa para cancelar.",
+          });
+          return;
+        }
+        
+        let devicesCanceled = 0;
+        
+        // Verificar se temos dispositivos Firebase ou iOS
+        const specialDevices = devices.filter((d: any) => 
+          d.deviceType === DeviceType.FIREBASE || 
+          d.deviceType === DeviceType.IOS || 
+          d.deviceType === 'firebase' || 
+          d.deviceType === 'ios'
+        );
+        
+        // Se temos dispositivos especiais, cancelamos todos
+        if (specialDevices.length > 0) {
+          for (const device of specialDevices) {
+            await apiRequest("DELETE", `/api/devices/${device.id}`);
+            console.log(`Dispositivo ${device.deviceType} (ID: ${device.id}) excluído`);
+            devicesCanceled++;
+          }
+        }
+        
+        // Caso especial para iOS (compatibilidade com registros antigos)
+        if (isIOS()) {
+          console.log("Verificando dispositivos iOS adicionais...");
           
-          // Encontrar dispositivos iOS
-          const iosDevices = devices.filter((d: any) => d.deviceType === "ios");
+          // Buscar dispositivos iOS que não tenham sido filtrados acima (formato antigo)
+          const iosDevices = devices.filter((d: any) => 
+            d.deviceType === "ios" && 
+            !specialDevices.some((sd: any) => sd.id === d.id)
+          );
           
           if (iosDevices.length > 0) {
             // Excluir todos os dispositivos iOS
             for (const device of iosDevices) {
               await apiRequest("DELETE", `/api/devices/${device.id}`);
               console.log(`Dispositivo iOS ${device.id} excluído`);
+              devicesCanceled++;
             }
-            
-            // Atualizar o estado
-            setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-            toast({
-              title: "Notificações desativadas",
-              description: "Você não receberá mais notificações no iOS.",
-            });
-            return;
           }
-        } catch (iosError) {
-          console.error("Erro ao excluir dispositivos iOS:", iosError);
         }
-      }
-      
-      // Fluxo padrão para outros navegadores
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        return;
-      }
+        
+        // Fluxo padrão para Web Push
+        if (("serviceWorker" in navigator) && ("PushManager" in window)) {
+          console.log("Tentando cancelar inscrição de Web Push padrão...");
+          
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
 
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-
-      if (subscription) {
-        // Cancelar a inscrição no servidor
-        await unregisterDeviceMutation.mutateAsync(subscription.toJSON());
-
-        // Cancelar a inscrição no navegador
-        await subscription.unsubscribe();
-
+            if (subscription) {
+              // Verificar se este subscription já não foi cancelado acima
+              const deviceTokenStr = JSON.stringify(subscription.toJSON());
+              const webDevice = devices.find((d: any) => 
+                d.deviceToken === deviceTokenStr && 
+                !specialDevices.some((sd: any) => sd.id === d.id)
+              );
+              
+              if (webDevice) {
+                // Se ainda existe um dispositivo com este token, cancelamos
+                await apiRequest("DELETE", `/api/devices/${webDevice.id}`);
+                console.log(`Dispositivo Web Push ${webDevice.id} excluído`);
+                devicesCanceled++;
+              }
+              
+              // Cancelar a inscrição no navegador de qualquer forma
+              await subscription.unsubscribe();
+              console.log("Inscrição Web Push cancelada no navegador");
+            }
+          } catch (webPushError) {
+            console.error("Erro ao cancelar inscrição de Web Push:", webPushError);
+          }
+        }
+        
         // Atualizar o estado
         setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-        toast({
-          title: "Notificações desativadas",
-          description: "Você não receberá mais notificações.",
-        });
-      } else {
-        // Não há inscrição para cancelar
-        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-        toast({
-          title: "Notificações já estão desativadas",
-          description: "Não foi encontrada nenhuma inscrição ativa para cancelar.",
-        });
+        
+        if (devicesCanceled > 0) {
+          toast({
+            title: "Notificações desativadas",
+            description: `${devicesCanceled} ${devicesCanceled === 1 ? 'dispositivo foi cancelado' : 'dispositivos foram cancelados'} com sucesso.`,
+          });
+        } else {
+          toast({
+            title: "Notificações já estão desativadas",
+            description: "Não foi encontrada nenhuma inscrição ativa para cancelar.",
+          });
+        }
+      } catch (deviceError) {
+        console.error("Erro ao buscar ou cancelar dispositivos:", deviceError);
+        
+        // Tentar o caminho tradicional como fallback
+        if (("serviceWorker" in navigator) && ("PushManager" in window)) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            
+            if (subscription) {
+              // Tentar cancelar no navegador de qualquer forma
+              await subscription.unsubscribe();
+              console.log("Inscrição Web Push cancelada no navegador como fallback");
+              
+              // Atualizar o estado
+              setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+              toast({
+                title: "Notificações parcialmente desativadas",
+                description: "Notificações foram desativadas no navegador, mas houve um erro ao comunicar com o servidor.",
+              });
+            } else {
+              // Não há inscrição para cancelar
+              setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
+              toast({
+                title: "Notificações já estão desativadas",
+                description: "Não foi encontrada nenhuma inscrição ativa para cancelar.",
+              });
+            }
+          } catch (error) {
+            console.error("Erro no fallback para cancelar inscrição:", error);
+            toast({
+              title: "Erro ao desativar notificações",
+              description: "Ocorreu um erro ao tentar desativar as notificações. Tente novamente mais tarde.",
+              variant: "destructive",
+            });
+          }
+        }
       }
     } catch (error) {
       console.error("Erro ao cancelar inscrição de notificações:", error);
@@ -547,8 +674,22 @@ function usePushNotificationsHook(): PushNotificationsContextType {
       }
       
       // Adicionar informações da plataforma se não especificado
-      if (payload.platform === undefined && isIOSDevice) {
-        payload.platform = 'ios';
+      if (payload.platform === undefined) {
+        if (isIOSDevice) {
+          payload.platform = DeviceType.IOS;
+        } else {
+          // Verificar se temos Firebase
+          try {
+            const hasFirebase = await getFirebaseToken() !== null;
+            if (hasFirebase) {
+              payload.platform = DeviceType.FIREBASE;
+            } else {
+              payload.platform = DeviceType.WEB;
+            }
+          } catch (e) {
+            payload.platform = DeviceType.WEB;
+          }
+        }
       }
       
       console.log('Enviando notificação de teste com payload:', payload);
@@ -584,7 +725,7 @@ function usePushNotificationsHook(): PushNotificationsContextType {
   // Define o tipo de dispositivo
   useEffect(() => {
     // Atualizar tipo de dispositivo com base na detecção
-    setDeviceType(isIOSDevice ? 'ios' : 'web');
+    setDeviceType(isIOSDevice ? DeviceType.IOS : DeviceType.WEB);
   }, [isIOSDevice]);
 
   return {

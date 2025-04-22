@@ -1,6 +1,7 @@
 import { storage } from "./storage";
 import { UserDevice } from "@shared/schema";
 import webpush from 'web-push';
+import { sendFirebaseMessage } from './firebaseConfig';
 
 // Configurar as chaves VAPID para Web Push (novas chaves geradas em formato P-256)
 const vapidPublicKey = 'BJG84i2kxDGApxEJgtbafkOOTGRuy0TivsOVzKtO6_IFpqZ0SgE1cwDTYgFeiHgKP30YJFB9YM01ZugJWusIt_Q';
@@ -17,7 +18,8 @@ webpush.setVapidDetails(
 export enum PushTargetPlatform {
   WEB = 'web',
   IOS = 'ios',
-  ANDROID = 'android'
+  ANDROID = 'android',
+  FIREBASE = 'firebase' // Novo tipo para Firebase Cloud Messaging
 }
 
 // Interface para a carga útil de uma notificação push
@@ -43,6 +45,8 @@ export interface PushNotificationPayload {
   // Outros metadados
   referenceType?: string;
   referenceId?: number;
+  // Imagem para notificações ricas
+  imageUrl?: string;
 }
 
 /**
@@ -62,13 +66,14 @@ export async function sendPushToDevice(device: UserDevice, payload: PushNotifica
     // Determinar o tipo de dispositivo e enviar a notificação apropriadamente
     if (device.deviceType === PushTargetPlatform.WEB) {
       return await sendWebPushNotification(device, payload);
-    } else if (device.deviceType === PushTargetPlatform.IOS) {
-      return await sendApplePushNotification(device, payload);
-    } else if (device.deviceType === PushTargetPlatform.ANDROID) {
+    } else if (device.deviceType === PushTargetPlatform.FIREBASE) {
+      return await sendFirebasePushNotification(device, payload);
+    } else if (device.deviceType === PushTargetPlatform.IOS || device.deviceType === PushTargetPlatform.ANDROID) {
+      // Para iOS e Android, usar o Firebase Cloud Messaging
       return await sendFirebasePushNotification(device, payload);
     } else {
-      console.error(`Tipo de dispositivo não suportado: ${device.deviceType}`);
-      return false;
+      console.log(`Tipo de dispositivo desconhecido: ${device.deviceType}, tentando via Firebase...`);
+      return await sendFirebasePushNotification(device, payload);
     }
   } catch (error) {
     console.error('Erro ao enviar notificação push:', error);
@@ -95,10 +100,139 @@ export async function sendPushToUser(userId: number, payload: PushNotificationPa
     
     console.log(`Enviando push para ${devices.length} dispositivo(s) do usuário ${userId}`);
     
-    // Enviar notificação para cada dispositivo
-    const results = await Promise.all(
-      devices.map(device => sendPushToDevice(device, payload))
+    // Separar dispositivos por tipo para otimizar o envio
+    const webDevices = devices.filter(d => d.deviceType === PushTargetPlatform.WEB);
+    const firebaseDevices = devices.filter(d => 
+      d.deviceType === PushTargetPlatform.FIREBASE || 
+      d.deviceType === PushTargetPlatform.IOS || 
+      d.deviceType === PushTargetPlatform.ANDROID
     );
+    const otherDevices = devices.filter(d => 
+      d.deviceType !== PushTargetPlatform.WEB && 
+      d.deviceType !== PushTargetPlatform.FIREBASE &&
+      d.deviceType !== PushTargetPlatform.IOS &&
+      d.deviceType !== PushTargetPlatform.ANDROID
+    );
+    
+    const results: boolean[] = [];
+    
+    // 1. Enviar para dispositivos web individualmente (Web Push API)
+    if (webDevices.length > 0) {
+      console.log(`Enviando para ${webDevices.length} dispositivos Web Push...`);
+      const webResults = await Promise.all(
+        webDevices.map(device => sendWebPushNotification(device, payload))
+      );
+      results.push(...webResults);
+    }
+    
+    // 2. Enviar para dispositivos Firebase (pode ser otimizado para múltiplos dispositivos)
+    if (firebaseDevices.length > 0) {
+      console.log(`Enviando para ${firebaseDevices.length} dispositivos Firebase...`);
+      
+      if (firebaseDevices.length === 1) {
+        // Para um único dispositivo
+        const success = await sendFirebasePushNotification(firebaseDevices[0], payload);
+        results.push(success);
+      } 
+      else {
+        // Para múltiplos dispositivos, agrupar tokens e enviar em lote
+        try {
+          // Extrair tokens
+          const firebaseTokens = firebaseDevices
+            .filter(d => d.deviceToken && d.pushEnabled)
+            .map(d => d.deviceToken);
+          
+          if (firebaseTokens.length > 0) {
+            // Preparar notificação para Firebase
+            const firebaseNotification = {
+              title: payload.title,
+              body: payload.body,
+              imageUrl: payload.imageUrl
+            };
+            
+            // Dados adicionais para enviar com a notificação
+            const firebaseData: Record<string, string> = {
+              referenceType: payload.referenceType || '',
+              referenceId: payload.referenceId?.toString() || '',
+              timestamp: new Date().toISOString()
+            };
+            
+            // Converter dados personalizados para strings (FCM requer valores string)
+            if (payload.data) {
+              Object.entries(payload.data).forEach(([key, value]) => {
+                firebaseData[key] = typeof value === 'string' ? value : JSON.stringify(value);
+              });
+            }
+            
+            // Importar função para envio em lote
+            const { sendFirebaseMessageToMultipleDevices } = await import('./firebaseConfig');
+            
+            // Enviar mensagem em lote
+            const batchResult = await sendFirebaseMessageToMultipleDevices(
+              firebaseTokens,
+              firebaseNotification,
+              firebaseData
+            );
+            
+            console.log(`Resultado do envio em lote: ${batchResult.success ? 'Sucesso' : 'Falha'}`);
+            console.log(`Enviado para ${batchResult.successCount || 0} dispositivos`);
+            
+            // Registrar notificação no banco de dados
+            try {
+              await storage.createNotification({
+                userId: userId,
+                title: payload.title,
+                message: payload.body,
+                type: 'push_batch',
+                referenceType: payload.referenceType || null,
+                referenceId: payload.referenceId || null,
+                isRead: false,
+                metadata: JSON.stringify({ 
+                  firebase: true, 
+                  batch: true, 
+                  devices: firebaseTokens.length,
+                  success: batchResult.successCount,
+                  ...firebaseData 
+                })
+              });
+            } catch (dbError) {
+              console.error('Erro ao salvar notificação em lote no banco de dados:', dbError);
+            }
+            
+            // Adicionar resultados baseado no sucesso/falha do lote
+            if (batchResult.success) {
+              // Se bem-sucedido, conte quantos dispositivos receberam
+              const successCount = batchResult.successCount || 0;
+              results.push(...Array(successCount).fill(true));
+              if (successCount < firebaseTokens.length) {
+                results.push(...Array(firebaseTokens.length - successCount).fill(false));
+              }
+            } else {
+              // Se falhou completamente, marque todos como falha
+              results.push(...Array(firebaseTokens.length).fill(false));
+            }
+          }
+        } catch (batchError) {
+          console.error('Erro ao enviar notificações Firebase em lote:', batchError);
+          
+          // Em caso de erro no lote, tentar individual para cada um
+          console.log('Alternando para envio individual após falha no lote...');
+          const individualResults = await Promise.all(
+            firebaseDevices.map(device => sendFirebasePushNotification(device, payload))
+          );
+          results.push(...individualResults);
+        }
+      }
+    }
+    
+    // 3. Enviar para outros tipos de dispositivos individualmente
+    if (otherDevices.length > 0) {
+      console.log(`Enviando para ${otherDevices.length} outros dispositivos...`);
+      const otherResults = await Promise.all(
+        otherDevices.map(device => sendPushToDevice(device, payload))
+      );
+      results.push(...otherResults);
+    }
     
     // Contar quantas notificações foram enviadas com sucesso
     const successCount = results.filter(result => result).length;
@@ -289,16 +423,71 @@ async function sendApplePushNotification(device: UserDevice, payload: PushNotifi
  */
 async function sendFirebasePushNotification(device: UserDevice, payload: PushNotificationPayload): Promise<boolean> {
   try {
-    // TODO: Implementar integração com o Firebase Cloud Messaging (FCM)
-    // Esta é uma implementação simulada
-    console.log(`[SIMULADO] Enviando notificação FCM para o dispositivo ${device.id}`);
-    console.log(`Título: ${payload.title}`);
-    console.log(`Corpo: ${payload.body}`);
+    // Verificar se tem token FCM
+    if (!device.deviceToken) {
+      console.error('Token FCM não encontrado para o dispositivo');
+      return false;
+    }
     
-    // Notificação enviada com sucesso (simulado)
-    return true;
+    console.log(`Enviando notificação Firebase para dispositivo: ${device.deviceName || 'Dispositivo'} (ID: ${device.id})`);
+    console.log(`Token: ${device.deviceToken.substring(0, 20)}...`);
+    
+    // Preparar notificação para Firebase
+    const firebaseNotification = {
+      title: payload.title,
+      body: payload.body,
+      imageUrl: payload.imageUrl
+    };
+    
+    // Dados adicionais para enviar com a notificação
+    const firebaseData: Record<string, string> = {
+      referenceType: payload.referenceType || '',
+      referenceId: payload.referenceId?.toString() || '',
+      timestamp: new Date().toISOString()
+    };
+    
+    // Converter dados personalizados para strings (FCM requer valores string)
+    if (payload.data) {
+      Object.entries(payload.data).forEach(([key, value]) => {
+        firebaseData[key] = typeof value === 'string' ? value : JSON.stringify(value);
+      });
+    }
+    
+    // Enviar a mensagem via Firebase
+    console.log(`Enviando notificação via Firebase Cloud Messaging...`);
+    const result = await sendFirebaseMessage(
+      device.deviceToken,
+      firebaseNotification,
+      firebaseData
+    );
+    
+    if (result.success) {
+      console.log(`Notificação Firebase enviada com sucesso para dispositivo ${device.id}`);
+      
+      // Registrar a notificação no banco de dados também
+      try {
+        await storage.createNotification({
+          userId: device.userId,
+          title: payload.title,
+          message: payload.body,
+          type: 'push',
+          referenceType: payload.referenceType || null,
+          referenceId: payload.referenceId || null,
+          isRead: false,
+          metadata: JSON.stringify({ firebase: true, ...firebaseData })
+        });
+      } catch (dbError) {
+        console.error('Erro ao salvar notificação no banco de dados:', dbError);
+        // Não falhar apenas por causa do erro no banco de dados
+      }
+      
+      return true;
+    } else {
+      console.error('Falha ao enviar notificação Firebase:', result.error);
+      return false;
+    }
   } catch (error) {
-    console.error('Erro ao enviar notificação FCM:', error);
+    console.error('Erro ao enviar notificação Firebase:', error);
     return false;
   }
 }
