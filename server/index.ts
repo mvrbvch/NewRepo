@@ -1,10 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Rota dedicada para servir o service-worker.js com os cabeçalhos corretos
+app.get("/service-worker.js", (req, res) => {
+  const swPath = path.join(process.cwd(), "client", "public", "service-worker.js");
+  console.log(`Servindo service worker de: ${swPath}`);
+  res.set("Service-Worker-Allowed", "/");
+  res.set("Content-Type", "application/javascript");
+  res.sendFile(swPath);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

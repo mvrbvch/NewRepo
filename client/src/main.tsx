@@ -62,6 +62,19 @@ if ('serviceWorker' in navigator) {
       };
     } catch (error) {
       console.error('Falha ao registrar o Service Worker:', error);
+      
+      // Verificar se o arquivo do service worker está acessível
+      fetch('/service-worker.js')
+        .then(response => {
+          if (response.ok) {
+            console.log('Service worker existe e está acessível. Status:', response.status);
+          } else {
+            console.error('Service worker não está acessível. Status:', response.status);
+          }
+        })
+        .catch(fetchError => {
+          console.error('Erro ao verificar arquivo service-worker.js:', fetchError);
+        });
     }
   });
 }

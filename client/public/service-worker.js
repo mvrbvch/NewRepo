@@ -153,6 +153,9 @@ self.addEventListener('push', event => {
     // Tentar extrair o payload como JSON
     payload = event.data ? event.data.json() : null;
     console.log('[Service Worker] Payload JSON extraído com sucesso:', JSON.stringify(payload));
+  } catch (jsonError) {
+    console.error('[Service Worker] Erro ao extrair payload JSON:', jsonError);
+    
     // Fallback para texto
     try {
       const textData = event.data ? event.data.text() : 'Notificação sem detalhes';
@@ -162,8 +165,8 @@ self.addEventListener('push', event => {
       try {
         payload = JSON.parse(textData);
         console.log('[Service Worker] Payload convertido de texto para JSON:', payload);
-      } catch (jsonError) {
-        console.error('[Service Worker] Não foi possível converter texto para JSON:', jsonError);
+      } catch (parseError) {
+        console.error('[Service Worker] Não foi possível converter texto para JSON:', parseError);
         // Usar o texto como corpo da notificação
         payload = {
           title: 'Por Nós',
