@@ -17,6 +17,8 @@ type AuthContextType = {
   loginMutation: UseMutationResult<UserType, Error, LoginData>;
   registerMutation: UseMutationResult<UserType, Error, RegisterData>;
   logoutMutation: UseMutationResult<void, Error, void>;
+  refreshAuth: () => Promise<UserType | null>;
+  isAuthenticated: boolean;
 };
 
 type LoginData = {
@@ -43,27 +45,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch: refetchUser
   } = useQuery<UserType | null>({
     queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
+        console.log("Verificando autenticação do usuário...");
         const res = await fetch(queryKey[0] as string, {
           credentials: "include",
         });
         
         if (res.status === 401) {
+          console.log("Usuário não autenticado");
           return null;
         }
         
         if (!res.ok) {
+          console.error(`Erro na requisição: ${res.status}`);
           throw new Error(`Error: ${res.status}`);
         }
         
-        return await res.json();
+        const userData = await res.json();
+        console.log("Usuário autenticado:", userData.username);
+        return userData;
       } catch (error) {
+        console.error("Erro ao verificar autenticação:", error);
         return null;
       }
     },
+    // Aumentar frequência de refetch para detectar mudanças no estado de autenticação
+    refetchInterval: 60000, // Verificar a cada minuto
+    refetchOnWindowFocus: true, // Verificar quando a janela ganha foco
   });
 
   const loginMutation = useMutation({
@@ -128,6 +140,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Função para forçar atualização do estado de autenticação
+  const refreshAuth = async (): Promise<UserType | null> => {
+    try {
+      console.log("Forçando atualização de autenticação do usuário...");
+      const { data } = await refetchUser();
+      return data || null;
+    } catch (error) {
+      console.error("Erro ao atualizar autenticação:", error);
+      return null;
+    }
+  };
+
+  // Verifica se o usuário está autenticado
+  const isAuthenticated = !!user;
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,6 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         registerMutation,
         logoutMutation,
+        refreshAuth,
+        isAuthenticated
       }}
     >
       {children}
