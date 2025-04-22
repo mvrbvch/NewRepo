@@ -41,11 +41,12 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
-  // Definindo todas as queries e mutations em um único bloco de componente
-  // para garantir que a ordem de chamada dos hooks seja sempre a mesma
-  
-  // Query principal para obter o usuário atual
-  const userQuery = useQuery<UserType | null>({
+  const {
+    data: user,
+    error,
+    isLoading,
+    refetch: refetchUser
+  } = useQuery<UserType | null>({
     queryKey: ["/api/user"],
     queryFn: async ({ queryKey }) => {
       try {
@@ -77,13 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: true, // Verificar quando a janela ganha foco
   });
 
-  // Extraindo dados da query para uso posterior
-  const user = userQuery.data;
-  const error = userQuery.error;
-  const isLoading = userQuery.isLoading;
-  const refetchUser = userQuery.refetch;
-
-  // Mutation para login
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -105,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Mutation para cadastro
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
       const res = await apiRequest("POST", "/api/register", userData);
@@ -127,7 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Mutation para logout
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
@@ -152,9 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshAuth = async (): Promise<UserType | null> => {
     try {
       console.log("Forçando atualização de autenticação do usuário...");
-      const result = await refetchUser();
-      // Garantir que sempre retornamos UserType | null, nunca undefined
-      return result.data ? result.data : null;
+      const { data } = await refetchUser();
+      return data || null;
     } catch (error) {
       console.error("Erro ao atualizar autenticação:", error);
       return null;
