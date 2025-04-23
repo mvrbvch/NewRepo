@@ -16,8 +16,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Por Nós" />
     
-    <!-- Ícone específico para iOS -->
+    <!-- Splash Screen para iOS -->
     <link rel="apple-touch-startup-image" href="/icons/apple-touch-icon.png" />
+    <!-- iOS Splash Screen Images -->
+    <!-- iPhone X (1125px x 2436px) -->
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/icons/apple-launch-1125x2436.svg" />
+    <!-- iPhone 8, 7, 6s, 6 (750px x 1334px) -->
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/icons/apple-launch-750x1334.svg" />
+    <!-- iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus (1242px x 2208px) -->
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="/icons/apple-launch-1242x2208.svg" />
     
     <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json" />
@@ -25,24 +32,88 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+      /* Inline splash screen styles for immediate display */
+      #initial-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(241, 90, 89, 0.9) 0%, rgb(241, 90, 89) 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      #initial-loader img {
+        width: 200px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+      #initial-loader p {
+        color: white;
+        font-family: 'Inter', sans-serif;
+        font-size: 18px;
+        font-weight: 500;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .loader-spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 3px solid white;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
+    <!-- Initial loader that shows before React loads -->
+    <div id="initial-loader">
+      <img src="/logo-white.png" alt="Por Nós" />
+      <p>Todo dia é uma nova chance de nos escolher</p>
+      <div class="loader-spinner"></div>
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
     
-    <!-- Service Worker Registration (temporariamente desativado) -->
+    <!-- Service Worker Registration -->
     <script>
-      // Desativando service worker temporariamente para evitar problemas de cache
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-            console.log('Service Worker desregistrado:', registration);
-          }
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(function(registration) {
+              console.log('Service Worker registrado com sucesso:', registration.scope);
+            })
+            .catch(function(error) {
+              console.log('Falha ao registrar Service Worker:', error);
+            });
         });
       }
+      
+      // Hide initial loader when the app has loaded
+      window.addEventListener('load', function() {
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(function() {
+            loader.style.display = 'none';
+          }, 500);
+        }
+      });
     </script>
   </body>
 </html>

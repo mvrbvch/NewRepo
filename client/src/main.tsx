@@ -3,84 +3,112 @@ import App from "./App";
 import "./index.css";
 import { ThemeProvider } from "next-themes";
 
-// Registrar o service worker para notificações push e PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      // Verificar se já existe um service worker registrado
-      const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+// Function to hide the initial HTML splash screen
+function hideInitialLoader() {
+  const loader = document.getElementById('initial-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 500);
+  }
+}
+
+// Register the service worker for push notifications and PWA
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  
+  try {
+    // Check if there are existing service worker registrations
+    const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+    
+    // If there are old registrations, try to update or remove them
+    if (existingRegistrations.length > 0) {
+      console.log(`Found ${existingRegistrations.length} registered service workers.`);
       
-      // Se existir algum registro antigo, tentar atualizá-lo ou removê-lo
-      if (existingRegistrations.length > 0) {
-        console.log(`Encontrados ${existingRegistrations.length} service workers registrados.`);
+      for (const registration of existingRegistrations) {
+        console.log(`Service worker at: ${registration.scope}`);
         
-        for (const registration of existingRegistrations) {
-          console.log(`Service worker em: ${registration.scope}`);
+        // Force update
+        try {
+          await registration.update();
+          console.log(`Service worker updated at: ${registration.scope}`);
+        } catch (updateError) {
+          console.error(`Error updating service worker:`, updateError);
           
-          // Forçar atualização
+          // If update fails, try to remove it
           try {
-            await registration.update();
-            console.log(`Service worker atualizado em: ${registration.scope}`);
-          } catch (updateError) {
-            console.error(`Erro ao atualizar service worker:`, updateError);
-            
-            // Se não conseguir atualizar, tentar remover
-            try {
-              const unregistered = await registration.unregister();
-              if (unregistered) {
-                console.log(`Service worker desregistrado com sucesso em: ${registration.scope}`);
-              }
-            } catch (unregisterError) {
-              console.error(`Erro ao desregistrar service worker:`, unregisterError);
+            const unregistered = await registration.unregister();
+            if (unregistered) {
+              console.log(`Service worker successfully unregistered at: ${registration.scope}`);
             }
+          } catch (unregisterError) {
+            console.error(`Error unregistering service worker:`, unregisterError);
           }
         }
       }
-      
-      // Registrar o service worker com opções mais robustas
-      const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/', 
-        updateViaCache: 'none' // Sempre buscar do servidor, não do cache
-      });
-      
-      console.log('Service Worker registrado com sucesso:', registration.scope);
-      
-      // Verificar se há uma nova versão disponível
-      registration.onupdatefound = () => {
-        const installingWorker = registration.installing;
-        if (installingWorker) {
-          installingWorker.onstatechange = () => {
-            if (installingWorker.state === 'installed') {
-              if (navigator.serviceWorker.controller) {
-                console.log('Nova versão do Service Worker instalada, será ativada na próxima visita');
-              } else {
-                console.log('Service Worker instalado pela primeira vez');
-              }
-            }
-          };
-        }
-      };
-    } catch (error) {
-      console.error('Falha ao registrar o Service Worker:', error);
-      
-      // Verificar se o arquivo do service worker está acessível
-      fetch('/service-worker.js')
-        .then(response => {
-          if (response.ok) {
-            console.log('Service worker existe e está acessível. Status:', response.status);
-          } else {
-            console.error('Service worker não está acessível. Status:', response.status);
-          }
-        })
-        .catch(fetchError => {
-          console.error('Erro ao verificar arquivo service-worker.js:', fetchError);
-        });
     }
-  });
+    
+    // Register the service worker with robust options
+    const registration = await navigator.serviceWorker.register('/service-worker.js', {
+      scope: '/', 
+      updateViaCache: 'none' // Always fetch from server, not from cache
+    });
+    
+    console.log('Service Worker successfully registered:', registration.scope);
+    
+    // Check if a new version is available
+    registration.onupdatefound = () => {
+      const installingWorker = registration.installing;
+      if (installingWorker) {
+        installingWorker.onstatechange = () => {
+          if (installingWorker.state === 'installed') {
+            if (navigator.serviceWorker.controller) {
+              console.log('New Service Worker version installed, will be activated on next visit');
+            } else {
+              console.log('Service Worker installed for the first time');
+            }
+          }
+        };
+      }
+    };
+    
+    return registration;
+  } catch (error) {
+    console.error('Failed to register Service Worker:', error);
+    
+    // Check if the service worker file is accessible
+    try {
+      const response = await fetch('/service-worker.js');
+      if (response.ok) {
+        console.log('Service worker exists and is accessible. Status:', response.status);
+      } else {
+        console.error('Service worker is not accessible. Status:', response.status);
+      }
+    } catch (fetchError) {
+      console.error('Error checking service-worker.js file:', fetchError);
+    }
+  }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <ThemeProvider attribute="class" defaultTheme="light">
-    <App />
-  </ThemeProvider>
-);
+// Initialize the application
+async function initializeApp() {
+  // Start service worker registration
+  const serviceWorkerPromise = registerServiceWorker();
+  
+  // Render the React app
+  createRoot(document.getElementById("root")!).render(
+    <ThemeProvider attribute="class" defaultTheme="light">
+      <App />
+    </ThemeProvider>
+  );
+  
+  // Hide the HTML splash screen after React has loaded (with a slight delay)
+  setTimeout(hideInitialLoader, 500);
+  
+  // Wait for service worker registration (but don't block the app)
+  await serviceWorkerPromise;
+}
+
+// Start the app when the window loads
+window.addEventListener('load', initializeApp);
