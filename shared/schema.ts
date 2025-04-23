@@ -78,6 +78,7 @@ export const householdTasks = pgTable("household_tasks", {
   completed: boolean("completed").default(false),
   nextDueDate: timestamp("next_due_date"),
   recurrenceRule: text("recurrence_rule"),
+  priority: integer("priority").default(0), // Valores: 0 (baixa), 1 (média), 2 (alta) prioridade
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -193,6 +194,7 @@ export const insertHouseholdTaskSchema = createInsertSchema(householdTasks).pick
   completed: true,
   nextDueDate: true,
   recurrenceRule: true,
+  priority: true,
 });
 
 export const insertUserDeviceSchema = createInsertSchema(userDevices).pick({
