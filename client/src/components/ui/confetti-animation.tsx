@@ -48,20 +48,32 @@ export function ConfettiAnimation({
 
     const container = containerRef.current;
     const centerX = container.offsetWidth / 2;
-    const originY = container.offsetHeight / 3; // Start from upper area
+    const centerY = container.offsetHeight / 3; // Start from upper area
+    
+    // Create two burst origin points for more natural celebration
+    const leftOriginX = centerX - 50;
+    const rightOriginX = centerX + 50;
 
     const newParticles = Array.from({ length: particleCount }, (_, i) => {
       const type = ['circle', 'rectangle', 'heart'][Math.floor(Math.random() * 3)] as 'circle' | 'rectangle' | 'heart';
+      // Alternate between left and right origin for better spread
+      const originX = i % 2 === 0 ? leftOriginX : rightOriginX;
+      
+      // Add some randomness to each particle
+      const uniqueScale = Math.random() * 0.6 + 0.4; // 0.4 to 1
+      const uniqueSpeed = 1.5 + Math.random() * 1; // 1.5 to 2.5 seconds
+      const uniqueDelay = Math.random() * 0.4; // 0 to 0.4 seconds
+      
       return {
         id: i,
-        x: centerX + (Math.random() - 0.5) * 20, // Start position with slight variation
-        y: originY,
+        x: originX + (Math.random() - 0.5) * 40, // More variation in start position
+        y: centerY + (Math.random() - 0.5) * 20,
         rotation: Math.random() * 360,
-        scale: Math.random() * 0.6 + 0.4, // 0.4 to 1
+        scale: uniqueScale,
         color: colors[Math.floor(Math.random() * colors.length)],
         type,
-        duration: 1.5 + Math.random() * 1, // 1.5 to 2.5 seconds
-        delay: Math.random() * 0.3, // 0 to 0.3 seconds
+        duration: uniqueSpeed,
+        delay: uniqueDelay,
       };
     });
 

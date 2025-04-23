@@ -180,20 +180,35 @@ export function TaskCompletionCelebration({
 // Smaller component for just a quick celebration effect
 export function QuickTaskCelebration({
   isActive,
-  onComplete
+  onComplete,
+  taskTitle
 }: {
   isActive: boolean;
   onComplete?: () => void;
+  taskTitle?: string;
 }) {
-  const [showThumbsUp, setShowThumbsUp] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showParticles, setShowParticles] = useState(false);
   
   useEffect(() => {
     if (isActive) {
-      setShowThumbsUp(true);
+      // Reset state
+      setShowCelebration(true);
       
+      // Add a slight delay before showing the particles for better visual effect
+      setTimeout(() => {
+        setShowParticles(true);
+      }, 50);
+      
+      // Auto-hide after the animation completes
       const timer = setTimeout(() => {
-        setShowThumbsUp(false);
-        if (onComplete) onComplete();
+        setShowParticles(false);
+        
+        // Fade out the main element after particles disappear
+        setTimeout(() => {
+          setShowCelebration(false);
+          if (onComplete) onComplete();
+        }, 300);
       }, 1500);
       
       return () => clearTimeout(timer);
@@ -205,10 +220,58 @@ export function QuickTaskCelebration({
       {isActive && (
         <motion.div
           className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
         >
-          {showThumbsUp && (
+          {/* Mini confetti particles */}
+          {showParticles && (
+            <motion.div className="absolute inset-0 overflow-hidden">
+              {Array.from({ length: 20 }).map((_, i) => {
+                const size = 4 + Math.random() * 6;
+                const color = ['#f15a59', '#FF9F9F', '#FFB9B9', '#ff6b6b', '#FFCD91'][
+                  Math.floor(Math.random() * 5)
+                ];
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 40 + Math.random() * 60;
+                const delay = Math.random() * 0.2;
+                
+                return (
+                  <motion.div
+                    key={i}
+                    className="absolute top-1/2 left-1/2 rounded-full"
+                    style={{ 
+                      width: size, 
+                      height: size, 
+                      backgroundColor: color 
+                    }}
+                    initial={{ 
+                      x: -size/2, 
+                      y: -size/2,
+                      scale: 0.5,
+                      opacity: 1
+                    }}
+                    animate={{ 
+                      x: -size/2 + Math.cos(angle) * distance, 
+                      y: -size/2 + Math.sin(angle) * distance,
+                      scale: 0,
+                      opacity: 0
+                    }}
+                    transition={{ 
+                      duration: 0.8 + Math.random() * 0.4,
+                      delay,
+                      ease: "easeOut"
+                    }}
+                  />
+                );
+              })}
+            </motion.div>
+          )}
+          
+          {/* Central icon */}
+          {showCelebration && (
             <motion.div
-              className="bg-primary-light/90 shadow-lg rounded-full p-5"
+              className="bg-gradient-to-br from-primary-light to-primary shadow-lg rounded-full p-5 relative"
               initial={{ opacity: 0, y: 20, scale: 0.5 }}
               animate={{ 
                 opacity: 1, 
@@ -226,7 +289,30 @@ export function QuickTaskCelebration({
                 scale: { times: [0, 0.6, 1], ease: "easeOut" }
               }}
             >
-              <ThumbsUp className="w-16 h-16 text-white" />
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-full bg-primary/30 blur-md transform scale-110" />
+              
+              {/* Success icon */}
+              <motion.div 
+                className="relative z-10"
+                initial={{ scale: 0.8, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+              >
+                <ThumbsUp className="w-16 h-16 text-white drop-shadow-md" />
+              </motion.div>
+              
+              {/* Optional mini text label */}
+              {taskTitle && (
+                <motion.div
+                  className="absolute bottom-[-25px] left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full text-sm font-medium text-primary-dark shadow-md"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Concluída!
+                </motion.div>
+              )}
             </motion.div>
           )}
         </motion.div>

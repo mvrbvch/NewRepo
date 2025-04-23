@@ -40,6 +40,7 @@ import {
   Filter,
   ChevronDown,
   ChevronUp,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { TaskCompletionCelebration, QuickTaskCelebration } from "@/components/household/task-completion-celebration";
@@ -203,6 +204,10 @@ export default function HouseholdTasksPage() {
     enabled: !!user?.partnerId, // Somente ativa se o usuário tiver um parceiro
   });
 
+  // Estado para controlar a animação rápida
+  const [showQuickCelebration, setShowQuickCelebration] = useState(false);
+  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>('');
+  
   // Mutação para marcar tarefa como concluída/pendente
   const toggleCompleteMutation = useMutation({
     mutationFn: async ({
@@ -217,13 +222,29 @@ export default function HouseholdTasksPage() {
       });
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
-      toast({
-        title: "Tarefa atualizada",
-        description: "O status da tarefa foi atualizado com sucesso.",
-      });
+      
+      // Mostrar mensagem de sucesso e celebração simples quando marcar como concluída
+      if (variables.completed) {
+        // Encontrar o título da tarefa que foi concluída
+        const task = tasks.find(t => t.id === variables.id);
+        if (task) {
+          setQuickCelebrationTask(task.title);
+        }
+        // Mostrar celebração rápida para conclusões fora da tela de detalhes
+        setShowQuickCelebration(true);
+        setTimeout(() => {
+          setShowQuickCelebration(false);
+        }, 1800);
+      } else {
+        // Apenas mostrar toast para desmarcar como concluído
+        toast({
+          title: "Tarefa atualizada",
+          description: "O status da tarefa foi atualizado com sucesso.",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -652,6 +673,26 @@ export default function HouseholdTasksPage() {
                   <Clock className="mr-2 h-4 w-4" />
                   <span>Lista simples</span>
                 </DropdownMenuItem>
+                
+                {process.env.NODE_ENV === 'development' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        // Add a test task completion
+                        setCompletedTaskTitle('Teste de tarefa');
+                        setTaskStreak(Math.floor(Math.random() * 10) + 1);
+                        setShowCelebration(true);
+                        // Auto-hide after a few seconds
+                        setTimeout(() => setShowCelebration(false), 3000);
+                      }}
+                      className="text-amber-600"
+                    >
+                      <Star className="mr-2 h-4 w-4" />
+                      <span>Testar Celebração</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -799,6 +840,13 @@ export default function HouseholdTasksPage() {
         taskTitle={completedTaskTitle}
         streakCount={taskStreak}
         onComplete={() => setShowCelebration(false)}
+      />
+      
+      {/* Quick celebration animation for checkbox toggles */}
+      <QuickTaskCelebration
+        isActive={showQuickCelebration}
+        taskTitle={quickCelebrationTask}
+        onComplete={() => setShowQuickCelebration(false)}
       />
     </div>
   );
