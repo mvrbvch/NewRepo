@@ -42,6 +42,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { TaskCompletionCelebration, QuickTaskCelebration } from "@/components/household/task-completion-celebration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -176,6 +177,14 @@ export default function HouseholdTasksPage() {
       once: true,
     }
   );
+  
+  // Celebration animation state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [completedTaskTitle, setCompletedTaskTitle] = useState('');
+  const [taskStreak, setTaskStreak] = useState(0);
+  
+  // Track completed tasks to calculate streaks
+  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<number[]>([]);
 
   // Busca todas as tarefas do usuário
   const {
@@ -359,6 +368,32 @@ export default function HouseholdTasksPage() {
   };
 
   const handleToggleTaskComplete = (task: HouseholdTaskType) => {
+    // Only trigger celebration if marking as completed (not when uncompleting)
+    if (!task.completed) {
+      // Set the task title for the celebration message
+      setCompletedTaskTitle(task.title);
+      
+      // Calculate streak (counting this task)
+      const updatedRecentlyCompleted = [...recentlyCompletedTasks];
+      // Add this task ID if not already in the list
+      if (!updatedRecentlyCompleted.includes(task.id)) {
+        updatedRecentlyCompleted.push(task.id);
+        setRecentlyCompletedTasks(updatedRecentlyCompleted);
+      }
+      
+      // Calculate streak (limit to last 24 hours for consecutive tasks)
+      const streak = Math.min(updatedRecentlyCompleted.length, 10); // Cap at 10 for UI purposes
+      setTaskStreak(streak);
+      
+      // Show the celebration animation
+      setShowCelebration(true);
+      
+      // Auto-hide celebration after animation completes
+      setTimeout(() => {
+        setShowCelebration(false);
+      }, 3000);
+    }
+    
     toggleCompleteMutation.mutate({
       id: task.id,
       completed: !task.completed,

@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { useLocation } from "wouter";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username or email is required"),
+  username: z.string().min(1, "Username or email is required").toLowerCase(),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -106,8 +106,8 @@ export default function AuthPage() {
                           <FormLabel>Email ou Nome de Usuário</FormLabel>
                           <FormControl>
                             <Input
-                              type="email"
-                              placeholder="seu@email.com"
+                              type="text"
+                              placeholder="digite seu email ou nome de usuário"
                               {...field}
                             />
                           </FormControl>
@@ -249,7 +249,7 @@ export default function AuthPage() {
           </TabsContent>
         </Tabs>
 
-        <p className="text-sm text-center text-gray-500 mt-6">
+        {/* <p className="text-sm text-center text-gray-500 mt-6">
           Ao continuar, você concorda com nossos{" "}
           <a href="#" className="text-primary">
             Termos de Serviço
@@ -259,7 +259,7 @@ export default function AuthPage() {
             Política de Privacidade
           </a>
           .
-        </p>
+        </p> */}
       </div>
     </div>
   );
