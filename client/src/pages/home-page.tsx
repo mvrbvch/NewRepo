@@ -331,39 +331,6 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Botão de teste de notificação */}
-      <div className="fixed bottom-20 right-4 z-50">
-        <TactileFeedback>
-          <RippleButton
-            size="sm"
-            variant="outline"
-            className="flex items-center gap-2 bg-white shadow-md"
-            onClick={() => {
-              if (subscriptionStatus !== "SUBSCRIBED") {
-                toast({
-                  title: "Notificações não ativadas",
-                  description: "Você precisa ativar as notificações primeiro",
-                  variant: "destructive",
-                });
-              } else {
-                testNotificationMutation.mutate();
-              }
-            }}
-            disabled={testNotificationMutation.isPending}
-          >
-            <motion.div
-              animate={
-                testNotificationMutation.isPending ? { scale: [1, 1.2, 1] } : {}
-              }
-              transition={{ repeat: Infinity, duration: 1 }}
-            >
-              <Bell className="h-4 w-4" />
-            </motion.div>
-            {testNotificationMutation.isPending
-              ? "Enviando..."
-              : "Testar Notificação"}
-          </RippleButton>
-        </TactileFeedback>
-      </div>
     </motion.div>
   );
 }

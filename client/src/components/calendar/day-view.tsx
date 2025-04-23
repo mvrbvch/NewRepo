@@ -20,22 +20,24 @@ export default function DayView({
   isLoading,
   onEventClick,
 }: DayViewProps) {
-  
   if (isLoading) {
     return (
       <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar p-4 flex items-center justify-center">
-        <CoupleLoadingAnimation 
-          type="calendar" 
-          text="Carregando agenda do dia..." 
-          size="lg" 
+        <CoupleLoadingAnimation
+          type="calendar"
+          text="Carregando agenda do dia..."
+          size="lg"
         />
       </div>
     );
   }
-  
+
   // Check if there are any events for the day
-  const hasEvents = morningEvents.length > 0 || afternoonEvents.length > 0 || nightEvents.length > 0;
-  
+  const hasEvents =
+    morningEvents.length > 0 ||
+    afternoonEvents.length > 0 ||
+    nightEvents.length > 0;
+
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar">
       {/* Morning section */}
@@ -51,7 +53,7 @@ export default function DayView({
             {periodLabels.morning.timeRange}
           </span>
         </div>
-        
+
         {morningEvents.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-500 text-sm mb-3">
             Nenhum evento neste período
@@ -61,31 +63,41 @@ export default function DayView({
             <div
               key={event.id}
               className={`bg-white rounded-lg shadow-sm mb-3 event-morning p-3 flex ${
-                event.isShared ? 'event-partner' : ''
+                event.isShared ? "event-partner" : ""
               } cursor-pointer hover:shadow-md transition-shadow`}
               onClick={() => onEventClick(event)}
             >
               <div className="mr-3 flex flex-col items-center">
-                <span className="text-sm font-medium">{formatTime(event.startTime)}</span>
-                <span className="text-xs text-gray-500">{formatTime(event.endTime)}</span>
+                <span className="text-sm font-medium">
+                  {formatTime(event.startTime)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {formatTime(event.endTime)}
+                </span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center mb-1">
-                  <span className="mr-1">{event.emoji || '📅'}</span>
+                  <span className="mr-1">{event.emoji || "📅"}</span>
                   <h4 className="font-medium">{event.title}</h4>
                 </div>
                 {event.location && (
-                  <div className="text-sm text-gray-600 mb-1">{event.location}</div>
+                  <div className="text-sm text-gray-600 mb-1">
+                    {event.location}
+                  </div>
                 )}
                 <div className="flex items-center text-xs text-gray-500">
                   {event.isShared ? (
                     <>
-                      <span className="material-icons text-xs text-secondary mr-1">favorite</span>
+                      <span className="material-icons text-xs text-secondary mr-1">
+                        favorite
+                      </span>
                       <span>Compartilhado</span>
                     </>
                   ) : (
                     <>
-                      <span className="material-icons text-xs mr-1">person</span>
+                      <span className="material-icons text-xs mr-1">
+                        person
+                      </span>
                       <span>Somente você</span>
                     </>
                   )}
@@ -95,11 +107,13 @@ export default function DayView({
           ))
         )}
       </div>
-      
+
       {/* Afternoon section */}
       <div className="p-4 pb-2">
         <div className="flex items-center mb-3">
-          <span className={`material-icons ${periodLabels.afternoon.color} mr-2`}>
+          <span
+            className={`material-icons ${periodLabels.afternoon.color} mr-2`}
+          >
             {periodLabels.afternoon.icon}
           </span>
           <h3 className={`${periodLabels.afternoon.color} font-medium`}>
@@ -109,7 +123,7 @@ export default function DayView({
             {periodLabels.afternoon.timeRange}
           </span>
         </div>
-        
+
         {afternoonEvents.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-500 text-sm mb-3">
             Nenhum evento neste período
@@ -119,31 +133,41 @@ export default function DayView({
             <div
               key={event.id}
               className={`bg-white rounded-lg shadow-sm mb-3 event-afternoon p-3 flex ${
-                event.isShared ? 'event-partner' : ''
+                event.isShared ? "event-partner" : ""
               } cursor-pointer hover:shadow-md transition-shadow`}
               onClick={() => onEventClick(event)}
             >
               <div className="mr-3 flex flex-col items-center">
-                <span className="text-sm font-medium">{formatTime(event.startTime)}</span>
-                <span className="text-xs text-gray-500">{formatTime(event.endTime)}</span>
+                <span className="text-sm font-medium">
+                  {formatTime(event.startTime)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {formatTime(event.endTime)}
+                </span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center mb-1">
-                  <span className="mr-1">{event.emoji || '📅'}</span>
+                  <span className="mr-1">{event.emoji || "📅"}</span>
                   <h4 className="font-medium">{event.title}</h4>
                 </div>
                 {event.location && (
-                  <div className="text-sm text-gray-600 mb-1">{event.location}</div>
+                  <div className="text-sm text-gray-600 mb-1">
+                    {event.location}
+                  </div>
                 )}
                 <div className="flex items-center text-xs text-gray-500">
                   {event.isShared ? (
                     <>
-                      <span className="material-icons text-xs text-secondary mr-1">favorite</span>
+                      <span className="material-icons text-xs text-secondary mr-1">
+                        favorite
+                      </span>
                       <span>Compartilhado</span>
                     </>
                   ) : (
                     <>
-                      <span className="material-icons text-xs mr-1">person</span>
+                      <span className="material-icons text-xs mr-1">
+                        person
+                      </span>
                       <span>Somente você</span>
                     </>
                   )}
@@ -153,7 +177,7 @@ export default function DayView({
           ))
         )}
       </div>
-      
+
       {/* Night section */}
       <div className="p-4 pb-2">
         <div className="flex items-center mb-3">
@@ -167,7 +191,7 @@ export default function DayView({
             {periodLabels.night.timeRange}
           </span>
         </div>
-        
+
         {nightEvents.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-4 text-center text-gray-500 text-sm mb-3">
             Nenhum evento neste período
@@ -177,31 +201,41 @@ export default function DayView({
             <div
               key={event.id}
               className={`bg-white rounded-lg shadow-sm mb-3 event-night p-3 flex ${
-                event.isShared ? 'event-partner' : ''
+                event.isShared ? "event-partner" : ""
               } cursor-pointer hover:shadow-md transition-shadow`}
               onClick={() => onEventClick(event)}
             >
               <div className="mr-3 flex flex-col items-center">
-                <span className="text-sm font-medium">{formatTime(event.startTime)}</span>
-                <span className="text-xs text-gray-500">{formatTime(event.endTime)}</span>
+                <span className="text-sm font-medium">
+                  {formatTime(event.startTime)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {formatTime(event.endTime)}
+                </span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center mb-1">
-                  <span className="mr-1">{event.emoji || '📅'}</span>
+                  <span className="mr-1">{event.emoji || "📅"}</span>
                   <h4 className="font-medium">{event.title}</h4>
                 </div>
                 {event.location && (
-                  <div className="text-sm text-gray-600 mb-1">{event.location}</div>
+                  <div className="text-sm text-gray-600 mb-1">
+                    {event.location}
+                  </div>
                 )}
                 <div className="flex items-center text-xs text-gray-500">
                   {event.isShared ? (
                     <>
-                      <span className="material-icons text-xs text-secondary mr-1">favorite</span>
+                      <span className="material-icons text-xs text-secondary mr-1">
+                        favorite
+                      </span>
                       <span>Compartilhado</span>
                     </>
                   ) : (
                     <>
-                      <span className="material-icons text-xs mr-1">person</span>
+                      <span className="material-icons text-xs mr-1">
+                        person
+                      </span>
                       <span>Somente você</span>
                     </>
                   )}
@@ -212,18 +246,7 @@ export default function DayView({
         )}
       </div>
 
-      {/* No events message */}
-      {!hasEvents && !isLoading && (
-        <div className="p-4 text-center">
-          <div className="bg-white rounded-lg shadow-sm p-6 text-gray-500">
-            <span className="material-icons text-4xl mb-2">event_busy</span>
-            <h3 className="font-medium mb-1">Nenhum evento para este dia</h3>
-            <p className="text-sm">Adicione eventos usando o botão + abaixo</p>
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
+      <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }

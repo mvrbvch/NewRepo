@@ -44,6 +44,7 @@ export enum PushSubscriptionStatus {
   LOADING = "loading",
   ENABLED = "enabled",
   DISABLED = "disabled",
+  SUBSCRIBED = "subscribed",
 }
 
 // Interface para o contexto de notificações push

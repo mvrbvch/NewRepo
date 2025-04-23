@@ -36,7 +36,7 @@ export default function Header() {
 
   return (
     <header
-      style={{ paddingTop: 30 }}
+      style={{ paddingTop: 50 }}
       className="px-4 py-3 flex items-center justify-between border-b bg-primary-dark shadow-md text-white"
     >
       <div className="flex items-center">

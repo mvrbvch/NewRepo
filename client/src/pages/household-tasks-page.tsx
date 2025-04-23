@@ -71,7 +71,10 @@ function PullToRefresh({
   const currentY = useRef(0);
   const controls = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const MAX_PULL_DISTANCE = 80;
+  const MAX_PULL_DISTANCE = 200; // Aumentado de 80 para 120 pixels
+
+  // Também podemos ajustar o limiar para ativar o refresh
+  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.5; // 50% da distância máxima
 
   const handleTouchStart = (e: React.TouchEvent) => {
     // Só ativa o pull to refresh se estiver no topo da página
@@ -105,7 +108,7 @@ function PullToRefresh({
 
     const pullDistance = currentY.current - startY.current;
 
-    if (pullDistance >= MAX_PULL_DISTANCE * 0.6) {
+    if (pullDistance >= ACTIVATION_THRESHOLD) {
       // Puxou o suficiente para ativar o refresh
       setRefreshing(true);
       await controls.start({ y: MAX_PULL_DISTANCE / 2, opacity: 1 });
