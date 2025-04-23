@@ -638,11 +638,9 @@ export default function HouseholdTasksPage() {
   return (
     <div className="h-screen flex flex-col">
       <Header />
-      {/* Espaçamento para compensar o header fixo */}
-      <div className="pt-[60px]"></div>
 
-      <div className="flex items-center justify-between p-3 bg-primary-light border-b border-primary-light sticky top-[60px] z-30 shadow-sm">
-        <h2 className="text-base font-semibold text-primary-dark">
+      <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
+        <h2 className="text-xl font-semibold text-primary-dark">
           Minhas Tarefas
         </h2>
         <div className="flex gap-2">
@@ -651,9 +649,9 @@ export default function HouseholdTasksPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-1 text-xs px-2 h-8"
+                className="flex items-center gap-1"
               >
-                <Filter className="h-3 w-3" />
+                <Filter className="h-4 w-4" />
                 Filtros
               </Button>
             </DropdownMenuTrigger>
@@ -703,9 +701,9 @@ export default function HouseholdTasksPage() {
             onClick={handleOpenCreateModal}
             variant="default"
             size="sm"
-            className="flex items-center gap-1 bg-primary-dark hover:bg-primary text-white transition-colors text-xs px-2 h-8"
+            className="flex items-center gap-1 bg-primary-dark hover:bg-primary text-white transition-colors"
           >
-            <span className="text-base">+</span> Nova
+            <span className="text-lg">+</span> Nova Tarefa
           </Button>
         </div>
       </div>
@@ -716,29 +714,29 @@ export default function HouseholdTasksPage() {
         onValueChange={setActiveTab}
         className="flex-1"
       >
-        <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-1 sticky top-[96px] z-20 shadow-sm">
+        <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-2">
           <TabsTrigger
             value="all"
-            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm text-xs py-1 h-8"
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Todas
           </TabsTrigger>
           <TabsTrigger
             value="pending"
-            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm text-xs py-1 h-8"
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Pendentes
           </TabsTrigger>
           <TabsTrigger
             value="completed"
-            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm text-xs py-1 h-8"
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Concluídas
           </TabsTrigger>
           <TabsTrigger
             value="partner"
             disabled={!user?.partnerId}
-            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm text-xs py-1 h-8"
+            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Parceiro
           </TabsTrigger>
