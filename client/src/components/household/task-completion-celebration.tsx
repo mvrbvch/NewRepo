@@ -28,6 +28,7 @@ export function TaskCompletionCelebration({
   const [showMessage, setShowMessage] = useState(false);
   const [showSticker, setShowSticker] = useState(false);
   const [celebrationText, setCelebrationText] = useState('Tarefa concluída!');
+  const [celebrationPhase, setCelebrationPhase] = useState(0);
   
   useEffect(() => {
     if (isActive) {
@@ -35,10 +36,13 @@ export function TaskCompletionCelebration({
       setShowAnimation(false);
       setShowMessage(false);
       setShowSticker(false);
+      setCelebrationPhase(0);
       
       // Set celebration text based on streak
-      if (streakCount >= 5) {
-        setCelebrationText(`Impressionante! ${streakCount} tarefas consecutivas!`);
+      if (streakCount >= 10) {
+        setCelebrationText(`Incrível! ${streakCount} tarefas completadas!`);
+      } else if (streakCount >= 5) {
+        setCelebrationText(`Impressionante! ${streakCount} tarefas completadas!`);
       } else if (streakCount >= 3) {
         setCelebrationText(`Você está em uma sequência de ${streakCount}!`);
       } else if (taskTitle) {
@@ -47,20 +51,41 @@ export function TaskCompletionCelebration({
         setCelebrationText('Tarefa concluída!');
       }
       
-      // Trigger animations in sequence
-      setTimeout(() => setShowAnimation(true), 100);
+      // Trigger animations in sequence with smooth timing
+      const animationSequence = async () => {
+        // Phase 1: Start confetti
+        setCelebrationPhase(1);
+        setTimeout(() => setShowAnimation(true), 50);
+        
+        // Phase 2: Show message after a short delay
+        if (type === 'full' || type === 'message') {
+          setTimeout(() => {
+            setCelebrationPhase(2);
+            setShowMessage(true);
+          }, 300);
+        }
+        
+        // Phase 3: Show sticker/badge for achievements
+        if (type === 'full' || type === 'sticker') {
+          setTimeout(() => {
+            setCelebrationPhase(3);
+            setShowSticker(true);
+          }, 800);
+        }
+      };
       
-      if (type === 'full' || type === 'message') {
-        setTimeout(() => setShowMessage(true), 300);
-      }
-      
-      if (type === 'full' || type === 'sticker') {
-        setTimeout(() => setShowSticker(true), 500);
-      }
+      animationSequence();
       
       // Handle completion callback
       const completeTimer = setTimeout(() => {
-        if (onComplete) onComplete();
+        // Fade out everything smoothly
+        setShowMessage(false);
+        setShowSticker(false);
+        
+        setTimeout(() => {
+          setShowAnimation(false);
+          if (onComplete) onComplete();
+        }, 500);
       }, 3000); // Total animation duration
       
       return () => clearTimeout(completeTimer);

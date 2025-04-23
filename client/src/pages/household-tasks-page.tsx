@@ -588,7 +588,7 @@ export default function HouseholdTasksPage() {
             <div className="text-primary">{icon}</div>
             <h3 className="font-semibold text-primary-dark">{title}</h3>
             <Badge variant="outline" className="ml-1">
-              {tasks.length}
+              {tasks.length.toString()}
             </Badge>
           </div>
           <div>
@@ -616,7 +616,7 @@ export default function HouseholdTasksPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <Header title="Tarefas Domésticas" />
+      <Header />
 
       <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
         <h2 className="text-xl font-semibold text-primary-dark">
@@ -792,6 +792,14 @@ export default function HouseholdTasksPage() {
           onToggleComplete={handleToggleTaskComplete}
         />
       )}
+      
+      {/* Task completion celebration animation */}
+      <TaskCompletionCelebration
+        isActive={showCelebration}
+        taskTitle={completedTaskTitle}
+        streakCount={taskStreak}
+        onComplete={() => setShowCelebration(false)}
+      />
     </div>
   );
 }
