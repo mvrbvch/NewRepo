@@ -7,7 +7,7 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ 
-  minDisplayTime = 2000, 
+  minDisplayTime = 3500, // Increased from 2000ms to 3500ms
   onFinished 
 }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
@@ -42,21 +42,33 @@ export function SplashScreen({
         <img 
           src="/logo-white.png" 
           alt="Por Nós" 
-          className="w-64 h-auto mb-8 animate-logo-pulse"
+          className="w-72 h-auto mb-10 animate-logo-pulse"
         />
         
-        <p className="text-white text-lg font-medium mb-8">
+        <p className="text-white text-xl font-medium mb-10 max-w-md px-4">
           Todo dia é uma nova chance de nos escolher
         </p>
         
         <div className="flex flex-col items-center justify-center">
-          <div className="flex items-center justify-center mb-4">
-            <Heart className="w-8 h-8 text-white mr-2 animate-pulse" />
-            <Heart className="w-8 h-8 text-white animate-pulse" fill="white" />
+          <div className="flex items-center justify-center mb-6 space-x-3">
+            <Heart 
+              className="w-9 h-9 text-white animate-pulse" 
+              style={{ animationDuration: '2s' }}
+            />
+            <Heart 
+              className="w-9 h-9 text-white animate-pulse" 
+              fill="white" 
+              style={{ animationDuration: '2.5s' }}
+            />
           </div>
           
-          <div className="heart-spinner w-8 h-8 mt-2"></div>
+          <div className="heart-spinner w-10 h-10 mt-2"></div>
         </div>
+      </div>
+      
+      {/* Version display */}
+      <div className="absolute bottom-6 text-white text-sm opacity-70">
+        v1.0
       </div>
     </div>
   );

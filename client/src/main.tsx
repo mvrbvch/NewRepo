@@ -103,8 +103,8 @@ async function initializeApp() {
     </ThemeProvider>
   );
   
-  // Hide the HTML splash screen after React has loaded (with a slight delay)
-  setTimeout(hideInitialLoader, 500);
+  // Keep the HTML splash screen visible longer (handled by the inline script in index.html)
+  // The React splash screen will take over smoothly
   
   // Wait for service worker registration (but don't block the app)
   await serviceWorkerPromise;
