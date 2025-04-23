@@ -31,6 +31,7 @@ const taskFormSchema = z.object({
   frequency: z.enum(["once", "daily", "weekly", "monthly"]),
   assignedTo: z.number().nullable().optional(),
   dueDate: z.date().nullable().optional(),
+  priority: z.number().default(0), // 0: baixa, 1: média, 2: alta
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -49,6 +50,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
       frequency: "once",
       assignedTo: user?.id || null,
       dueDate: null,
+      priority: 0, // prioridade baixa por padrão
     },
   });
 
@@ -219,6 +221,35 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                   </Popover>
                   <FormDescription className="text-small text-medium">
                     Até quando esta tarefa deve ser concluída?
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-subtitle">Prioridade</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    defaultValue={field.value.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="shadow-input">
+                        <SelectValue placeholder="Selecione a prioridade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="0">Baixa</SelectItem>
+                      <SelectItem value="1">Média</SelectItem>
+                      <SelectItem value="2">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-small text-medium">
+                    Qual a prioridade desta tarefa?
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -297,13 +297,22 @@ export default function HouseholdTasksPage() {
         break;
     }
 
-    // Ordenar tarefas: primeiro as pendentes com data de vencimento próxima, depois as concluídas
+    // Ordenar tarefas: primeiro por status (pendentes antes das concluídas), 
+    // em seguida por prioridade (alta para baixa) e finalmente por data
     return filteredTasks.sort((a, b) => {
       // Se uma tarefa está completa e a outra não, a pendente vem primeiro
       if (a.completed && !b.completed) return 1;
       if (!a.completed && b.completed) return -1;
 
-      // Se ambas têm o mesmo status de conclusão, ordenar por data de vencimento
+      // Se ambas têm o mesmo status de conclusão, ordenar por prioridade (alta para baixa)
+      const priorityA = a.priority || 0;
+      const priorityB = b.priority || 0;
+      
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA; // Ordem decrescente: 2 (alta) vem antes de 0 (baixa)
+      }
+      
+      // Se ambas têm a mesma prioridade, ordenar por data de vencimento
       if (a.dueDate && b.dueDate) {
         const dateA = new Date(a.dueDate);
         const dateB = new Date(b.dueDate);

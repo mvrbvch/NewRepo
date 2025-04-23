@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Loader2, Trash2, Edit, Check, RefreshCw, BellRing, Send, User, Calendar } from "lucide-react";
+import { Star } from "lucide-react";
 import { useState } from "react";
 import { 
   AlertDialog,
@@ -110,6 +111,24 @@ export default function TaskDetailsModal({
     }
   };
 
+  const getPriorityText = (priority: number): string => {
+    switch (priority) {
+      case 0: return 'Baixa';
+      case 1: return 'Média';
+      case 2: return 'Alta';
+      default: return 'Baixa';
+    }
+  };
+
+  const getPriorityColor = (priority: number): string => {
+    switch (priority) {
+      case 0: return 'bg-blue-100 text-blue-600';
+      case 1: return 'bg-yellow-100 text-yellow-600';
+      case 2: return 'bg-red-100 text-red-600';
+      default: return 'bg-blue-100 text-blue-600';
+    }
+  };
+
   const isCreatedByUser = task.createdBy === user?.id;
   const isAssignedToUser = task.assignedTo === user?.id || task.assignedTo === null;
   const canEdit = isCreatedByUser || isAssignedToUser;
@@ -186,6 +205,31 @@ export default function TaskDetailsModal({
                     </div>
                   </div>
                 )}
+                
+                {/* Prioridade da tarefa */}
+                <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
+                  <div className={`p-2 rounded-full flex-shrink-0 ${
+                    task.priority === 2 ? 'bg-red-100' : 
+                    task.priority === 1 ? 'bg-yellow-100' : 
+                    'bg-blue-100'
+                  }`}>
+                    <Star className={`h-4 w-4 ${
+                      task.priority === 2 ? 'text-red-600' : 
+                      task.priority === 1 ? 'text-yellow-600' : 
+                      'text-blue-600'
+                    }`} />
+                  </div>
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="text-xs text-medium">Prioridade</p>
+                    <p className={`font-medium truncate ${
+                      task.priority === 2 ? 'text-red-600' : 
+                      task.priority === 1 ? 'text-yellow-600' : 
+                      'text-blue-600'
+                    }`}>
+                      {getPriorityText(task.priority || 0)}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
