@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ interface RippleButtonProps extends ButtonProps {
   rippleSize?: number;
   rippleDuration?: number;
   children: ReactNode;
+  hapticFeedback?: boolean;
 }
 
 export function RippleButton({
@@ -16,6 +17,7 @@ export function RippleButton({
   rippleDuration = 0.5,
   className,
   children,
+  hapticFeedback = true,
   ...props
 }: RippleButtonProps) {
   const [ripples, setRipples] = useState<Array<{
@@ -23,8 +25,55 @@ export function RippleButton({
     x: number;
     y: number;
   }>>([]);
+  
+  // Usar useRef para rastrear se o evento de toque aconteceu
+  const touchOccurred = useRef(false);
 
-  const addRipple = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const triggerHapticFeedback = () => {
+    if (hapticFeedback && navigator.vibrate) {
+      navigator.vibrate(15); // Vibração curta para feedback tátil
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLButtonElement>) => {
+    touchOccurred.current = true;
+    
+    const button = e.currentTarget;
+    const rect = button.getBoundingClientRect();
+    
+    // Obter a posição do toque relativa ao botão
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+    
+    // Feedback tátil
+    triggerHapticFeedback();
+    
+    // Criar uma nova ondulação com ID único
+    const newRipple = {
+      id: Date.now(),
+      x,
+      y,
+    };
+    
+    // Adicionar ao estado
+    setRipples([...ripples, newRipple]);
+    
+    // Remover a ondulação depois que a animação terminar
+    setTimeout(() => {
+      setRipples((prevRipples) =>
+        prevRipples.filter((ripple) => ripple.id !== newRipple.id)
+      );
+    }, rippleDuration * 1000);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    // Se já ocorreu um evento de toque, ignore o clique
+    // Isso evita "duplo disparo" em dispositivos touch
+    if (touchOccurred.current) {
+      touchOccurred.current = false;
+      return;
+    }
+    
     const button = e.currentTarget;
     const rect = button.getBoundingClientRect();
     
@@ -53,7 +102,8 @@ export function RippleButton({
   return (
     <Button
       className={cn("relative overflow-hidden", className)}
-      onClick={addRipple}
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
       {...props}
     >
       {children}
