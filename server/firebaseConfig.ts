@@ -1,5 +1,5 @@
-import admin from 'firebase-admin';
-import { getMessaging } from 'firebase-admin/messaging';
+import admin from "firebase-admin";
+import { getMessaging } from "firebase-admin/messaging";
 
 // Verificar se já inicializamos o Firebase para evitar múltiplas inicializações
 let firebaseInitialized = false;
@@ -7,14 +7,17 @@ let firebaseInitialized = false;
 // Inicializar Firebase Admin SDK com as credenciais
 export function initializeFirebase() {
   if (firebaseInitialized) {
-    console.log('Firebase já inicializado, ignorando');
+    console.log("Firebase já inicializado, ignorando");
     return;
   }
 
   try {
     // Verificar se as credenciais existem
-    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_STORAGE_BUCKET) {
-      throw new Error('Credenciais do Firebase não definidas corretamente');
+    if (
+      !process.env.FIREBASE_PROJECT_ID ||
+      !process.env.FIREBASE_STORAGE_BUCKET
+    ) {
+      throw new Error("Credenciais do Firebase não definidas corretamente");
     }
 
     // Em vez de usar a string JSON completa, usamos os valores individuais
@@ -23,20 +26,20 @@ export function initializeFirebase() {
     // Inicializar o app do Firebase Admin usando configuração simples
     admin.initializeApp({
       projectId: process.env.FIREBASE_PROJECT_ID,
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
     });
 
-    console.log('Firebase Admin SDK inicializado com sucesso');
+    console.log("Firebase Admin SDK inicializado com sucesso");
     firebaseInitialized = true;
   } catch (error) {
-    console.error('Erro ao inicializar Firebase Admin SDK:', error);
+    console.error("Erro ao inicializar Firebase Admin SDK:", error);
     throw error;
   }
 }
 
 // Função para enviar notificação via Firebase Cloud Messaging
 export async function sendFirebaseMessage(
-  token: string, 
+  token: string,
   notification: { title: string; body: string; imageUrl?: string },
   data: Record<string, string> = {}
 ) {
@@ -46,7 +49,7 @@ export async function sendFirebaseMessage(
 
   try {
     const messaging = getMessaging();
-    
+
     // Preparar a mensagem
     const message = {
       token,
@@ -54,36 +57,37 @@ export async function sendFirebaseMessage(
       data,
       webpush: {
         notification: {
-          icon: '/icons/icon-192x192.png',
-          click_action: process.env.NODE_ENV === 'production' 
-            ? 'https://por-nos.replit.app/' 
-            : 'http://localhost:5000/',
-          ...notification
+          icon: "/icons/icon-192x192.png",
+          click_action:
+            process.env.NODE_ENV === "production"
+              ? "https://por-nos.murbach.work/"
+              : "http://localhost:5000/",
+          ...notification,
         },
         fcmOptions: {
-          link: '/'
-        }
+          link: "/",
+        },
       },
       // Configuração para iOS
       apns: {
         payload: {
           aps: {
             badge: 1,
-            sound: 'default'
-          }
+            sound: "default",
+          },
         },
         fcmOptions: {
-          imageUrl: notification.imageUrl
-        }
-      }
+          imageUrl: notification.imageUrl,
+        },
+      },
     };
 
     // Enviar a mensagem
     const response = await messaging.send(message);
-    console.log('Mensagem Firebase enviada com sucesso:', response);
+    console.log("Mensagem Firebase enviada com sucesso:", response);
     return { success: true, messageId: response };
   } catch (error) {
-    console.error('Erro ao enviar mensagem Firebase:', error);
+    console.error("Erro ao enviar mensagem Firebase:", error);
     return { success: false, error };
   }
 }
@@ -99,13 +103,13 @@ export async function sendFirebaseMessageToMultipleDevices(
   }
 
   if (!tokens || tokens.length === 0) {
-    console.warn('Nenhum token fornecido para envio de notificação');
-    return { success: false, error: 'Nenhum token fornecido' };
+    console.warn("Nenhum token fornecido para envio de notificação");
+    return { success: false, error: "Nenhum token fornecido" };
   }
 
   try {
     const messaging = getMessaging();
-    
+
     // Preparar a mensagem
     const message = {
       tokens,
@@ -113,44 +117,50 @@ export async function sendFirebaseMessageToMultipleDevices(
       data,
       webpush: {
         notification: {
-          icon: '/icons/icon-192x192.png',
-          click_action: process.env.NODE_ENV === 'production' 
-            ? 'https://por-nos.replit.app/' 
-            : 'http://localhost:5000/',
-          ...notification
+          icon: "/icons/icon-192x192.png",
+          click_action:
+            process.env.NODE_ENV === "production"
+              ? "https://por-nos.murbach.work/"
+              : "http://localhost:5000/",
+          ...notification,
         },
         fcmOptions: {
-          link: '/'
-        }
+          link: "/",
+        },
       },
       apns: {
         payload: {
           aps: {
             badge: 1,
-            sound: 'default'
-          }
+            sound: "default",
+          },
         },
         fcmOptions: {
-          imageUrl: notification.imageUrl
-        }
-      }
+          imageUrl: notification.imageUrl,
+        },
+      },
     };
 
     // Enviar a mensagem para cada dispositivo individualmente
     const responses = await Promise.all(
-      tokens.map(token => messaging.send({ ...message, token }))
+      tokens.map((token) => messaging.send({ ...message, token }))
     );
-    
-    console.log(`Mensagem Firebase enviada para ${responses.length} dispositivos`);
-    
+
+    console.log(
+      `Mensagem Firebase enviada para ${responses.length} dispositivos`
+    );
+
     // Retornar detalhes de sucesso/falha
-    return { 
+    return {
       success: responses.length > 0,
       successCount: responses.length,
-      responses
+      responses,
     };
   } catch (error) {
-    console.error('Erro ao enviar mensagem Firebase para múltiplos dispositivos:', error);
+    console.error(
+      "Erro ao enviar mensagem Firebase para múltiplos dispositivos:",
+      error
+    );
     return { success: false, error };
   }
 }
