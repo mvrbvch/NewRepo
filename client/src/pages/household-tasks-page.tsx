@@ -557,12 +557,14 @@ export default function HouseholdTasksPage() {
                   </div>
                 )}
 
+                {/* Status da tarefa: Concluída */}
                 {task.completed ? (
                   <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
                     <Check className="h-3 w-3 mr-1 flex-shrink-0" />
                     Concluída
                   </div>
                 ) : (
+                  /* Informação sobre atribuição */
                   task.assignedTo &&
                   task.assignedTo === user?.partnerId && (
                     <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
@@ -570,6 +572,19 @@ export default function HouseholdTasksPage() {
                       Atribuída ao parceiro
                     </div>
                   )
+                )}
+                
+                {/* Indicador de prioridade */}
+                {!task.completed && (
+                  <div className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
+                    task.priority === 2 ? 'bg-red-50 text-red-600' : 
+                    task.priority === 1 ? 'bg-yellow-50 text-yellow-600' : 
+                    'bg-blue-50 text-blue-600'
+                  }`}>
+                    <Star className="h-3 w-3 mr-1 flex-shrink-0" />
+                    {task.priority === 2 ? 'Alta' : 
+                     task.priority === 1 ? 'Média' : 'Baixa'}
+                  </div>
                 )}
               </div>
             </div>
