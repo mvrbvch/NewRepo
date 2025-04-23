@@ -638,8 +638,10 @@ export default function HouseholdTasksPage() {
   return (
     <div className="h-screen flex flex-col">
       <Header />
+      {/* Espaçamento para compensar o header fixo */}
+      <div className="pt-[102px]"></div>
 
-      <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
+      <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light sticky top-[102px] z-30 shadow-sm">
         <h2 className="text-xl font-semibold text-primary-dark">
           Minhas Tarefas
         </h2>
@@ -714,7 +716,7 @@ export default function HouseholdTasksPage() {
         onValueChange={setActiveTab}
         className="flex-1"
       >
-        <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-2">
+        <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-2 sticky top-[152px] z-20 shadow-sm">
           <TabsTrigger
             value="all"
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
