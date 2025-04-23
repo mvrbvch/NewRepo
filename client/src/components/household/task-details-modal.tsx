@@ -3,17 +3,34 @@ import { HouseholdTaskType, UserType } from "@/lib/types";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2, Trash2, Edit, Check, RefreshCw, BellRing, Send, User, Calendar } from "lucide-react";
+import {
+  CalendarIcon,
+  Loader2,
+  Trash2,
+  Edit,
+  Check,
+  RefreshCw,
+  BellRing,
+  Send,
+  User,
+  Calendar,
+} from "lucide-react";
 import { Star } from "lucide-react";
 import { useState } from "react";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -23,6 +40,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Pencil } from "lucide-react";
+import EditTaskModal from "./edit-task-modal";
 
 interface TaskDetailsModalProps {
   task: HouseholdTaskType;
@@ -30,6 +49,7 @@ interface TaskDetailsModalProps {
   onClose: () => void;
   onDelete: (id: number) => void;
   onToggleComplete: (task: HouseholdTaskType) => void;
+  openEditModal: (task: HouseholdTaskType) => void;
 }
 
 export default function TaskDetailsModal({
@@ -37,6 +57,7 @@ export default function TaskDetailsModal({
   isOpen,
   onClose,
   onDelete,
+  openEditModal,
   onToggleComplete,
 }: TaskDetailsModalProps) {
   const { toast } = useToast();
@@ -44,13 +65,21 @@ export default function TaskDetailsModal({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
-  const [reminderMessage, setReminderMessage] = useState('');
+  const [reminderMessage, setReminderMessage] = useState("");
   const [sendingReminder, setSendingReminder] = useState(false);
-  
+
   // Mutation para enviar lembrete
   const sendReminderMutation = useMutation({
-    mutationFn: async ({ taskId, message }: { taskId: number; message: string }) => {
-      const response = await apiRequest("POST", `/api/tasks/${taskId}/remind`, { message });
+    mutationFn: async ({
+      taskId,
+      message,
+    }: {
+      taskId: number;
+      message: string;
+    }) => {
+      const response = await apiRequest("POST", `/api/tasks/${taskId}/remind`, {
+        message,
+      });
       return await response.json();
     },
     onSuccess: () => {
@@ -59,7 +88,7 @@ export default function TaskDetailsModal({
         description: "O lembrete foi enviado com sucesso para seu parceiro.",
       });
       setReminderDialogOpen(false);
-      setReminderMessage('');
+      setReminderMessage("");
     },
     onError: (error) => {
       toast({
@@ -70,7 +99,7 @@ export default function TaskDetailsModal({
     },
     onSettled: () => {
       setSendingReminder(false);
-    }
+    },
   });
 
   const handleDelete = () => {
@@ -86,51 +115,65 @@ export default function TaskDetailsModal({
     setUpdatingStatus(true);
     onToggleComplete(task);
     // Simular um pequeno atraso para feedback visual
-    setTimeout(() => setUpdatingStatus(false), 500);
+    setTimeout(() => setUpdatingStatus(false), 100);
   };
-  
+
   const handleOpenReminderDialog = () => {
     setReminderDialogOpen(true);
   };
-  
+
   const handleSendReminder = () => {
     setSendingReminder(true);
     sendReminderMutation.mutate({
       taskId: task.id,
-      message: reminderMessage
+      message: reminderMessage,
     });
   };
 
   const getFrequencyText = (frequency: string): string => {
     switch (frequency) {
-      case 'once': return 'Uma vez';
-      case 'daily': return 'Diária';
-      case 'weekly': return 'Semanal';
-      case 'monthly': return 'Mensal';
-      default: return frequency;
+      case "once":
+        return "Uma vez";
+      case "daily":
+        return "Diária";
+      case "weekly":
+        return "Semanal";
+      case "monthly":
+        return "Mensal";
+      default:
+        return frequency;
     }
   };
 
   const getPriorityText = (priority: number): string => {
     switch (priority) {
-      case 0: return 'Baixa';
-      case 1: return 'Média';
-      case 2: return 'Alta';
-      default: return 'Baixa';
+      case 0:
+        return "Baixa";
+      case 1:
+        return "Média";
+      case 2:
+        return "Alta";
+      default:
+        return "Baixa";
     }
   };
 
   const getPriorityColor = (priority: number): string => {
     switch (priority) {
-      case 0: return 'bg-blue-100 text-blue-600';
-      case 1: return 'bg-yellow-100 text-yellow-600';
-      case 2: return 'bg-red-100 text-red-600';
-      default: return 'bg-blue-100 text-blue-600';
+      case 0:
+        return "bg-blue-100 text-blue-600";
+      case 1:
+        return "bg-yellow-100 text-yellow-600";
+      case 2:
+        return "bg-red-100 text-red-600";
+      default:
+        return "bg-blue-100 text-blue-600";
     }
   };
 
   const isCreatedByUser = task.createdBy === user?.id;
-  const isAssignedToUser = task.assignedTo === user?.id || task.assignedTo === null;
+  const isAssignedToUser =
+    task.assignedTo === user?.id || task.assignedTo === null;
   const canEdit = isCreatedByUser || isAssignedToUser;
 
   return (
@@ -151,14 +194,18 @@ export default function TaskDetailsModal({
           <div className="space-y-6 py-4">
             {task.description && (
               <div className="bg-primary-light/10 p-4 rounded-lg border border-primary-light/30">
-                <h3 className="text-subtitle font-semibold mb-2 text-primary-dark">Descrição</h3>
+                <h3 className="text-subtitle font-semibold mb-2 text-primary-dark">
+                  Descrição
+                </h3>
                 <p className="text-body text-medium">{task.description}</p>
               </div>
             )}
 
             <div className="flex flex-col gap-4 p-4 bg-card rounded-lg shadow-card border border-gray-100">
-              <h3 className="text-subtitle font-semibold text-dark mb-2">Detalhes da Tarefa</h3>
-              
+              <h3 className="text-subtitle font-semibold text-dark mb-2">
+                Detalhes da Tarefa
+              </h3>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
                   <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
@@ -166,7 +213,9 @@ export default function TaskDetailsModal({
                   </div>
                   <div className="min-w-0 overflow-hidden">
                     <p className="text-xs text-medium">Frequência</p>
-                    <p className="font-medium text-dark truncate">{getFrequencyText(task.frequency)}</p>
+                    <p className="font-medium text-dark truncate">
+                      {getFrequencyText(task.frequency)}
+                    </p>
                   </div>
                 </div>
 
@@ -177,7 +226,11 @@ export default function TaskDetailsModal({
                     </div>
                     <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Data de vencimento</p>
-                      <p className="font-medium text-dark truncate">{format(new Date(task.dueDate), 'PPP', { locale: ptBR })}</p>
+                      <p className="font-medium text-dark truncate">
+                        {format(new Date(task.dueDate), "PPP", {
+                          locale: ptBR,
+                        })}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -189,7 +242,9 @@ export default function TaskDetailsModal({
                     </div>
                     <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Atribuída a</p>
-                      <p className="font-medium text-dark truncate">{task.assignedTo === user?.id ? 'Você' : 'Seu parceiro'}</p>
+                      <p className="font-medium text-dark truncate">
+                        {task.assignedTo === user?.id ? "Você" : "Seu parceiro"}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -201,31 +256,47 @@ export default function TaskDetailsModal({
                     </div>
                     <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Criada em</p>
-                      <p className="font-medium text-dark truncate">{format(new Date(task.createdAt), 'PPP', { locale: ptBR })}</p>
+                      <p className="font-medium text-dark truncate">
+                        {format(new Date(task.createdAt), "PPP", {
+                          locale: ptBR,
+                        })}
+                      </p>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Prioridade da tarefa */}
                 <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
-                  <div className={`p-2 rounded-full flex-shrink-0 ${
-                    task.priority === 2 ? 'bg-red-100' : 
-                    task.priority === 1 ? 'bg-yellow-100' : 
-                    'bg-blue-100'
-                  }`}>
-                    <Star className={`h-4 w-4 ${
-                      task.priority === 2 ? 'text-red-600' : 
-                      task.priority === 1 ? 'text-yellow-600' : 
-                      'text-blue-600'
-                    }`} />
+                  <div
+                    className={`p-2 rounded-full flex-shrink-0 ${
+                      task.priority === 2
+                        ? "bg-red-100"
+                        : task.priority === 1
+                          ? "bg-yellow-100"
+                          : "bg-blue-100"
+                    }`}
+                  >
+                    <Star
+                      className={`h-4 w-4 ${
+                        task.priority === 2
+                          ? "text-red-600"
+                          : task.priority === 1
+                            ? "text-yellow-600"
+                            : "text-blue-600"
+                      }`}
+                    />
                   </div>
                   <div className="min-w-0 overflow-hidden">
                     <p className="text-xs text-medium">Prioridade</p>
-                    <p className={`font-medium truncate ${
-                      task.priority === 2 ? 'text-red-600' : 
-                      task.priority === 1 ? 'text-yellow-600' : 
-                      'text-blue-600'
-                    }`}>
+                    <p
+                      className={`font-medium truncate ${
+                        task.priority === 2
+                          ? "text-red-600"
+                          : task.priority === 1
+                            ? "text-yellow-600"
+                            : "text-blue-600"
+                      }`}
+                    >
                       {getPriorityText(task.priority || 0)}
                     </p>
                   </div>
@@ -234,29 +305,40 @@ export default function TaskDetailsModal({
             </div>
 
             <div className="mt-5 border-t pt-4">
-              <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer bg-gray-50" onClick={handleToggleComplete}>
+              <div
+                className="flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer bg-gray-50"
+                onClick={handleToggleComplete}
+              >
                 <Checkbox
                   checked={task.completed}
                   onCheckedChange={handleToggleComplete}
                   disabled={updatingStatus || !canEdit}
                   className={`h-5 w-5 rounded-sm flex-shrink-0 ${
-                    !task.completed 
-                      ? "border-primary hover:border-primary-dark" 
+                    !task.completed
+                      ? "border-primary hover:border-primary-dark"
                       : "text-green-600"
                   }`}
                 />
                 <div className="min-w-0 flex-1">
                   <span className="text-dark font-medium block text-sm">
-                    Status: {task.completed ? 'Concluída' : 'Pendente'}
+                    Status: {task.completed ? "Concluída" : "Pendente"}
                   </span>
                   <p className="text-xs text-medium">
-                    Clique para marcar como {' '}
-                    <span className={task.completed ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
-                      {task.completed ? 'pendente' : 'concluída'}
+                    Clique para marcar como{" "}
+                    <span
+                      className={
+                        task.completed
+                          ? "text-red-500 font-medium"
+                          : "text-green-600 font-medium"
+                      }
+                    >
+                      {task.completed ? "pendente" : "concluída"}
                     </span>
                   </p>
                 </div>
-                {updatingStatus && <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary flex-shrink-0" />}
+                {updatingStatus && (
+                  <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary flex-shrink-0" />
+                )}
               </div>
             </div>
           </div>
@@ -273,12 +355,12 @@ export default function TaskDetailsModal({
                 Excluir
               </Button>
             )}
-            
+
             {/* Botão para enviar lembrete ao parceiro */}
             {user?.partnerId && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleOpenReminderDialog}
                 className="status-active shadow-hover"
               >
@@ -286,15 +368,22 @@ export default function TaskDetailsModal({
                 Lembrar Parceiro
               </Button>
             )}
-            
+
             {/* Botão de edição - será implementado futuramente */}
             {canEdit && (
-              <Button variant="outline" size="sm" disabled className="shadow-hover">
-                <Edit className="h-4 w-4 mr-1" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openEditModal(task)}
+                className="shadow-hover"
+              >
+                <Pencil className="h-4 w-4 mr-1" />
                 Editar
               </Button>
             )}
-            <Button onClick={onClose} className="btn-gradient shadow-hover">Fechar</Button>
+            <Button onClick={onClose} className="btn-gradient shadow-hover">
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -302,16 +391,21 @@ export default function TaskDetailsModal({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="modal-card max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-title text-alert">Você tem certeza?</AlertDialogTitle>
+            <AlertDialogTitle className="text-title text-alert">
+              Você tem certeza?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-body text-medium">
               Esta ação não pode ser desfeita. Isso excluirá permanentemente a
-              tarefa <span className="font-medium">"{task.title}"</span> e todos os dados associados.
+              tarefa <span className="font-medium">"{task.title}"</span> e todos
+              os dados associados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
-            <AlertDialogCancel className="shadow-hover w-full sm:w-auto">Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
+            <AlertDialogCancel className="shadow-hover w-full sm:w-auto">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700 shadow-hover w-full sm:w-auto"
             >
               <Trash2 className="h-4 w-4 mr-1" />
@@ -320,36 +414,48 @@ export default function TaskDetailsModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       {/* Diálogo para enviar lembrete */}
-      <Dialog open={reminderDialogOpen} onOpenChange={(open) => !open && setReminderDialogOpen(false)}>
+      <Dialog
+        open={reminderDialogOpen}
+        onOpenChange={(open) => !open && setReminderDialogOpen(false)}
+      >
         <DialogContent className="sm:max-w-[500px] modal-card max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-title title-gradient">Enviar lembrete para seu parceiro</DialogTitle>
+            <DialogTitle className="text-title title-gradient">
+              Enviar lembrete para seu parceiro
+            </DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4">
             <div className="mb-4 p-4 bg-primary-light/20 rounded-lg border border-primary-light/30 shadow-card">
-              <h3 className="text-subtitle font-semibold mb-2 text-primary-dark break-words">{task.title}</h3>
-              {task.description && <p className="text-small text-medium break-words">{task.description}</p>}
+              <h3 className="text-subtitle font-semibold mb-2 text-primary-dark break-words">
+                {task.title}
+              </h3>
+              {task.description && (
+                <p className="text-small text-medium break-words">
+                  {task.description}
+                </p>
+              )}
               {task.dueDate && (
                 <div className="mt-2 text-xs flex items-center">
                   <CalendarIcon className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
                   <span className="font-medium text-primary-dark truncate">
-                    {format(new Date(task.dueDate), 'PPP', { locale: ptBR })}
+                    {format(new Date(task.dueDate), "PPP", { locale: ptBR })}
                   </span>
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-4">
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <p className="text-body text-medium text-pretty">
-                  Escreva uma mensagem personalizada para enviar junto com o lembrete dessa tarefa.
-                  Seu parceiro receberá uma notificação com os detalhes da tarefa.
+                  Escreva uma mensagem personalizada para enviar junto com o
+                  lembrete dessa tarefa. Seu parceiro receberá uma notificação
+                  com os detalhes da tarefa.
                 </p>
               </div>
-              
+
               <Textarea
                 placeholder="Exemplo: Por favor, não se esqueça de realizar esta tarefa até amanhã!"
                 value={reminderMessage}
@@ -358,7 +464,7 @@ export default function TaskDetailsModal({
               />
             </div>
           </div>
-          
+
           <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
             <Button
               variant="outline"

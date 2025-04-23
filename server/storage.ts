@@ -1456,9 +1456,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
+  async getUserHouseholdTasks(
+    userId: number,
+    date?: Date
+  ): Promise<HouseholdTask[]> {
     try {
-      const tasks = await db
+      let query = db
         .select()
         .from(householdTasks)
         .where(
@@ -1467,6 +1470,26 @@ export class DatabaseStorage implements IStorage {
             eq(householdTasks.createdBy, userId)
           )
         );
+
+      // If a date is provided, add date filtering
+      if (date) {
+        // Convert the provided date to start and end of day for comparison
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Add date filter condition
+        query = query.where(
+          and(
+            householdTasks.dueDate >= startOfDay,
+            householdTasks.dueDate <= endOfDay
+          )
+        );
+      }
+
+      const tasks = await query;
 
       // Mapear cada tarefa e formatar suas datas de forma segura usando a função utilitária
       return tasks.map((task) => {
@@ -1493,12 +1516,7 @@ export class DatabaseStorage implements IStorage {
       const tasks = await db
         .select()
         .from(householdTasks)
-        .where(
-          or(
-            eq(householdTasks.assignedTo, user.partnerId),
-            eq(householdTasks.createdBy, user.partnerId)
-          )
-        );
+        .where(or(eq(householdTasks.assignedTo, user.partnerId)));
 
       // Mapear cada tarefa e formatar suas datas de forma segura usando a função utilitária
       return tasks.map((task) => {

@@ -334,13 +334,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: req.user.partnerId,
           permission: req.body.partnerPermission || "view",
         });
-        
+
         // Send push notification to partner about the shared event
         try {
           // Get the creator's name
           const creator = await storage.getUser(userId);
           const creatorName = creator ? creator.name : "Alguém";
-          
+
           // Create push notification payload
           const pushPayload: PushNotificationPayload = {
             title: `Novo evento: ${newEvent.title}`,
@@ -354,11 +354,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             referenceId: newEvent.id,
             tag: `event_${newEvent.id}`,
           };
-          
+
           // Send push notification to the partner
-          const sentCount = await sendPushToUser(req.user.partnerId, pushPayload);
-          console.log(`Enviadas ${sentCount} notificações push para o parceiro sobre o evento compartilhado`);
-          
+          const sentCount = await sendPushToUser(
+            req.user.partnerId,
+            pushPayload
+          );
+          console.log(
+            `Enviadas ${sentCount} notificações push para o parceiro sobre o evento compartilhado`
+          );
+
           // Create notification in database
           await storage.createNotification({
             userId: req.user.partnerId,
@@ -375,7 +380,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }),
           });
         } catch (notificationError) {
-          console.error("Erro ao enviar notificação de evento compartilhado:", notificationError);
+          console.error(
+            "Erro ao enviar notificação de evento compartilhado:",
+            notificationError
+          );
           // Continue even if notification fails
         }
       }
@@ -457,22 +465,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedEvent = await storage.updateEvent(eventId, req.body);
-      
+
       // Get all users who have access to this event (shares)
       const shares = await storage.getEventShares(eventId);
-      
+
       // Notify all users who have access to this event (except the updater)
       if (shares.length > 0) {
         try {
           // Get the updater's name
           const updater = await storage.getUser(userId);
           const updaterName = updater ? updater.name : "Alguém";
-          
+
           // For each user who has access to the event
           for (const share of shares) {
             // Skip if it's the user who updated the event
             if (share.userId === userId) continue;
-            
+
             // Create push notification payload
             const pushPayload: PushNotificationPayload = {
               title: `Evento atualizado: ${updatedEvent.title}`,
@@ -486,11 +494,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               referenceId: updatedEvent.id,
               tag: `event_${updatedEvent.id}`,
             };
-            
+
             // Send push notification to the user
             const sentCount = await sendPushToUser(share.userId, pushPayload);
-            console.log(`Enviadas ${sentCount} notificações push para o usuário ${share.userId} sobre o evento atualizado`);
-            
+            console.log(
+              `Enviadas ${sentCount} notificações push para o usuário ${share.userId} sobre o evento atualizado`
+            );
+
             // Create notification in database
             await storage.createNotification({
               userId: share.userId,
@@ -507,11 +517,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         } catch (notificationError) {
-          console.error("Erro ao enviar notificações de evento atualizado:", notificationError);
+          console.error(
+            "Erro ao enviar notificações de evento atualizado:",
+            notificationError
+          );
           // Continue even if notification fails
         }
       }
-      
+
       res.json(updatedEvent);
     } catch (error) {
       res.status(500).json({ message: "Failed to update event" });
@@ -589,35 +602,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Get the event creator
         const eventCreator = event.createdBy;
-        
+
         // Get all users who have access to this event (shares)
         const shares = await storage.getEventShares(eventId);
-        
+
         // Get the commenter's name
         const commenter = await storage.getUser(userId);
         const commenterName = commenter ? commenter.name : "Alguém";
-        
+
         // Create a set of users to notify (to avoid duplicates)
         const usersToNotify = new Set<number>();
-        
+
         // Add the event creator if it's not the commenter
         if (eventCreator !== userId) {
           usersToNotify.add(eventCreator);
         }
-        
+
         // Add all users who have access to the event (except the commenter)
         for (const share of shares) {
           if (share.userId !== userId) {
             usersToNotify.add(share.userId);
           }
         }
-        
+
         // For each user to notify
         for (const userIdToNotify of usersToNotify) {
           // Create push notification payload
           const pushPayload: PushNotificationPayload = {
             title: `Novo comentário em: ${event.title}`,
-            body: `${commenterName}: ${content.substring(0, 100)}${content.length > 100 ? '...' : ''}`,
+            body: `${commenterName}: ${content.substring(0, 100)}${content.length > 100 ? "..." : ""}`,
             data: {
               type: "event_comment",
               referenceType: "event",
@@ -627,11 +640,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             referenceId: eventId,
             tag: `event_${eventId}_comment`,
           };
-          
+
           // Send push notification to the user
           const sentCount = await sendPushToUser(userIdToNotify, pushPayload);
-          console.log(`Enviadas ${sentCount} notificações push para o usuário ${userIdToNotify} sobre o novo comentário`);
-          
+          console.log(
+            `Enviadas ${sentCount} notificações push para o usuário ${userIdToNotify} sobre o novo comentário`
+          );
+
           // Create notification in database
           await storage.createNotification({
             userId: userIdToNotify,
@@ -649,7 +664,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       } catch (notificationError) {
-        console.error("Erro ao enviar notificações de novo comentário:", notificationError);
+        console.error(
+          "Erro ao enviar notificações de novo comentário:",
+          notificationError
+        );
         // Continue even if notification fails
       }
 
@@ -886,7 +904,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = req.user?.id as number;
-      const tasks = await storage.getUserHouseholdTasks(userId);
+      let filterDate: Date | undefined;
+
+      // Parse date parameter if provided
+      if (req.query.date) {
+        try {
+          filterDate = new Date(req.query.date as string);
+          // Validate that the parsed date is valid
+          if (isNaN(filterDate.getTime())) {
+            return res.status(400).json({ message: "Invalid date format" });
+          }
+        } catch (error) {
+          return res.status(400).json({ message: "Invalid date format" });
+        }
+      }
+
+      const tasks = await storage.getUserHouseholdTasks(userId, filterDate);
       res.json(tasks);
     } catch (error) {
       console.error("Erro ao buscar tarefas domésticas:", error);
@@ -982,7 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const newTask = await storage.createHouseholdTask(taskData);
-      
+
       // Send push notification to the assigned user if it's not the creator
       if (newTask.assignedTo && newTask.assignedTo !== userId) {
         try {
@@ -992,7 +1025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get the creator's name
             const creator = await storage.getUser(userId);
             const creatorName = creator ? creator.name : "Alguém";
-            
+
             // Create push notification payload
             const pushPayload: PushNotificationPayload = {
               title: `Nova tarefa: ${newTask.title}`,
@@ -1006,11 +1039,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               referenceId: newTask.id,
               tag: `task_${newTask.id}`,
             };
-            
+
             // Send push notification to the assigned user
-            const sentCount = await sendPushToUser(newTask.assignedTo, pushPayload);
-            console.log(`Enviadas ${sentCount} notificações push para o usuário responsável pela tarefa`);
-            
+            const sentCount = await sendPushToUser(
+              newTask.assignedTo,
+              pushPayload
+            );
+            console.log(
+              `Enviadas ${sentCount} notificações push para o usuário responsável pela tarefa`
+            );
+
             // Create notification in database
             await storage.createNotification({
               userId: newTask.assignedTo,
@@ -1027,11 +1065,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         } catch (notificationError) {
-          console.error("Erro ao enviar notificação de tarefa:", notificationError);
+          console.error(
+            "Erro ao enviar notificação de tarefa:",
+            notificationError
+          );
           // Continue even if notification fails
         }
       }
-      
+
       res.status(201).json(newTask);
     } catch (error) {
       console.error("Erro ao criar tarefa doméstica:", error);
@@ -1084,9 +1125,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const updatedTask = await storage.updateHouseholdTask(taskId, updates);
-      
+
       // Send push notification if the task was reassigned to someone else
-      if (updates.assignedTo && updates.assignedTo !== userId && updates.assignedTo !== task.assignedTo) {
+      if (
+        updates.assignedTo &&
+        updates.assignedTo !== userId &&
+        updates.assignedTo !== task.assignedTo
+      ) {
         try {
           // Get the assigned user
           const assignedUser = await storage.getUser(updates.assignedTo);
@@ -1094,7 +1139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get the updater's name
             const updater = await storage.getUser(userId);
             const updaterName = updater ? updater.name : "Alguém";
-            
+
             // Create push notification payload
             const pushPayload: PushNotificationPayload = {
               title: `Tarefa atribuída: ${updatedTask.title}`,
@@ -1108,11 +1153,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               referenceId: updatedTask.id,
               tag: `task_${updatedTask.id}`,
             };
-            
+
             // Send push notification to the newly assigned user
-            const sentCount = await sendPushToUser(updates.assignedTo, pushPayload);
-            console.log(`Enviadas ${sentCount} notificações push para o novo responsável pela tarefa`);
-            
+            const sentCount = await sendPushToUser(
+              updates.assignedTo,
+              pushPayload
+            );
+            console.log(
+              `Enviadas ${sentCount} notificações push para o novo responsável pela tarefa`
+            );
+
             // Create notification in database
             await storage.createNotification({
               userId: updates.assignedTo,
@@ -1129,18 +1179,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         } catch (notificationError) {
-          console.error("Erro ao enviar notificação de tarefa atualizada:", notificationError);
+          console.error(
+            "Erro ao enviar notificação de tarefa atualizada:",
+            notificationError
+          );
           // Continue even if notification fails
         }
       }
-      
+
       // If the task was updated by someone else, notify the assigned user
       if (task.assignedTo && task.assignedTo !== userId) {
         try {
           // Get the updater's name
           const updater = await storage.getUser(userId);
           const updaterName = updater ? updater.name : "Alguém";
-          
+
           // Create push notification payload
           const pushPayload: PushNotificationPayload = {
             title: `Tarefa atualizada: ${updatedTask.title}`,
@@ -1154,11 +1207,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             referenceId: updatedTask.id,
             tag: `task_${updatedTask.id}`,
           };
-          
+
           // Send push notification to the assigned user
           const sentCount = await sendPushToUser(task.assignedTo, pushPayload);
-          console.log(`Enviadas ${sentCount} notificações push para o responsável pela tarefa atualizada`);
-          
+          console.log(
+            `Enviadas ${sentCount} notificações push para o responsável pela tarefa atualizada`
+          );
+
           // Create notification in database
           await storage.createNotification({
             userId: task.assignedTo,
@@ -1174,11 +1229,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }),
           });
         } catch (notificationError) {
-          console.error("Erro ao enviar notificação de tarefa atualizada:", notificationError);
+          console.error(
+            "Erro ao enviar notificação de tarefa atualizada:",
+            notificationError
+          );
           // Continue even if notification fails
         }
       }
-      
+
       res.json(updatedTask);
     } catch (error) {
       console.error("Erro ao atualizar tarefa doméstica:", error);
@@ -1262,14 +1320,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         taskId,
         completed
       );
-      
+
       // If the task was completed by someone else, notify the creator
       if (completed && task.createdBy !== userId) {
         try {
           // Get the completer's name
           const completer = await storage.getUser(userId);
           const completerName = completer ? completer.name : "Alguém";
-          
+
           // Create push notification payload
           const pushPayload: PushNotificationPayload = {
             title: `Tarefa concluída: ${updatedTask.title}`,
@@ -1283,11 +1341,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             referenceId: updatedTask.id,
             tag: `task_${updatedTask.id}`,
           };
-          
+
           // Send push notification to the task creator
           const sentCount = await sendPushToUser(task.createdBy, pushPayload);
-          console.log(`Enviadas ${sentCount} notificações push para o criador da tarefa concluída`);
-          
+          console.log(
+            `Enviadas ${sentCount} notificações push para o criador da tarefa concluída`
+          );
+
           // Create notification in database
           await storage.createNotification({
             userId: task.createdBy,
@@ -1304,11 +1364,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }),
           });
         } catch (notificationError) {
-          console.error("Erro ao enviar notificação de tarefa concluída:", notificationError);
+          console.error(
+            "Erro ao enviar notificação de tarefa concluída:",
+            notificationError
+          );
           // Continue even if notification fails
         }
       }
-      
+
       res.json(updatedTask);
     } catch (error) {
       console.error("Erro ao atualizar status da tarefa:", error);
@@ -2152,9 +2215,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   return httpServer;
 }
-
-
-
-
-
-

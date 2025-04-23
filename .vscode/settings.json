@@ -1,0 +1,19 @@
+{
+  "sqltools.connections": [
+    {
+      "pgOptions": {
+        "ssl": {
+          "rejectUnauthorized": true
+        }
+      },
+      "previewLimit": 50,
+      "server": "ep-orange-heart-a5zsrpws.us-east-2.aws.neon.tech",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "PorNos",
+      "username": "neondb_owner",
+      "password": "npg_hU6cXSkBuD0m",
+      "database": "neondb"
+    }
+  ]
+}

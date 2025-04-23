@@ -39,7 +39,7 @@ export default function OnboardingPage() {
   });
 
   const nextStep = () => {
-    if (step === 4) {
+    if (step === 3) {
       completeOnboardingMutation.mutate();
     } else {
       setStep(step + 1);
@@ -77,9 +77,6 @@ export default function OnboardingPage() {
           ></div>
           <div
             className={`h-1 w-8 rounded-full ${step >= 3 ? "bg-primary" : "bg-gray-200"}`}
-          ></div>
-          <div
-            className={`h-1 w-8 rounded-full ${step >= 4 ? "bg-primary" : "bg-gray-200"}`}
           ></div>
         </div>
         <Button
@@ -130,73 +127,6 @@ export default function OnboardingPage() {
           )}
 
           {step === 2 && (
-            <div className="mb-8">
-              <div className="text-center">
-                <div className="bg-primary/10 inline-flex items-center justify-center w-16 h-16 rounded-full mb-4">
-                  <span className="material-icons text-primary text-3xl">
-                    calendar_today
-                  </span>
-                </div>
-                <h2 className="text-2xl font-bold mb-2">
-                  Importe seus calendários
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Conecte com seus calendários existentes para não perder nenhum
-                  compromisso.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <button
-                  disabled
-                  style={{ opacity: 0.5 }}
-                  className={`flex items-center justify-between w-full ${
-                    selectedCalendars.includes("google")
-                      ? "bg-blue-50 border-blue-300"
-                      : "bg-white border-gray-300"
-                  } border rounded-lg p-4 disabled`}
-                  onClick={() => toggleCalendarSelection("google")}
-                >
-                  <div className="flex items-center">
-                    <span className="material-icons text-blue-500 mr-3">
-                      event_note
-                    </span>
-                    <span>Google Calendar (rs ainda não)</span>
-                  </div>
-                  <span className="material-icons text-gray-400">
-                    {selectedCalendars.includes("google")
-                      ? "check_circle"
-                      : "chevron_right"}
-                  </span>
-                </button>
-
-                <button
-                  disabled
-                  style={{ opacity: 0.5 }}
-                  className={`flex items-center justify-between w-full disabled ${
-                    selectedCalendars.includes("apple")
-                      ? "bg-blue-50 border-blue-300"
-                      : "bg-white border-gray-300"
-                  } border rounded-lg p-4`}
-                  onClick={() => toggleCalendarSelection("apple")}
-                >
-                  <div className="flex items-center">
-                    <span className="material-icons text-red-500 mr-3">
-                      event_available
-                    </span>
-                    <span>Apple Calendar (rs ainda não)</span>
-                  </div>
-                  <span className="material-icons text-gray-400">
-                    {selectedCalendars.includes("apple")
-                      ? "check_circle"
-                      : "chevron_right"}
-                  </span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
             <div className="mb-8">
               <div className="text-center">
                 <div className="bg-primary/10 inline-flex items-center justify-center w-16 h-16 rounded-full mb-4">
@@ -257,7 +187,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {step === 4 && (
+          {step === 3 && (
             <div className="mb-8">
               <div className="text-center">
                 <div className="bg-primary/10 inline-flex items-center justify-center w-16 h-16 rounded-full mb-4">
@@ -304,7 +234,7 @@ export default function OnboardingPage() {
             </Button>
           )}
           <Button onClick={nextStep} className="flex-1">
-            {step === 4 ? "Concluir" : "Continuar"}
+            {step === 3 ? "Concluir" : "Continuar"}
           </Button>
         </div>
       </div>

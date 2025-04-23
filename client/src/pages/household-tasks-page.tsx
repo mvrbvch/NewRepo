@@ -1,14 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { HouseholdTaskType, UserType } from "@/lib/types";
-import { queryClient, apiRequest, getQueryFn } from "@/lib/queryClient";
-import Header from "@/components/shared/header";
-import BottomNavigation from "@/components/shared/bottom-navigation";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+import { HouseholdTaskType } from "@/lib/types";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import {
   format,
   isToday,
@@ -17,15 +12,9 @@ import {
   isAfter,
   isBefore,
   addDays,
+  isSameDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
-import CreateTaskModal from "@/components/household/create-task-modal";
-import TaskDetailsModal from "@/components/household/task-details-modal";
-import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
-import { AnimatedList } from "@/components/ui/animated-list";
-import { TactileFeedback } from "@/components/ui/tactile-feedback";
-import { RippleButton } from "@/components/ui/ripple-button";
 import { motion, useAnimation } from "framer-motion";
 import {
   Loader2,
@@ -42,8 +31,25 @@ import {
   ChevronUp,
   Star,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { TaskCompletionCelebration, QuickTaskCelebration } from "@/components/household/task-completion-celebration";
+
+// Components
+import Header from "@/components/shared/header";
+import BottomNavigation from "@/components/shared/bottom-navigation";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import CreateTaskModal from "@/components/household/create-task-modal";
+import TaskDetailsModal from "@/components/household/task-details-modal";
+import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
+import { AnimatedList } from "@/components/ui/animated-list";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
+import { RippleButton } from "@/components/ui/ripple-button";
+import {
+  TaskCompletionCelebration,
+  QuickTaskCelebration,
+} from "@/components/household/task-completion-celebration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,8 +64,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import EditTaskModal from "@/components/household/edit-task-modal";
+import { formatDateSafely } from "@/lib/utils";
 
-// Componente de Pull to Refresh
+// Pull to Refresh Component
 function PullToRefresh({
   onRefresh,
   children,
@@ -73,13 +87,10 @@ function PullToRefresh({
   const currentY = useRef(0);
   const controls = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const MAX_PULL_DISTANCE = 200; // Aumentado de 80 para 120 pixels
-
-  // Também podemos ajustar o limiar para ativar o refresh
-  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.5; // 50% da distância máxima
+  const MAX_PULL_DISTANCE = 200;
+  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.5;
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Só ativa o pull to refresh se estiver no topo da página
     if (containerRef.current && containerRef.current.scrollTop <= 0) {
       startY.current = e.touches[0].clientY;
       setIsPulling(true);
@@ -96,7 +107,6 @@ function PullToRefresh({
     );
 
     if (pullDistance > 0) {
-      // Prevenir o comportamento padrão de scroll quando estamos puxando
       e.preventDefault();
       controls.set({
         y: pullDistance,
@@ -111,7 +121,6 @@ function PullToRefresh({
     const pullDistance = currentY.current - startY.current;
 
     if (pullDistance >= ACTIVATION_THRESHOLD) {
-      // Puxou o suficiente para ativar o refresh
       setRefreshing(true);
       await controls.start({ y: MAX_PULL_DISTANCE / 2, opacity: 1 });
 
@@ -124,7 +133,6 @@ function PullToRefresh({
       }
     }
 
-    // Animar de volta à posição original
     await controls.start({
       y: 0,
       opacity: 0,
@@ -161,15 +169,23 @@ function PullToRefresh({
 }
 
 export default function HouseholdTasksPage() {
+  // Hooks
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("all");
+
+  // State
+  const [activeTab, setActiveTab] = useState("pending");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<HouseholdTaskType | null>(null);
   const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
     null
   );
   const [groupByFrequency, setGroupByFrequency] = useState(true);
+  const [viewPartner, setViewPartner] = useState(false);
+  const [viewMyTasks, setViewMyTasks] = useState(true);
+
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {
       daily: true,
@@ -178,16 +194,18 @@ export default function HouseholdTasksPage() {
       once: true,
     }
   );
-  
+
   // Celebration animation state
   const [showCelebration, setShowCelebration] = useState(false);
-  const [completedTaskTitle, setCompletedTaskTitle] = useState('');
+  const [completedTaskTitle, setCompletedTaskTitle] = useState("");
   const [taskStreak, setTaskStreak] = useState(0);
-  
-  // Track completed tasks to calculate streaks
-  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<number[]>([]);
+  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<
+    number[]
+  >([]);
+  const [showQuickCelebration, setShowQuickCelebration] = useState(false);
+  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>("");
 
-  // Busca todas as tarefas do usuário
+  // Queries
   const {
     data: tasks = [],
     isLoading,
@@ -196,19 +214,14 @@ export default function HouseholdTasksPage() {
     queryKey: ["/api/tasks"],
   });
 
-  // Busca tarefas do parceiro (se existir)
   const { data: partnerTasks = [], refetch: refetchPartnerTasks } = useQuery<
     HouseholdTaskType[]
   >({
-    queryKey: ["/api/partner-tasks"],
-    enabled: !!user?.partnerId, // Somente ativa se o usuário tiver um parceiro
+    queryKey: ["/api/tasks/partner"],
+    enabled: !!user?.partnerId,
   });
 
-  // Estado para controlar a animação rápida
-  const [showQuickCelebration, setShowQuickCelebration] = useState(false);
-  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>('');
-  
-  // Mutação para marcar tarefa como concluída/pendente
+  // Mutations
   const toggleCompleteMutation = useMutation({
     mutationFn: async ({
       id,
@@ -224,29 +237,25 @@ export default function HouseholdTasksPage() {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
-      
-      // Mostrar mensagem de sucesso e celebração simples quando marcar como concluída
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
+
       if (variables.completed) {
-        // Encontrar o título da tarefa que foi concluída
-        const task = tasks.find(t => t.id === variables.id);
+        const task = tasks.find((t) => t.id === variables.id);
         if (task) {
           setQuickCelebrationTask(task.title);
         }
-        // Mostrar celebração rápida para conclusões fora da tela de detalhes
         setShowQuickCelebration(true);
         setTimeout(() => {
           setShowQuickCelebration(false);
         }, 1800);
       } else {
-        // Apenas mostrar toast para desmarcar como concluído
         toast({
           title: "Tarefa atualizada",
           description: "O status da tarefa foi atualizado com sucesso.",
         });
       }
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Erro ao atualizar tarefa",
         description: "Não foi possível atualizar o status. Tente novamente.",
@@ -255,21 +264,20 @@ export default function HouseholdTasksPage() {
     },
   });
 
-  // Mutação para excluir tarefa
   const deleteTaskMutation = useMutation({
     mutationFn: async (id: number) => {
       await apiRequest("DELETE", `/api/tasks/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
       setSelectedTask(null);
       toast({
         title: "Tarefa excluída",
         description: "A tarefa foi excluída com sucesso.",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Erro ao excluir tarefa",
         description: "Não foi possível excluir a tarefa. Tente novamente.",
@@ -278,10 +286,11 @@ export default function HouseholdTasksPage() {
     },
   });
 
-  // Filtrar tarefas baseado na aba ativa
+  // Helper functions
   const getFilteredTasks = () => {
     let filteredTasks: HouseholdTaskType[] = [];
 
+    // Filter by tab
     switch (activeTab) {
       case "all":
         filteredTasks = [...tasks];
@@ -292,43 +301,125 @@ export default function HouseholdTasksPage() {
       case "completed":
         filteredTasks = tasks.filter((task) => task.completed);
         break;
-      case "partner":
-        filteredTasks = [...partnerTasks];
-        break;
     }
 
-    // Ordenar tarefas: primeiro por status (pendentes antes das concluídas), 
-    // em seguida por prioridade (alta para baixa) e finalmente por data
+    if (viewMyTasks) {
+      filteredTasks = filteredTasks.filter(
+        (task) => task.assignedTo === user?.id
+      );
+    }
+
+    // Filter by date if selected
+    if (selectedDate) {
+      filteredTasks = filteredTasks.filter((task) => {
+        console.log("task.dueDate", task.dueDate, selectedDate);
+        if (!task.dueDate) return false;
+        const eventDate = new Date(task.dueDate);
+        const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
+        const formattedSelectedDate = formatDateSafely(
+          new Date(selectedDate)
+        )?.split("T")[0];
+
+        if (!formattedEventDate || !formattedSelectedDate) {
+          return false;
+        }
+
+        return isSameDay(formattedEventDate, formattedSelectedDate);
+      });
+    }
+
+    // Sort tasks
     return filteredTasks.sort((a, b) => {
-      // Se uma tarefa está completa e a outra não, a pendente vem primeiro
+      // Pending tasks first
       if (a.completed && !b.completed) return 1;
       if (!a.completed && b.completed) return -1;
 
-      // Se ambas têm o mesmo status de conclusão, ordenar por prioridade (alta para baixa)
+      // Sort by priority (high to low)
       const priorityA = a.priority || 0;
       const priorityB = b.priority || 0;
-      
+
       if (priorityA !== priorityB) {
-        return priorityB - priorityA; // Ordem decrescente: 2 (alta) vem antes de 0 (baixa)
+        return priorityB - priorityA;
       }
-      
-      // Se ambas têm a mesma prioridade, ordenar por data de vencimento
+
+      // Sort by due date
       if (a.dueDate && b.dueDate) {
         const dateA = new Date(a.dueDate);
         const dateB = new Date(b.dueDate);
         return dateA.getTime() - dateB.getTime();
       }
 
-      // Se apenas uma tem data de vencimento, ela vem primeiro
+      // Tasks with due dates come first
       if (a.dueDate && !b.dueDate) return -1;
       if (!a.dueDate && b.dueDate) return 1;
 
-      // Se nenhuma tem data de vencimento, manter a ordem original
       return 0;
     });
   };
 
-  // Função auxiliar para formatação amigável de datas
+  const getFilteredTasksPartner = () => {
+    let filteredTasks: HouseholdTaskType[] = [];
+
+    // Filter by tab
+    switch (activeTab) {
+      case "all":
+        filteredTasks = [...partnerTasks];
+        break;
+      case "pending":
+        filteredTasks = partnerTasks.filter((task) => !task.completed);
+        break;
+      case "completed":
+        filteredTasks = partnerTasks.filter((task) => task.completed);
+        break;
+    }
+
+    // Filter by date if selected
+    if (selectedDate) {
+      filteredTasks = filteredTasks.filter((task) => {
+        if (!task.dueDate) return false;
+        const eventDate = new Date(task.dueDate);
+        const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
+        const formattedSelectedDate = formatDateSafely(
+          new Date(selectedDate)
+        )?.split("T")[0];
+
+        if (!formattedEventDate || !formattedSelectedDate) {
+          return false;
+        }
+
+        return isSameDay(formattedEventDate, formattedSelectedDate);
+      });
+    }
+
+    // Sort tasks
+    return filteredTasks.sort((a, b) => {
+      // Pending tasks first
+      if (a.completed && !b.completed) return 1;
+      if (!a.completed && b.completed) return -1;
+
+      // Sort by priority (high to low)
+      const priorityA = a.priority || 0;
+      const priorityB = b.priority || 0;
+
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA;
+      }
+
+      // Sort by due date
+      if (a.dueDate && b.dueDate) {
+        const dateA = new Date(a.dueDate);
+        const dateB = new Date(b.dueDate);
+        return dateA.getTime() - dateB.getTime();
+      }
+
+      // Tasks with due dates come first
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+
+      return 0;
+    });
+  };
+
   const getFormattedDueDate = (dueDate: string | Date) => {
     const date = new Date(dueDate);
     const today = new Date();
@@ -344,94 +435,6 @@ export default function HouseholdTasksPage() {
     } else {
       return format(date, "dd/MM/yyyy", { locale: ptBR });
     }
-  };
-
-  // Agrupar tarefas por frequência
-  const groupedTasks = useMemo(() => {
-    const filteredTasks = getFilteredTasks();
-
-    if (!groupByFrequency) {
-      return { ungrouped: filteredTasks };
-    }
-
-    return filteredTasks.reduce(
-      (acc, task) => {
-        const frequency = task.frequency || "once";
-        if (!acc[frequency]) {
-          acc[frequency] = [];
-        }
-        acc[frequency].push(task);
-        return acc;
-      },
-      {} as Record<string, HouseholdTaskType[]>
-    );
-  }, [tasks, partnerTasks, activeTab, groupByFrequency]);
-
-  // Função para atualizar os dados
-  const handleRefresh = async () => {
-    toast({
-      title: "Atualizando...",
-      description: "Buscando as tarefas mais recentes.",
-      duration: 2000,
-    });
-
-    await refetchTasks();
-    if (user?.partnerId) {
-      await refetchPartnerTasks();
-    }
-  };
-
-  const handleOpenCreateModal = () => {
-    setCreateModalOpen(true);
-  };
-
-  const handleCloseCreateModal = () => {
-    setCreateModalOpen(false);
-  };
-
-  const handleOpenTaskDetails = (task: HouseholdTaskType) => {
-    setSelectedTask(task);
-  };
-
-  const handleCloseTaskDetails = () => {
-    setSelectedTask(null);
-  };
-
-  const handleToggleTaskComplete = (task: HouseholdTaskType) => {
-    // Only trigger celebration if marking as completed (not when uncompleting)
-    if (!task.completed) {
-      // Set the task title for the celebration message
-      setCompletedTaskTitle(task.title);
-      
-      // Calculate streak (counting this task)
-      const updatedRecentlyCompleted = [...recentlyCompletedTasks];
-      // Add this task ID if not already in the list
-      if (!updatedRecentlyCompleted.includes(task.id)) {
-        updatedRecentlyCompleted.push(task.id);
-        setRecentlyCompletedTasks(updatedRecentlyCompleted);
-      }
-      
-      // Calculate streak (limit to last 24 hours for consecutive tasks)
-      const streak = Math.min(updatedRecentlyCompleted.length, 10); // Cap at 10 for UI purposes
-      setTaskStreak(streak);
-      
-      // Show the celebration animation
-      setShowCelebration(true);
-      
-      // Auto-hide celebration after animation completes
-      setTimeout(() => {
-        setShowCelebration(false);
-      }, 3000);
-    }
-    
-    toggleCompleteMutation.mutate({
-      id: task.id,
-      completed: !task.completed,
-    });
-  };
-
-  const handleDeleteTask = (id: number) => {
-    deleteTaskMutation.mutate(id);
   };
 
   const getFrequencyText = (frequency: string): string => {
@@ -462,7 +465,109 @@ export default function HouseholdTasksPage() {
     }
   };
 
-  // Alternar expansão de um grupo
+  // Group tasks by frequency
+  const groupedTasks = useMemo(() => {
+    let filteredTasks: HouseholdTaskType[] = [];
+    if (viewPartner && !viewMyTasks) {
+      filteredTasks = getFilteredTasksPartner();
+    } else {
+      filteredTasks = getFilteredTasks();
+    }
+
+    if (!groupByFrequency) {
+      return { ungrouped: filteredTasks };
+    }
+
+    return filteredTasks.reduce(
+      (acc, task) => {
+        const frequency = task.frequency || "once";
+        if (!acc[frequency]) {
+          acc[frequency] = [];
+        }
+        acc[frequency].push(task);
+        return acc;
+      },
+      {} as Record<string, HouseholdTaskType[]>
+    );
+  }, [
+    tasks,
+    partnerTasks,
+    activeTab,
+    groupByFrequency,
+    selectedDate,
+    viewPartner,
+    viewMyTasks,
+  ]);
+
+  // Event handlers
+  const handleRefresh = async () => {
+    toast({
+      title: "Atualizando...",
+      description: "Buscando as tarefas mais recentes.",
+      duration: 2000,
+    });
+
+    await refetchTasks();
+    if (user?.partnerId) {
+      await refetchPartnerTasks();
+    }
+  };
+
+  const handleOpenCreateModal = () => setCreateModalOpen(true);
+  const handleCloseCreateModal = () => setCreateModalOpen(false);
+  const handleOpenTaskDetails = (task: HouseholdTaskType) =>
+    setSelectedTask(task);
+  const handleCloseTaskDetails = () => setSelectedTask(null);
+
+  // Add a function to handle opening the edit modal
+  const handleOpenEditModal = (task: HouseholdTaskType) => {
+    setTaskToEdit(task);
+    setEditModalOpen(true);
+  };
+
+  // Add a function to handle closing the edit modal
+  const handleCloseEditModal = (task: HouseholdTaskType) => {
+    setEditModalOpen(false);
+    setSelectedTask(task);
+
+    setTaskToEdit(null);
+  };
+
+  const handleToggleTaskComplete = (task: HouseholdTaskType) => {
+    // Only trigger celebration if marking as completed
+    if (!task.completed) {
+      setCompletedTaskTitle(task.title);
+
+      // Calculate streak
+      const updatedRecentlyCompleted = [...recentlyCompletedTasks];
+      if (!updatedRecentlyCompleted.includes(task.id)) {
+        updatedRecentlyCompleted.push(task.id);
+        setRecentlyCompletedTasks(updatedRecentlyCompleted);
+      }
+
+      // Calculate streak (limit to last 10 for UI purposes)
+      const streak = Math.min(updatedRecentlyCompleted.length, 10);
+      setTaskStreak(streak);
+
+      // Show celebration animation
+      setShowCelebration(true);
+      setTimeout(() => {
+        setShowCelebration(false);
+        refetchTasks();
+      }, 3000);
+    }
+
+    toggleCompleteMutation.mutate({
+      id: task.id,
+      completed: !task.completed,
+    });
+    setSelectedTask({ ...task, completed: !task.completed });
+  };
+
+  const handleDeleteTask = (id: number) => {
+    deleteTaskMutation.mutate(id);
+  };
+
   const toggleGroupExpansion = (group: string) => {
     setExpandedGroups((prev) => ({
       ...prev,
@@ -470,7 +575,7 @@ export default function HouseholdTasksPage() {
     }));
   };
 
-  // Renderiza um card de tarefa
+  // UI Components
   const renderTaskCard = (task: HouseholdTaskType) => {
     return (
       <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
@@ -573,17 +678,24 @@ export default function HouseholdTasksPage() {
                     </div>
                   )
                 )}
-                
+
                 {/* Indicador de prioridade */}
                 {!task.completed && (
-                  <div className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
-                    task.priority === 2 ? 'bg-red-50 text-red-600' : 
-                    task.priority === 1 ? 'bg-yellow-50 text-yellow-600' : 
-                    'bg-blue-50 text-blue-600'
-                  }`}>
+                  <div
+                    className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
+                      task.priority === 2
+                        ? "bg-red-50 text-red-600"
+                        : task.priority === 1
+                          ? "bg-yellow-50 text-yellow-600"
+                          : "bg-blue-50 text-blue-600"
+                    }`}
+                  >
                     <Star className="h-3 w-3 mr-1 flex-shrink-0" />
-                    {task.priority === 2 ? 'Alta' : 
-                     task.priority === 1 ? 'Média' : 'Baixa'}
+                    {task.priority === 2
+                      ? "Alta"
+                      : task.priority === 1
+                        ? "Média"
+                        : "Baixa"}
                   </div>
                 )}
               </div>
@@ -594,7 +706,6 @@ export default function HouseholdTasksPage() {
     );
   };
 
-  // Renderiza uma seção de tarefas agrupadas
   const renderTaskGroup = (frequency: string, tasks: HouseholdTaskType[]) => {
     if (!tasks || tasks.length === 0) return null;
 
@@ -659,67 +770,186 @@ export default function HouseholdTasksPage() {
     );
   };
 
+  const renderFiltersDropdown = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant={
+            viewMyTasks || viewPartner || !groupByFrequency || selectedDate
+              ? "default"
+              : "outline"
+          }
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <Filter className="h-4 w-4" />
+          Filtros
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Visualização</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            onClick={() => setGroupByFrequency(true)}
+            className={groupByFrequency ? "bg-primary-light/20" : ""}
+          >
+            <CalendarDays className="mr-2 h-4 w-4" />
+            <span>Agrupar por frequência</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setGroupByFrequency(false)}
+            className={!groupByFrequency ? "bg-primary-light/20" : ""}
+          >
+            <Clock className="mr-2 h-4 w-4" />
+            <span>Lista simples</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onClick={() => {
+              setViewPartner(false);
+              setViewMyTasks(true);
+            }}
+            className={!viewPartner && viewMyTasks ? "bg-lime-100/40" : ""}
+          >
+            <UserIcon className="mr-2 h-4 w-4" />
+            <span>Minhas tarefas</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setViewPartner(true);
+              setViewMyTasks(false);
+            }}
+            className={viewPartner && !viewMyTasks ? "bg-lime-100/40" : ""}
+          >
+            <UserIcon className="mr-2 h-4 w-4" />
+            <span>Tarefas do parceiro</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              setViewPartner(false);
+              setViewMyTasks(false);
+            }}
+            className={!viewPartner && !viewMyTasks ? "bg-lime-100/40" : ""}
+          >
+            <UserIcon className="mr-2 h-4 w-4" />
+            <span>Todas as tarefas</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Data</DropdownMenuLabel>
+        <Popover>
+          <PopoverTrigger asChild>
+            <DropdownMenuItem
+              className="cursor-pointer justify-between"
+              onSelect={(e) => e.preventDefault()}
+            >
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                <span>
+                  {selectedDate
+                    ? format(selectedDate, "PP", { locale: ptBR })
+                    : "Selecionar data"}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {selectedDate && (
+          <DropdownMenuItem onClick={() => setSelectedDate(undefined)}>
+            <Clock className="mr-2 h-4 w-4" />
+            <span>Limpar data</span>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const renderEmptyState = () => (
+    <motion.div
+      className="flex flex-col items-center justify-center h-48 text-gray-500"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <p>Nenhuma tarefa encontrada</p>
+      <RippleButton
+        variant="link"
+        onClick={handleOpenCreateModal}
+        className="mt-2"
+      >
+        Criar uma nova tarefa
+      </RippleButton>
+    </motion.div>
+  );
+
+  const renderTaskList = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center h-48">
+          <CoupleLoadingAnimation
+            type="tasks"
+            text="Carregando tarefas domésticas..."
+            size="lg"
+          />
+        </div>
+      );
+    }
+
+    if (groupByFrequency) {
+      // Grouped view by frequency
+      const hasAnyTasks = Object.keys(groupedTasks).length > 0;
+
+      return (
+        <>
+          {renderTaskGroup("daily", groupedTasks.daily || [])}
+          {renderTaskGroup("weekly", groupedTasks.weekly || [])}
+          {renderTaskGroup("monthly", groupedTasks.monthly || [])}
+          {renderTaskGroup("once", groupedTasks.once || [])}
+
+          {!hasAnyTasks && renderEmptyState()}
+        </>
+      );
+    } else {
+      // Simple list view
+      return groupedTasks.ungrouped && groupedTasks.ungrouped.length > 0 ? (
+        <AnimatedList
+          items={groupedTasks.ungrouped}
+          keyExtractor={(task) => task.id}
+          staggerDelay={0.05}
+          className="space-y-4"
+          renderItem={(task) => renderTaskCard(task)}
+        />
+      ) : (
+        renderEmptyState()
+      );
+    }
+  };
+
+  const getTasksTitle = () => {
+    if (viewPartner && !viewMyTasks) return "Tarefas do parceiro";
+    if (!viewMyTasks && !viewPartner) return "Todas as tarefas";
+    return "Minhas tarefas";
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <Header />
-
       <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
-        <h2 className="text-xl font-semibold text-primary-dark">
-          Minhas Tarefas
+        <h2 className="text-xl font-semibold text-rose-900">
+          {getTasksTitle()}
         </h2>
         <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <Filter className="h-4 w-4" />
-                Filtros
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Visualização</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => setGroupByFrequency(true)}
-                  className={groupByFrequency ? "bg-primary-light/20" : ""}
-                >
-                  <CalendarDays className="mr-2 h-4 w-4" />
-                  <span>Agrupar por frequência</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setGroupByFrequency(false)}
-                  className={!groupByFrequency ? "bg-primary-light/20" : ""}
-                >
-                  <Clock className="mr-2 h-4 w-4" />
-                  <span>Lista simples</span>
-                </DropdownMenuItem>
-                
-                {process.env.NODE_ENV === 'development' && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        // Add a test task completion
-                        setCompletedTaskTitle('Teste de tarefa');
-                        setTaskStreak(Math.floor(Math.random() * 10) + 1);
-                        setShowCelebration(true);
-                        // Auto-hide after a few seconds
-                        setTimeout(() => setShowCelebration(false), 3000);
-                      }}
-                      className="text-amber-600"
-                    >
-                      <Star className="mr-2 h-4 w-4" />
-                      <span>Testar Celebração</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {renderFiltersDropdown()}
 
           <Button
             onClick={handleOpenCreateModal}
@@ -727,24 +957,17 @@ export default function HouseholdTasksPage() {
             size="sm"
             className="flex items-center gap-1 bg-primary-dark hover:bg-primary text-white transition-colors"
           >
-            <span className="text-lg">+</span> Nova Tarefa
+            <span className="text-lg">+</span> Nova
           </Button>
         </div>
       </div>
-
       <Tabs
-        defaultValue="all"
+        defaultValue="pending"
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex-1"
       >
-        <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-2">
-          <TabsTrigger
-            value="all"
-            className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
-          >
-            Todas
-          </TabsTrigger>
+        <TabsList className="grid grid-cols-3 mx-3 bg-gray-50 border border-gray-100 p-1 mt-2">
           <TabsTrigger
             value="pending"
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
@@ -757,97 +980,25 @@ export default function HouseholdTasksPage() {
           >
             Concluídas
           </TabsTrigger>
+
           <TabsTrigger
-            value="partner"
-            disabled={!user?.partnerId}
+            value="all"
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
-            Parceiro
+            Todas
           </TabsTrigger>
         </TabsList>
 
         <PullToRefresh onRefresh={handleRefresh}>
-          <div className="mt-4 pb-16 px-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-48">
-                <CoupleLoadingAnimation
-                  type="tasks"
-                  text="Carregando tarefas domésticas..."
-                  size="lg"
-                />
-              </div>
-            ) : (
-              <>
-                {groupByFrequency ? (
-                  // Visualização agrupada por frequência
-                  <>
-                    {renderTaskGroup("daily", groupedTasks.daily || [])}
-                    {renderTaskGroup("weekly", groupedTasks.weekly || [])}
-                    {renderTaskGroup("monthly", groupedTasks.monthly || [])}
-                    {renderTaskGroup("once", groupedTasks.once || [])}
-
-                    {Object.keys(groupedTasks).length === 0 && (
-                      <motion.div
-                        className="flex flex-col items-center justify-center h-48 text-gray-500"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <p>Nenhuma tarefa encontrada</p>
-                        <RippleButton
-                          variant="link"
-                          onClick={handleOpenCreateModal}
-                          className="mt-2"
-                        >
-                          Criar uma nova tarefa
-                        </RippleButton>
-                      </motion.div>
-                    )}
-                  </>
-                ) : (
-                  // Visualização em lista simples
-                  <>
-                    {groupedTasks.ungrouped &&
-                    groupedTasks.ungrouped.length > 0 ? (
-                      <AnimatedList
-                        items={groupedTasks.ungrouped}
-                        keyExtractor={(task) => task.id}
-                        staggerDelay={0.05}
-                        className="space-y-4"
-                        renderItem={(task) => renderTaskCard(task)}
-                      />
-                    ) : (
-                      <motion.div
-                        className="flex flex-col items-center justify-center h-48 text-gray-500"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <p>Nenhuma tarefa encontrada</p>
-                        <RippleButton
-                          variant="link"
-                          onClick={handleOpenCreateModal}
-                          className="mt-2"
-                        >
-                          Criar uma nova tarefa
-                        </RippleButton>
-                      </motion.div>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </div>
+          <div className="mt-4 pb-16 px-4">{renderTaskList()}</div>
         </PullToRefresh>
       </Tabs>
-
       <BottomNavigation onCreateEvent={handleOpenCreateModal} />
-
+      {/* Modals */}
       <CreateTaskModal
         isOpen={createModalOpen}
         onClose={handleCloseCreateModal}
       />
-
       {selectedTask && (
         <TaskDetailsModal
           task={selectedTask}
@@ -855,18 +1006,23 @@ export default function HouseholdTasksPage() {
           onClose={handleCloseTaskDetails}
           onDelete={handleDeleteTask}
           onToggleComplete={handleToggleTaskComplete}
+          openEditModal={handleOpenEditModal}
         />
       )}
-      
-      {/* Task completion celebration animation */}
+      {taskToEdit && (
+        <EditTaskModal
+          isOpen={editModalOpen}
+          onClose={handleCloseEditModal}
+          task={taskToEdit}
+        />
+      )}
+      {/* Animations */}
       <TaskCompletionCelebration
         isActive={showCelebration}
         taskTitle={completedTaskTitle}
         streakCount={taskStreak}
         onComplete={() => setShowCelebration(false)}
       />
-      
-      {/* Quick celebration animation for checkbox toggles */}
       <QuickTaskCelebration
         isActive={showQuickCelebration}
         taskTitle={quickCelebrationTask}
