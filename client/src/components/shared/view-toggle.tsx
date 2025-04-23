@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
-import TactileFeedback from "@/components/ui/tactile-feedback";
 
 interface ViewToggleProps {
   view: "day" | "week" | "month";
@@ -19,44 +18,56 @@ export default function ViewToggle({
         className="flex bg-gray-100 rounded-lg p-1 text-sm"
         style={{ maxWidth: "280px" }}
       >
-        <TactileFeedback>
-          <button
-            className={`flex-1 py-1.5 px-3 rounded-md font-medium ${
-              view === "day"
-                ? "bg-primary text-white"
-                : "text-gray-700 hover:bg-gray-200"
-            }`}
-            onClick={() => onChange("day")}
-          >
-            Dia
-          </button>
-        </TactileFeedback>
+        <button
+          className={`flex-1 py-1.5 px-3 rounded-md font-medium ${
+            view === "day"
+              ? "bg-primary text-white"
+              : "text-gray-700 hover:bg-gray-200"
+          }`}
+          onClick={() => {
+            onChange("day");
+            // Usar vibração para feedback tátil
+            if (navigator.vibrate) {
+              navigator.vibrate(15);
+            }
+          }}
+        >
+          Dia
+        </button>
 
-        <TactileFeedback>
-          <button
-            className={`flex-1 py-1.5 px-3 mx-1 rounded-md font-medium ${
-              view === "week"
-                ? "bg-primary text-white"
-                : "text-gray-700 hover:bg-gray-200"
-            }`}
-            onClick={() => onChange("week")}
-          >
-            Semana
-          </button>
-        </TactileFeedback>
+        <button
+          className={`flex-1 py-1.5 px-3 mx-1 rounded-md font-medium ${
+            view === "week"
+              ? "bg-primary text-white"
+              : "text-gray-700 hover:bg-gray-200"
+          }`}
+          onClick={() => {
+            onChange("week");
+            // Usar vibração para feedback tátil
+            if (navigator.vibrate) {
+              navigator.vibrate(15);
+            }
+          }}
+        >
+          Semana
+        </button>
 
-        <TactileFeedback>
-          <button
-            className={`flex-1 py-1.5 px-3 rounded-md font-medium ${
-              view === "month"
-                ? "bg-primary text-white"
-                : "text-gray-700 hover:bg-gray-200"
-            }`}
-            onClick={() => onChange("month")}
-          >
-            Mês
-          </button>
-        </TactileFeedback>
+        <button
+          className={`flex-1 py-1.5 px-3 rounded-md font-medium ${
+            view === "month"
+              ? "bg-primary text-white"
+              : "text-gray-700 hover:bg-gray-200"
+          }`}
+          onClick={() => {
+            onChange("month");
+            // Usar vibração para feedback tátil
+            if (navigator.vibrate) {
+              navigator.vibrate(15);
+            }
+          }}
+        >
+          Mês
+        </button>
       </div>
 
       <RippleButton

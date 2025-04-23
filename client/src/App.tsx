@@ -22,7 +22,7 @@ import { PageTransition } from "./components/ui/page-transition";
 function TransitionedPage({ children, effect = "fade" }: { children: ReactNode, effect?: string }) {
   return (
     <PageTransition effect={effect as any} duration={0.35}>
-      <div className="min-h-screen">
+      <div>
         {children}
       </div>
     </PageTransition>
@@ -104,7 +104,7 @@ function AppContent() {
       {showSplash && <SplashScreen onFinished={handleSplashFinish} />}
       <TooltipProvider>
         <Toaster />
-        <div className="overflow-hidden">
+        <div>
           <Router />
         </div>
       </TooltipProvider>
