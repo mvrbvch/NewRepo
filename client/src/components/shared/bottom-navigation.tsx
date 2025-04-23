@@ -1,64 +1,70 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
-import { usePushNotifications } from "@/hooks/use-push-notifications";
-import NotificationButton from "./notification-button";
+import { Plus, Home, Calendar, User, MessageSquare } from "lucide-react";
+import { motion } from "framer-motion";
+import { NotificationIndicator } from "./notification-indicator";
 
 interface BottomNavigationProps {
-  onCreateEvent: () => void;
-  onNotificationsClick?: () => void;
+  onCreateEvent?: () => void;
 }
 
 export default function BottomNavigation({
   onCreateEvent,
-  onNotificationsClick,
 }: BottomNavigationProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
-  const { subscriptionStatus } = usePushNotifications();
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
+
+  const isActive = (path: string) => {
+    return location === path;
+  };
+  const handleCreateClick = () => {
+    if (onCreateEvent) {
+      onCreateEvent();
+    } else {
+      setIsCreateMenuOpen(!isCreateMenuOpen);
+    }
+  };
 
   return (
-    <div className="bg-white border-t border-gray-200 flex items-center justify-around p-2 z-10 shadow-sm pb-5 fixed bottom-0 left-0 right-0">
-      <Link href="/">
-        <Button
-          variant="ghost"
-          className={`flex flex-col items-center py-1 px-3 h-auto ${
-            location === "/" ? "text-primary-dark font-medium" : "text-dark"
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <div className="flex items-center justify-around h-16 px-4">
+        <Link
+          to="/"
+          className={`flex flex-col items-center justify-center w-12 h-12 ${
+            isActive("/") ? "text-primary" : "text-gray-600"
           }`}
-          asChild
         >
-          <a>
-            <span className="material-icons text-[22px]">calendar_today</span>
-            <span className="text-xs mt-1">Calendário</span>
-          </a>
-        </Button>
-      </Link>
+          <Calendar className="h-6 w-6" />
+          <span className="text-xs mt-1">Agenda</span>
+        </Link>
 
-      <div className="relative flex justify-center">
-        <Button
-          className="absolute -top-6 bg-gradient-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-md hover:shadow-lg transition-shadow"
-          onClick={onCreateEvent}
-        >
-          <span className="material-icons">add</span>
-        </Button>
+        <div className="relative">
+          <Button
+            onClick={handleCreateClick}
+            className="h-14 w-14 rounded-full bg-primary hover:bg-primary-dark text-white shadow-lg flex items-center justify-center"
+          >
+            <Plus className="h-8 w-8" />
+          </Button>
+        </div>
+
+        <Link href="/tasks">
+          <Button
+            variant="ghost"
+            className={`flex flex-col items-center py-1 px-3 h-auto ${
+              location === "/tasks"
+                ? "text-primary-dark font-medium"
+                : "text-dark"
+            }`}
+            asChild
+          >
+            <a>
+              <span className="material-icons text-[22px]">task_alt</span>
+              <span className="text-xs mt-1">Tarefas</span>
+            </a>
+          </Button>
+        </Link>
       </div>
-
-      <Link href="/tasks">
-        <Button
-          variant="ghost"
-          className={`flex flex-col items-center py-1 px-3 h-auto ${
-            location === "/tasks"
-              ? "text-primary-dark font-medium"
-              : "text-dark"
-          }`}
-          asChild
-        >
-          <a>
-            <span className="material-icons text-[22px]">task_alt</span>
-            <span className="text-xs mt-1">Tarefas</span>
-          </a>
-        </Button>
-      </Link>
     </div>
   );
 }

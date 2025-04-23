@@ -14,9 +14,9 @@ interface DayViewProps {
 
 export default function DayView({
   date,
-  morningEvents,
-  afternoonEvents,
-  nightEvents,
+  morningEvents = [],
+  afternoonEvents = [],
+  nightEvents = [],
   isLoading,
   onEventClick,
 }: DayViewProps) {
@@ -32,6 +32,9 @@ export default function DayView({
       </div>
     );
   }
+  
+  // Check if there are any events for the day
+  const hasEvents = morningEvents.length > 0 || afternoonEvents.length > 0 || nightEvents.length > 0;
   
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar">
@@ -59,7 +62,7 @@ export default function DayView({
               key={event.id}
               className={`bg-white rounded-lg shadow-sm mb-3 event-morning p-3 flex ${
                 event.isShared ? 'event-partner' : ''
-              }`}
+              } cursor-pointer hover:shadow-md transition-shadow`}
               onClick={() => onEventClick(event)}
             >
               <div className="mr-3 flex flex-col items-center">
@@ -117,7 +120,7 @@ export default function DayView({
               key={event.id}
               className={`bg-white rounded-lg shadow-sm mb-3 event-afternoon p-3 flex ${
                 event.isShared ? 'event-partner' : ''
-              }`}
+              } cursor-pointer hover:shadow-md transition-shadow`}
               onClick={() => onEventClick(event)}
             >
               <div className="mr-3 flex flex-col items-center">
@@ -175,7 +178,7 @@ export default function DayView({
               key={event.id}
               className={`bg-white rounded-lg shadow-sm mb-3 event-night p-3 flex ${
                 event.isShared ? 'event-partner' : ''
-              }`}
+              } cursor-pointer hover:shadow-md transition-shadow`}
               onClick={() => onEventClick(event)}
             >
               <div className="mr-3 flex flex-col items-center">
@@ -208,6 +211,17 @@ export default function DayView({
           ))
         )}
       </div>
+
+      {/* No events message */}
+      {!hasEvents && !isLoading && (
+        <div className="p-4 text-center">
+          <div className="bg-white rounded-lg shadow-sm p-6 text-gray-500">
+            <span className="material-icons text-4xl mb-2">event_busy</span>
+            <h3 className="font-medium mb-1">Nenhum evento para este dia</h3>
+            <p className="text-sm">Adicione eventos usando o botão + abaixo</p>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {

@@ -1,38 +1,15 @@
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
+import {
   useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+  ReactNode,
 } from "react";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
-import { apiRequest } from "../lib/queryClient";
 
-/**
- * Interface para o formato JSON da inscrição de push
- */
-interface PushSubscriptionJSON {
-  endpoint: string;
-  expirationTime: number | null;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
-/**
- * Status possíveis da inscrição de notificações push
- */
-export enum PushSubscriptionStatus {
-  NOT_SUPPORTED = "not_supported",
-  DENIED = "denied",
-  NOT_SUBSCRIBED = "not_subscribed",
-  SUBSCRIBED = "subscribed",
-}
-
-/**
- * Tipos de dispositivo suportados para notificações
- */
+// Tipos para notificações push
 export enum DeviceType {
   WEB = "web",
   IOS = "ios",
@@ -43,7 +20,7 @@ export enum DeviceType {
 /**
  * Opções para envio de notificação de teste
  */
-interface NotificationTestOptions {
+export interface TestNotificationOptions {
   title?: string;
   message?: string;
   platform?: DeviceType | null; // null = todos os dispositivos
@@ -59,314 +36,400 @@ interface NotificationTestOptions {
 }
 
 /**
- * Interface do contexto de notificações push
+ * Status possíveis da inscrição de notificações push
  */
-interface PushNotificationsContextType {
-  subscriptionStatus: PushSubscriptionStatus;
-  isPending: boolean;
-  isIOSDevice: boolean;
-  deviceType: DeviceType | null;
-  subscribe: () => Promise<void>;
-  unsubscribe: () => Promise<void>;
-  testNotification: (options?: NotificationTestOptions) => Promise<void>;
+export enum PushSubscriptionStatus {
+  UNSUPPORTED = "unsupported",
+  DENIED = "denied",
+  LOADING = "loading",
+  ENABLED = "enabled",
+  DISABLED = "disabled",
 }
 
-// Criação do contexto
-const PushNotificationsContext =
-  createContext<PushNotificationsContextType | null>(null);
+// Interface para o contexto de notificações push
+interface PushNotificationsContextType {
+  isPushSupported: boolean;
+  isPushEnabled: boolean;
+  pushStatus: PushSubscriptionStatus;
+  subscription: PushSubscription | null;
+  enablePushNotifications: () => Promise<boolean>;
+  disablePushNotifications: () => Promise<boolean>;
+  sendTestNotification: (options?: TestNotificationOptions) => Promise<any>;
+}
 
-// Provedor do contexto - implementação simplificada focada apenas em eventos e tarefas
+// Criar o contexto
+const PushNotificationsContext = createContext<
+  PushNotificationsContextType | undefined
+>(undefined);
+
+// Props para o provider
+interface PushNotificationsProviderProps {
+  children: ReactNode;
+}
+
+// Provider de notificações push
 export function PushNotificationsProvider({
   children,
-}: {
-  children: ReactNode;
-}) {
-  // Estado
-  const [subscriptionStatus, setSubscriptionStatus] =
-    useState<PushSubscriptionStatus>(PushSubscriptionStatus.NOT_SUPPORTED);
-  const [isPending, setIsPending] = useState(false);
-  const [deviceType, setDeviceType] = useState<DeviceType | null>(null);
+}: PushNotificationsProviderProps) {
   const { toast } = useToast();
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [pushStatus, setPushStatus] = useState<PushSubscriptionStatus>(
+    PushSubscriptionStatus.LOADING
+  );
+  const [subscription, setSubscription] = useState<PushSubscription | null>(
+    null
+  );
+  const [deviceToken, setDeviceToken] = useState<string | null>(null);
+  const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
 
-  // Verificar se estamos no iOS
-  const isIOS = () => {
-    return (
-      /iPad|iPhone|iPod/.test(navigator.platform) ||
-      (navigator.userAgent.includes("Mac") && "ontouchend" in document) ||
-      /iPad|iPhone|iPod/.test(navigator.userAgent)
-    );
-  };
+  // Verificar se o navegador suporta notificações push
+  const checkPushSupport = useCallback(async () => {
+    const supported =
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window;
 
-  // Detectar se o dispositivo é iOS
-  const isIOSDevice = isIOS();
+    setIsPushSupported(supported);
 
-  // Define o tipo de dispositivo e verifica o suporte inicial
-  useEffect(() => {
-    // Atualizar tipo de dispositivo
-    setDeviceType(isIOSDevice ? DeviceType.IOS : DeviceType.WEB);
-
-    // Verificar suporte a notificações push
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-    } else {
-      setSubscriptionStatus(PushSubscriptionStatus.NOT_SUPPORTED);
+    if (!supported) {
+      setPushStatus(PushSubscriptionStatus.UNSUPPORTED);
+      return false;
     }
-  }, [isIOSDevice]);
 
-  // Função para inscrever o usuário para notificações de novos eventos e tarefas
-  const subscribe = async () => {
+    // Verificar permissão de notificação
+    const permission = Notification.permission;
+
+    if (permission === "denied") {
+      setPushStatus(PushSubscriptionStatus.DENIED);
+      return false;
+    }
+
+    return true;
+  }, []);
+
+  // Obter a chave VAPID pública do servidor
+  const getVapidPublicKey = useCallback(async () => {
     try {
-      setIsPending(true);
-      console.log("Iniciando processo de inscrição para notificações...");
+      const response = await apiRequest("GET", "/api/push/vapid-info");
+      const data = await response.json();
 
-      // Solicitar permissão do navegador
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        console.log("Permissão de notificação negada pelo usuário");
-        setSubscriptionStatus(PushSubscriptionStatus.DENIED);
-        toast({
-          title: "Permissão negada",
-          description:
-            "Você precisa permitir notificações para receber atualizações de eventos e tarefas.",
-          variant: "destructive",
-        });
-        return;
+      if (data.status === "ok" && data.publicKey) {
+        setVapidPublicKey(data.publicKey);
+        return data.publicKey;
+      } else {
+        console.error("Erro ao obter chave VAPID:", data.message);
+        return null;
       }
+    } catch (error) {
+      console.error("Erro ao obter chave VAPID:", error);
+      return null;
+    }
+  }, []);
 
-      console.log("Permissão de notificação concedida pelo usuário");
+  // Converter chave base64 para Uint8Array (necessário para a API de Push)
+  const urlBase64ToUint8Array = useCallback((base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
 
-      // Verificar se o Service Worker está registrado
-      if (!("serviceWorker" in navigator)) {
-        console.error("Service Worker não suportado neste navegador");
-        throw new Error("Service Worker não suportado");
-      }
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
 
-      // Obter a chave pública VAPID
-      let publicKey: string;
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }, []);
 
-      // Obter informações VAPID do servidor
-      console.log("Obtendo chave VAPID do servidor...");
-      try {
-        const vapidResponse = await fetch("/api/push/vapid-info");
+  // Registrar o service worker
+  const registerServiceWorker = useCallback(async () => {
+    try {
+      const registration =
+        await navigator.serviceWorker.register("/service-worker.js");
+      console.log("Service Worker registrado com sucesso:", registration);
+      return registration;
+    } catch (error) {
+      console.error("Erro ao registrar Service Worker:", error);
+      throw error;
+    }
+  }, []);
 
-        if (!vapidResponse.ok) {
-          throw new Error(
-            "Falha ao obter informações VAPID do servidor: " +
-              vapidResponse.statusText
-          );
-        }
-
-        const vapidInfo = await vapidResponse.json();
-        console.log("Informações VAPID recebidas:", vapidInfo);
-
-        if (!vapidInfo.publicKey) {
-          throw new Error("Chave VAPID pública não encontrada");
-        }
-
-        publicKey = vapidInfo.publicKey;
-      } catch (error) {
-        console.error("Erro ao obter informações VAPID:", error);
-
-        // Usar a chave VAPID do ambiente como fallback em desenvolvimento
-        const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (vapidPublicKey) {
-          console.log("Usando chave VAPID do ambiente como fallback");
-          publicKey = vapidPublicKey as string;
-        } else {
-          throw new Error("Nenhuma chave VAPID pública disponível");
-        }
-      }
-
-      // Registrar o Service Worker (se ainda não estiver registrado)
-      console.log("Registrando ou obtendo Service Worker...");
+  // Obter a inscrição de push atual
+  const getSubscription = useCallback(async () => {
+    try {
+      // Garantir que o service worker está ativo
       const registration = await navigator.serviceWorker.ready;
-      console.log("Service Worker pronto:", registration);
 
-      // Obter a inscrição de push existente ou criar uma nova
-      let subscription = await registration.pushManager.getSubscription();
+      // Obter a inscrição atual
+      const subscription = await registration.pushManager.getSubscription();
+      setSubscription(subscription);
 
       if (subscription) {
-        console.log("Inscrição de push existente encontrada, renovando...");
-        await subscription.unsubscribe();
+        // Converter para string para armazenar no banco de dados
+        setDeviceToken(JSON.stringify(subscription));
+        setIsPushEnabled(true);
+        setPushStatus(PushSubscriptionStatus.ENABLED);
+      } else {
+        setIsPushEnabled(false);
+        setPushStatus(PushSubscriptionStatus.DISABLED);
       }
 
-      // Converter a chave VAPID para o formato necessário
-      const applicationServerKey = urlBase64ToUint8Array(publicKey);
-      console.log("Chave VAPID convertida para Uint8Array");
+      return subscription;
+    } catch (error) {
+      console.error("Erro ao obter inscrição push:", error);
+      setPushStatus(PushSubscriptionStatus.DISABLED);
+      return null;
+    }
+  }, []);
 
-      // Criar nova inscrição
-      console.log("Criando nova inscrição de push...");
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey,
+  // Registrar o dispositivo no servidor
+  const registerDeviceOnServer = useCallback(async (token: string) => {
+    try {
+      const response = await apiRequest("POST", "/api/push/register-device", {
+        deviceToken: token,
+        deviceType: DeviceType.WEB,
+        deviceName: `${navigator.userAgent.includes("Mobile") ? "Mobile" : "Desktop"} Browser`,
       });
 
-      console.log("Nova inscrição de push criada com sucesso:", subscription);
+      if (!response.ok) {
+        throw new Error("Falha ao registrar dispositivo no servidor");
+      }
 
-      // Enviar a inscrição para o servidor
-      console.log("Enviando inscrição para o servidor...");
-      const response = await fetch("/api/push/register-device", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          deviceToken: JSON.stringify(subscription),
-          deviceType: DeviceType.WEB,
-          deviceName: navigator.userAgent,
-          pushEnabled: true,
-        }),
-        credentials: "include", // Importante para incluir cookies de autenticação
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao registrar dispositivo:", error);
+      throw error;
+    }
+  }, []);
+
+  // Cancelar registro do dispositivo no servidor
+  const unregisterDeviceOnServer = useCallback(async (token: string) => {
+    try {
+      const response = await apiRequest("POST", "/api/push/unregister-device", {
+        deviceToken: token,
       });
 
       if (!response.ok) {
         throw new Error(
-          "Falha ao registrar dispositivo no servidor: " + response.statusText
+          "Falha ao cancelar registro do dispositivo no servidor"
         );
       }
 
-      console.log("Dispositivo registrado com sucesso no servidor");
-
-      // Atualizar estado
-      setSubscriptionStatus(PushSubscriptionStatus.SUBSCRIBED);
-      toast({
-        title: "Notificações ativadas",
-        description: "Você receberá notificações para novos eventos e tarefas.",
-      });
+      return true;
     } catch (error) {
-      console.error("Erro ao ativar notificações:", error);
-      toast({
-        title: "Erro ao ativar notificações",
-        description: `Ocorreu um erro ao configurar as notificações: ${error instanceof Error ? error.message : String(error)}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsPending(false);
+      console.error("Erro ao cancelar registro do dispositivo:", error);
+      return false;
     }
-  };
+  }, []);
 
-  // Função para cancelar a inscrição
-  const unsubscribe = async () => {
+  // Inscrever para receber notificações push
+  const subscribeToPush = useCallback(async () => {
     try {
-      setIsPending(true);
-      console.log("Iniciando processo de cancelamento de inscrição...");
-
-      // Verificar se o Service Worker está registrado
-      if (!("serviceWorker" in navigator)) {
-        console.error("Service Worker não suportado neste navegador");
-        throw new Error("Service Worker não suportado");
+      // Verificar se o navegador suporta notificações
+      if (!(await checkPushSupport())) {
+        return null;
       }
 
-      // Obter o registro do Service Worker
-      const registration = await navigator.serviceWorker.ready;
-      console.log("Service Worker pronto para cancelamento:", registration);
+      // Solicitar permissão se ainda não foi concedida
+      if (Notification.permission !== "granted") {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          setPushStatus(PushSubscriptionStatus.DENIED);
+          return null;
+        }
+      }
 
-      // Obter a inscrição de push existente
-      const subscription = await registration.pushManager.getSubscription();
+      // Obter a chave VAPID se ainda não temos
+      let publicKey = vapidPublicKey;
+      if (!publicKey) {
+        publicKey = await getVapidPublicKey();
+        if (!publicKey) {
+          throw new Error("Não foi possível obter a chave VAPID");
+        }
+      }
 
+      // Registrar o service worker
+      const registration = await registerServiceWorker();
+
+      // Verificar se já existe uma inscrição
+      const existingSubscription =
+        await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        // Se já existe, usar a existente
+        setSubscription(existingSubscription);
+        setDeviceToken(JSON.stringify(existingSubscription));
+        setIsPushEnabled(true);
+        setPushStatus(PushSubscriptionStatus.ENABLED);
+        return existingSubscription;
+      }
+
+      // Criar nova inscrição
+      const convertedKey = urlBase64ToUint8Array(publicKey);
+      const newSubscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedKey,
+      });
+
+      setSubscription(newSubscription);
+      setDeviceToken(JSON.stringify(newSubscription));
+      setIsPushEnabled(true);
+      setPushStatus(PushSubscriptionStatus.ENABLED);
+
+      // Registrar o dispositivo no servidor
+      await registerDeviceOnServer(JSON.stringify(newSubscription));
+
+      return newSubscription;
+    } catch (error) {
+      console.error("Erro ao inscrever para notificações push:", error);
+      setPushStatus(PushSubscriptionStatus.DISABLED);
+      return null;
+    }
+  }, [
+    checkPushSupport,
+    getVapidPublicKey,
+    registerServiceWorker,
+    vapidPublicKey,
+    urlBase64ToUint8Array,
+    registerDeviceOnServer,
+  ]);
+
+  // Cancelar inscrição de notificações push
+  const unsubscribeFromPush = useCallback(async () => {
+    try {
+      // Verificar se existe uma inscrição
       if (!subscription) {
-        console.log("Nenhuma inscrição de push encontrada para cancelar");
-        setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-        return;
+        const currentSubscription = await getSubscription();
+        if (!currentSubscription) {
+          return true; // Já não está inscrito
+        }
       }
 
-      // Extrair informações da inscrição para debug
-      console.log("Cancelando inscrição push:", subscription.endpoint);
-
-      // Cancelar inscrição no navegador
-      const success = await subscription.unsubscribe();
-      console.log("Inscrição cancelada no navegador:", success);
-
-      // Notificar o servidor
-      try {
-        console.log("Notificando servidor sobre cancelamento...");
-        await fetch("/api/push/unregister-device", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            deviceToken: JSON.stringify(subscription),
-          }),
-          credentials: "include",
-        });
-        console.log("Servidor notificado com sucesso");
-      } catch (serverError) {
-        console.error("Erro ao notificar servidor:", serverError);
-        // Continuamos mesmo se falhar, pois o mais importante é cancelar no navegador
-      }
+      // Cancelar a inscrição
+      await subscription?.unsubscribe();
 
       // Atualizar estado
-      setSubscriptionStatus(PushSubscriptionStatus.NOT_SUBSCRIBED);
-      toast({
-        title: "Notificações desativadas",
-        description:
-          "Você não receberá mais notificações de eventos e tarefas.",
-      });
-    } catch (error) {
-      console.error("Erro ao desativar notificações:", error);
-      toast({
-        title: "Erro ao desativar notificações",
-        description: `Ocorreu um erro ao desativar as notificações: ${error instanceof Error ? error.message : String(error)}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsPending(false);
-    }
-  };
+      setSubscription(null);
+      setDeviceToken(null);
+      setIsPushEnabled(false);
+      setPushStatus(PushSubscriptionStatus.DISABLED);
 
-  // Função para testar notificações
-  const testNotification = async (options?: NotificationTestOptions) => {
-    try {
-      // Simplificado: apenas mostra um toast
-      toast({
-        title: "Notificação de teste",
-        description:
-          "Esta é uma simulação de notificação de novo evento/tarefa.",
-      });
+      // Informar o servidor
+      if (deviceToken) {
+        await unregisterDeviceOnServer(deviceToken);
+      }
+
+      return true;
     } catch (error) {
-      console.error("Erro ao enviar notificação de teste:", error);
+      console.error("Erro ao cancelar inscrição push:", error);
+      return false;
     }
+  }, [subscription, getSubscription, deviceToken, unregisterDeviceOnServer]);
+
+  // Ativar notificações push
+  const enablePushNotifications = useCallback(async () => {
+    setPushStatus(PushSubscriptionStatus.LOADING);
+    try {
+      const subscription = await subscribeToPush();
+      return !!subscription;
+    } catch (error) {
+      setPushStatus(PushSubscriptionStatus.DISABLED);
+      throw error;
+    }
+  }, [subscribeToPush]);
+
+  // Desativar notificações push
+  const disablePushNotifications = useCallback(async () => {
+    setPushStatus(PushSubscriptionStatus.LOADING);
+    try {
+      return await unsubscribeFromPush();
+    } catch (error) {
+      setPushStatus(PushSubscriptionStatus.ENABLED);
+      throw error;
+    }
+  }, [unsubscribeFromPush]);
+
+  // Enviar notificação de teste
+  const sendTestNotification = useCallback(
+    async (options: TestNotificationOptions = {}) => {
+      try {
+        const response = await apiRequest("POST", "/api/notifications/test", {
+          title: options.title || "Notificação de teste",
+          message: options.message || "Esta é uma notificação de teste!",
+          platform: options.platform || null,
+          icon: options.icon || null,
+          sound: options.sound || "default",
+          badge: options.badge || 1,
+          requireInteraction:
+            options.requireInteraction !== undefined
+              ? options.requireInteraction
+              : true,
+          actions: options.actions || [],
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(
+            error.message || "Falha ao enviar notificação de teste"
+          );
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("Erro ao enviar notificação de teste:", error);
+        throw error;
+      }
+    },
+    []
+  );
+
+  // Inicializar o hook
+  useEffect(() => {
+    const initialize = async () => {
+      setPushStatus(PushSubscriptionStatus.LOADING);
+
+      // Verificar suporte a notificações push
+      const supported = await checkPushSupport();
+      if (!supported) return;
+
+      // Obter a chave VAPID
+      await getVapidPublicKey();
+
+      // Verificar se já existe uma inscrição
+      await getSubscription();
+    };
+
+    initialize();
+  }, [checkPushSupport, getVapidPublicKey, getSubscription]);
+
+  // Valor do contexto
+  const contextValue: PushNotificationsContextType = {
+    isPushSupported,
+    isPushEnabled,
+    pushStatus,
+    subscription,
+    enablePushNotifications,
+    disablePushNotifications,
+    sendTestNotification,
   };
 
   return (
-    <PushNotificationsContext.Provider
-      value={{
-        subscriptionStatus,
-        isPending,
-        isIOSDevice,
-        deviceType,
-        subscribe,
-        unsubscribe,
-        testNotification,
-      }}
-    >
+    <PushNotificationsContext.Provider value={contextValue}>
       {children}
     </PushNotificationsContext.Provider>
   );
 }
 
-// Hook para usar o contexto
+// Hook para usar o contexto de notificações push
 export function usePushNotifications() {
   const context = useContext(PushNotificationsContext);
-  if (!context) {
+
+  if (context === undefined) {
     throw new Error(
       "usePushNotifications deve ser usado dentro de um PushNotificationsProvider"
     );
   }
+
   return context;
-}
-
-// Função auxiliar para converter chave VAPID para o formato correto
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
 }

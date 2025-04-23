@@ -14,6 +14,7 @@ import { useState } from "react";
 import InstallButton from "@/components/pwa/install-button";
 import NotificationButton from "@/components/shared/notification-button";
 import IOSInstallGuide from "@/components/shared/ios-install-guide";
+import { NotificationIndicator } from "./notification-indicator";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
@@ -53,10 +54,10 @@ export default function Header() {
       <div className="flex items-center space-x-3">
         <InstallButton />
         <IOSInstallGuide />
-        <NotificationButton
-          variant="ghost"
-          size="icon"
-          className="text-white hover:text-white/90 hover:bg-primary/80"
+        <NotificationIndicator
+          size="sm"
+          showLabel={false}
+          className="text-white"
         />
 
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { HouseholdTaskType, UserType } from "@/lib/types";
 import { queryClient, apiRequest, getQueryFn } from "@/lib/queryClient";
@@ -9,7 +9,15 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { format, isToday, isThisWeek, isThisMonth, isAfter, isBefore, addDays } from "date-fns";
+import {
+  format,
+  isToday,
+  isThisWeek,
+  isThisMonth,
+  isAfter,
+  isBefore,
+  addDays,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import CreateTaskModal from "@/components/household/create-task-modal";
@@ -18,17 +26,134 @@ import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-anima
 import { AnimatedList } from "@/components/ui/animated-list";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 import {
   Loader2,
   Calendar as CalendarIcon,
   Check,
-  RefreshCw,
   Clock,
   AlertCircle,
   User as UserIcon,
+  Repeat,
+  CalendarDays,
+  CalendarClock,
+  Filter,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
+// Componente de Pull to Refresh
+function PullToRefresh({
+  onRefresh,
+  children,
+}: {
+  onRefresh: () => Promise<void>;
+  children: React.ReactNode;
+}) {
+  const [isPulling, setIsPulling] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const startY = useRef(0);
+  const currentY = useRef(0);
+  const controls = useAnimation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const MAX_PULL_DISTANCE = 80;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Só ativa o pull to refresh se estiver no topo da página
+    if (containerRef.current && containerRef.current.scrollTop <= 0) {
+      startY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling) return;
+
+    currentY.current = e.touches[0].clientY;
+    const pullDistance = Math.max(
+      0,
+      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
+    );
+
+    if (pullDistance > 0) {
+      // Prevenir o comportamento padrão de scroll quando estamos puxando
+      e.preventDefault();
+      controls.set({
+        y: pullDistance,
+        opacity: pullDistance / MAX_PULL_DISTANCE,
+      });
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!isPulling) return;
+
+    const pullDistance = currentY.current - startY.current;
+
+    if (pullDistance >= MAX_PULL_DISTANCE * 0.6) {
+      // Puxou o suficiente para ativar o refresh
+      setRefreshing(true);
+      await controls.start({ y: MAX_PULL_DISTANCE / 2, opacity: 1 });
+
+      try {
+        await onRefresh();
+      } catch (error) {
+        console.error("Erro ao atualizar:", error);
+      } finally {
+        setRefreshing(false);
+      }
+    }
+
+    // Animar de volta à posição original
+    await controls.start({
+      y: 0,
+      opacity: 0,
+      transition: { type: "spring", stiffness: 300, damping: 30 },
+    });
+    setIsPulling(false);
+  };
+
+  return (
+    <div
+      className="flex-1 overflow-y-auto relative"
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <motion.div
+        className="absolute top-0 left-0 right-0 flex justify-center z-10 pointer-events-none"
+        animate={controls}
+        initial={{ y: 0, opacity: 0 }}
+      >
+        <div className="bg-primary-light/30 rounded-full p-3 mt-2">
+          {refreshing ? (
+            <Loader2 className="h-6 w-6 text-primary animate-spin" />
+          ) : (
+            <ChevronDown className="h-6 w-6 text-primary" />
+          )}
+        </div>
+      </motion.div>
+
+      {children}
+    </div>
+  );
+}
 
 export default function HouseholdTasksPage() {
   const { toast } = useToast();
@@ -37,16 +162,31 @@ export default function HouseholdTasksPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
-    null,
+    null
+  );
+  const [groupByFrequency, setGroupByFrequency] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
+    {
+      daily: true,
+      weekly: true,
+      monthly: true,
+      once: true,
+    }
   );
 
   // Busca todas as tarefas do usuário
-  const { data: tasks = [], isLoading } = useQuery<HouseholdTaskType[]>({
+  const {
+    data: tasks = [],
+    isLoading,
+    refetch: refetchTasks,
+  } = useQuery<HouseholdTaskType[]>({
     queryKey: ["/api/tasks"],
   });
 
   // Busca tarefas do parceiro (se existir)
-  const { data: partnerTasks = [] } = useQuery<HouseholdTaskType[]>({
+  const { data: partnerTasks = [], refetch: refetchPartnerTasks } = useQuery<
+    HouseholdTaskType[]
+  >({
     queryKey: ["/api/partner-tasks"],
     enabled: !!user?.partnerId, // Somente ativa se o usuário tiver um parceiro
   });
@@ -145,12 +285,12 @@ export default function HouseholdTasksPage() {
       return 0;
     });
   };
-  
+
   // Função auxiliar para formatação amigável de datas
   const getFormattedDueDate = (dueDate: string | Date) => {
     const date = new Date(dueDate);
     const today = new Date();
-    
+
     if (isToday(date)) {
       return "Hoje";
     } else if (isToday(addDays(date, -1))) {
@@ -164,7 +304,40 @@ export default function HouseholdTasksPage() {
     }
   };
 
-  const filteredTasks = getFilteredTasks();
+  // Agrupar tarefas por frequência
+  const groupedTasks = useMemo(() => {
+    const filteredTasks = getFilteredTasks();
+
+    if (!groupByFrequency) {
+      return { ungrouped: filteredTasks };
+    }
+
+    return filteredTasks.reduce(
+      (acc, task) => {
+        const frequency = task.frequency || "once";
+        if (!acc[frequency]) {
+          acc[frequency] = [];
+        }
+        acc[frequency].push(task);
+        return acc;
+      },
+      {} as Record<string, HouseholdTaskType[]>
+    );
+  }, [tasks, partnerTasks, activeTab, groupByFrequency]);
+
+  // Função para atualizar os dados
+  const handleRefresh = async () => {
+    toast({
+      title: "Atualizando...",
+      description: "Buscando as tarefas mais recentes.",
+      duration: 2000,
+    });
+
+    await refetchTasks();
+    if (user?.partnerId) {
+      await refetchPartnerTasks();
+    }
+  };
 
   const handleOpenCreateModal = () => {
     setCreateModalOpen(true);
@@ -208,17 +381,199 @@ export default function HouseholdTasksPage() {
     }
   };
 
-  // Função para atualizar manualmente os dados
-  const handleManualRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-    if (user?.partnerId) {
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
+  const getFrequencyIcon = (frequency: string) => {
+    switch (frequency) {
+      case "daily":
+        return <Repeat className="h-4 w-4 text-primary flex-shrink-0" />;
+      case "weekly":
+        return <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />;
+      case "monthly":
+        return <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />;
+      default:
+        return <Clock className="h-4 w-4 text-primary flex-shrink-0" />;
     }
-    toast({
-      title: "Atualizando...",
-      description: "Buscando as tarefas mais recentes.",
-      duration: 2000,
-    });
+  };
+
+  // Alternar expansão de um grupo
+  const toggleGroupExpansion = (group: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [group]: !prev[group],
+    }));
+  };
+
+  // Renderiza um card de tarefa
+  const renderTaskCard = (task: HouseholdTaskType) => {
+    return (
+      <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
+        <Card
+          className={`p-4 relative ${
+            task.completed
+              ? "bg-gray-50 border-gray-200"
+              : "bg-white hover:bg-primary-light/10 border-primary-light"
+          } shadow-sm hover:shadow-md transition-all`}
+        >
+          <div className="flex items-start gap-4">
+            <motion.div
+              className="mt-1 flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleTaskComplete(task);
+              }}
+              whileTap={{ scale: 0.8 }}
+            >
+              <Checkbox
+                checked={task.completed}
+                className={`h-5 w-5 rounded-sm ${
+                  !task.completed
+                    ? "border-primary hover:border-primary-dark"
+                    : "text-green-600"
+                }`}
+              />
+            </motion.div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h3
+                  className={`font-semibold text-lg break-words ${
+                    task.completed ? "line-through text-gray-500" : "text-dark"
+                  }`}
+                >
+                  {task.title}
+                </h3>
+                {task.frequency && task.frequency !== "once" && (
+                  <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium flex-shrink-0">
+                    {getFrequencyIcon(task.frequency)}
+                    <span className="ml-1">
+                      {getFrequencyText(task.frequency)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {task.description && (
+                <p
+                  className={`text-sm mt-2 break-words ${
+                    task.completed ? "text-gray-500" : "text-medium"
+                  }`}
+                >
+                  {task.description}
+                </p>
+              )}
+
+              <div className="mt-3 flex flex-wrap gap-2 items-center">
+                {task.dueDate && (
+                  <div className="text-xs flex items-center">
+                    <CalendarIcon className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
+                    {isBefore(new Date(task.dueDate), new Date()) &&
+                    !task.completed ? (
+                      <Badge
+                        variant="destructive"
+                        className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium"
+                      >
+                        <AlertCircle size={12} className="flex-shrink-0" />
+                        <span className="truncate">
+                          {getFormattedDueDate(task.dueDate)}
+                        </span>
+                      </Badge>
+                    ) : (
+                      <span
+                        className={`${
+                          task.completed
+                            ? "text-gray-500 bg-gray-100"
+                            : "text-dark font-medium bg-primary-light/20"
+                        } px-2 py-0.5 rounded-full truncate`}
+                      >
+                        {getFormattedDueDate(task.dueDate)}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {task.completed ? (
+                  <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                    <Check className="h-3 w-3 mr-1 flex-shrink-0" />
+                    Concluída
+                  </div>
+                ) : (
+                  task.assignedTo &&
+                  task.assignedTo === user?.partnerId && (
+                    <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                      <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                      Atribuída ao parceiro
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </TactileFeedback>
+    );
+  };
+
+  // Renderiza uma seção de tarefas agrupadas
+  const renderTaskGroup = (frequency: string, tasks: HouseholdTaskType[]) => {
+    if (!tasks || tasks.length === 0) return null;
+
+    const isExpanded = expandedGroups[frequency] !== false;
+
+    let title = "Tarefas";
+    let icon = <Clock className="h-5 w-5" />;
+
+    switch (frequency) {
+      case "daily":
+        title = "Tarefas Diárias";
+        icon = <Repeat className="h-5 w-5" />;
+        break;
+      case "weekly":
+        title = "Tarefas Semanais";
+        icon = <CalendarDays className="h-5 w-5" />;
+        break;
+      case "monthly":
+        title = "Tarefas Mensais";
+        icon = <CalendarClock className="h-5 w-5" />;
+        break;
+      case "once":
+        title = "Tarefas Únicas";
+        icon = <Clock className="h-5 w-5" />;
+        break;
+    }
+
+    return (
+      <Collapsible
+        open={isExpanded}
+        onOpenChange={() => toggleGroupExpansion(frequency)}
+        className="mb-6 border border-gray-100 rounded-lg overflow-hidden"
+      >
+        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="text-primary">{icon}</div>
+            <h3 className="font-semibold text-primary-dark">{title}</h3>
+            <Badge variant="outline" className="ml-1">
+              {tasks.length}
+            </Badge>
+          </div>
+          <div>
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5 text-gray-500" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-500" />
+            )}
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-4 space-y-4">
+            <AnimatedList
+              items={tasks}
+              keyExtractor={(task) => task.id}
+              staggerDelay={0.05}
+              className="space-y-4"
+              renderItem={(task) => renderTaskCard(task)}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
   };
 
   return (
@@ -226,18 +581,44 @@ export default function HouseholdTasksPage() {
       <Header title="Tarefas Domésticas" />
 
       <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
-        <h2 className="text-xl font-semibold text-primary-dark">Minhas Tarefas</h2>
+        <h2 className="text-xl font-semibold text-primary-dark">
+          Minhas Tarefas
+        </h2>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleManualRefresh}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
-          <Button 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Filter className="h-4 w-4" />
+                Filtros
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Visualização</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => setGroupByFrequency(true)}
+                  className={groupByFrequency ? "bg-primary-light/20" : ""}
+                >
+                  <CalendarDays className="mr-2 h-4 w-4" />
+                  <span>Agrupar por frequência</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setGroupByFrequency(false)}
+                  className={!groupByFrequency ? "bg-primary-light/20" : ""}
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  <span>Lista simples</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
             onClick={handleOpenCreateModal}
             variant="default"
             size="sm"
@@ -255,26 +636,26 @@ export default function HouseholdTasksPage() {
         className="flex-1"
       >
         <TabsList className="grid grid-cols-4 mx-4 bg-gray-50 border border-gray-100 p-1 mt-2">
-          <TabsTrigger 
-            value="all" 
+          <TabsTrigger
+            value="all"
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Todas
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="pending"
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Pendentes
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="completed"
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
             Concluídas
           </TabsTrigger>
-          <TabsTrigger 
-            value="partner" 
+          <TabsTrigger
+            value="partner"
             disabled={!user?.partnerId}
             className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm"
           >
@@ -282,139 +663,79 @@ export default function HouseholdTasksPage() {
           </TabsTrigger>
         </TabsList>
 
-        <div className="mt-4 pb-16 overflow-y-auto flex-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <CoupleLoadingAnimation 
-                type="tasks" 
-                text="Carregando tarefas domésticas..." 
-                size="lg" 
-              />
-            </div>
-          ) : filteredTasks.length > 0 ? (
-            <div className="px-4">
-              <AnimatedList
-                items={filteredTasks}
-                keyExtractor={(task) => task.id}
-                staggerDelay={0.05}
-                className="space-y-4"
-                renderItem={(task) => (
-                  <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
-                    <Card
-                      className={`p-4 relative ${
-                        task.completed 
-                          ? "bg-gray-50 border-gray-200" 
-                          : "bg-white hover:bg-primary-light/10 border-primary-light"
-                      } shadow-sm hover:shadow-md transition-all`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <motion.div
-                          className="mt-1 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleTaskComplete(task);
-                          }}
-                          whileTap={{ scale: 0.8 }}
+        <PullToRefresh onRefresh={handleRefresh}>
+          <div className="mt-4 pb-16 px-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <CoupleLoadingAnimation
+                  type="tasks"
+                  text="Carregando tarefas domésticas..."
+                  size="lg"
+                />
+              </div>
+            ) : (
+              <>
+                {groupByFrequency ? (
+                  // Visualização agrupada por frequência
+                  <>
+                    {renderTaskGroup("daily", groupedTasks.daily || [])}
+                    {renderTaskGroup("weekly", groupedTasks.weekly || [])}
+                    {renderTaskGroup("monthly", groupedTasks.monthly || [])}
+                    {renderTaskGroup("once", groupedTasks.once || [])}
+
+                    {Object.keys(groupedTasks).length === 0 && (
+                      <motion.div
+                        className="flex flex-col items-center justify-center h-48 text-gray-500"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <p>Nenhuma tarefa encontrada</p>
+                        <RippleButton
+                          variant="link"
+                          onClick={handleOpenCreateModal}
+                          className="mt-2"
                         >
-                          <Checkbox 
-                            checked={task.completed} 
-                            className={`h-5 w-5 rounded-sm ${
-                              !task.completed 
-                                ? "border-primary hover:border-primary-dark" 
-                                : "text-green-600"
-                            }`} 
-                          />
-                        </motion.div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <h3
-                              className={`font-semibold text-lg break-words ${
-                                task.completed 
-                                  ? "line-through text-gray-500" 
-                                  : "text-dark"
-                              }`}
-                            >
-                              {task.title}
-                            </h3>
-                            {task.frequency !== "once" && (
-                              <div className="flex items-center text-xs bg-primary-light/30 text-primary-dark px-2 py-1 rounded-full font-medium flex-shrink-0">
-                                <RefreshCw className="h-3 w-3 mr-1 text-primary flex-shrink-0" />
-                                {getFrequencyText(task.frequency)}
-                              </div>
-                            )}
-                          </div>
-
-                          {task.description && (
-                            <p
-                              className={`text-sm mt-2 break-words ${
-                                task.completed 
-                                  ? "text-gray-500" 
-                                  : "text-medium"
-                              }`}
-                            >
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="mt-3 flex flex-wrap gap-2 items-center">
-                            {task.dueDate && (
-                              <div className="text-xs flex items-center">
-                                <CalendarIcon className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
-                                {isBefore(new Date(task.dueDate), new Date()) && !task.completed ? (
-                                  <Badge variant="destructive" className="px-2 py-0.5 h-5 flex items-center gap-1 font-medium">
-                                    <AlertCircle size={12} className="flex-shrink-0" />
-                                    <span className="truncate">{getFormattedDueDate(task.dueDate)}</span>
-                                  </Badge>
-                                ) : (
-                                  <span className={`${
-                                    task.completed 
-                                      ? "text-gray-500 bg-gray-100" 
-                                      : "text-dark font-medium bg-primary-light/20"
-                                    } px-2 py-0.5 rounded-full truncate`}
-                                  >
-                                    {getFormattedDueDate(task.dueDate)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {task.completed ? (
-                              <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
-                                <Check className="h-3 w-3 mr-1 flex-shrink-0" />
-                                Concluída
-                              </div>
-                            ) : task.assignedTo && task.assignedTo === user?.partnerId && (
-                              <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
-                                <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
-                                Atribuída ao parceiro
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </TactileFeedback>
+                          Criar uma nova tarefa
+                        </RippleButton>
+                      </motion.div>
+                    )}
+                  </>
+                ) : (
+                  // Visualização em lista simples
+                  <>
+                    {groupedTasks.ungrouped &&
+                    groupedTasks.ungrouped.length > 0 ? (
+                      <AnimatedList
+                        items={groupedTasks.ungrouped}
+                        keyExtractor={(task) => task.id}
+                        staggerDelay={0.05}
+                        className="space-y-4"
+                        renderItem={(task) => renderTaskCard(task)}
+                      />
+                    ) : (
+                      <motion.div
+                        className="flex flex-col items-center justify-center h-48 text-gray-500"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <p>Nenhuma tarefa encontrada</p>
+                        <RippleButton
+                          variant="link"
+                          onClick={handleOpenCreateModal}
+                          className="mt-2"
+                        >
+                          Criar uma nova tarefa
+                        </RippleButton>
+                      </motion.div>
+                    )}
+                  </>
                 )}
-              />
-            </div>
-          ) : (
-            <motion.div 
-              className="flex flex-col items-center justify-center h-48 text-gray-500"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <p>Nenhuma tarefa encontrada</p>
-              <RippleButton
-                variant="link"
-                onClick={handleOpenCreateModal}
-                className="mt-2"
-              >
-                Criar uma nova tarefa
-              </RippleButton>
-            </motion.div>
-          )}
-        </div>
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       </Tabs>
 
       <BottomNavigation onCreateEvent={handleOpenCreateModal} />

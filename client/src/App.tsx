@@ -12,6 +12,7 @@ import HouseholdTasksPage from "./pages/household-tasks-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
+import NotificationSettingsPage from "./pages/notification-settings-page";
 
 function Router() {
   return (
@@ -20,6 +21,10 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/onboarding" component={OnboardingPage} />
       <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
+      <ProtectedRoute
+        path="/notifications"
+        component={NotificationSettingsPage}
+      />
       <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
       <Route path="/accept-invite/:token" component={PartnerInvitePage} />
       <Route component={NotFound} />
