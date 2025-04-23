@@ -35,7 +35,7 @@ import {
   PushSubscriptionStatus,
 } from "@/hooks/use-push-notifications";
 import { motion, AnimatePresence } from "framer-motion";
-import { TactileFeedback } from "@/components/ui/tactile-feedback";
+import TactileFeedback from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { TransitionComponent } from "@/components/ui/transition-component";
 
@@ -45,7 +45,8 @@ export default function HomePage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const { toast } = useToast();
-  const { subscriptionStatus } = usePushNotifications();
+  const pushNotificationContext = usePushNotifications();
+  const subscriptionStatus = pushNotificationContext?.status || PushSubscriptionStatus.UNSUPPORTED;
 
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({

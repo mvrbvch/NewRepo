@@ -1,137 +1,160 @@
-import React, { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, useCallback } from 'react';
 
-interface TactileFeedbackProps {
-  x: number;
-  y: number;
-  color?: string;
-  isActive: boolean;
-  onComplete: () => void;
-  size?: 'sm' | 'md' | 'lg';
+interface TactileFeedbackOptions {
+  /**
+   * Padrão de vibração em milissegundos.
+   * Ex: [100, 50, 200] = vibrar 100ms, pausa 50ms, vibrar 200ms
+   */
+  pattern?: number | number[];
+  
+  /**
+   * Intervalo mínimo entre acionamentos consecutivos em milissegundos.
+   * Evita spam de vibrações.
+   */
+  throttleMs?: number;
+  
+  /**
+   * Se verdadeiro, ativa automaticamente na montagem do componente
+   */
+  autoTrigger?: boolean;
+  
+  /**
+   * Tipo de feedback: 'success', 'error', 'warning', etc.
+   * Cada tipo tem um padrão de vibração predefinido
+   */
+  type?: 'success' | 'error' | 'warning' | 'tap' | 'notification' | 'custom';
 }
 
-export function TactileFeedback({
-  x,
-  y,
-  color = '#4E77E5',
-  isActive,
-  onComplete,
-  size = 'md',
-}: TactileFeedbackProps) {
-  const timeoutRef = useRef<NodeJS.Timeout>();
-
-  // Tamanhos baseados no valor de size
-  const getSizeValue = () => {
-    switch (size) {
-      case 'sm': return { ripple: 30, outer: 10 };
-      case 'lg': return { ripple: 70, outer: 20 };
-      default: return { ripple: 50, outer: 15 };
+/**
+ * Feedback tátil component usando a API de vibração
+ * 
+ * Exemplo de uso:
+ * ```jsx
+ * <TactileFeedback type="success" />
+ * ```
+ * 
+ * ou com acionamento manual:
+ * ```jsx
+ * const feedbackRef = useRef<TactileFeedbackHandle>(null);
+ * ...
+ * <button onClick={() => feedbackRef.current.trigger()}>
+ *   Vibrar
+ * </button>
+ * <TactileFeedback ref={feedbackRef} type="success" />
+ * ```
+ */
+export default function TactileFeedback({
+  pattern,
+  throttleMs = 300,
+  autoTrigger = false,
+  type = 'tap'
+}: TactileFeedbackOptions) {
+  const [lastTriggerTime, setLastTriggerTime] = useState(0);
+  
+  // Definir padrões de vibração para diferentes tipos de feedback
+  const getPattern = useCallback(() => {
+    if (pattern) return pattern;
+    
+    switch (type) {
+      case 'success':
+        return [15, 50, 50]; // Vibração breve seguida de uma pausa e outra vibração curta
+      case 'error':
+        return [60, 50, 60, 50, 60]; // Três vibrações rápidas
+      case 'warning':
+        return [40, 30, 80]; // Vibração curta + vibração longa
+      case 'notification':
+        return [20, 50, 50, 50, 20]; // Padrão de notificação
+      case 'tap':
+      default:
+        return 15; // Vibração simples e curta
     }
-  };
+  }, [pattern, type]);
   
-  const sizeValue = getSizeValue();
-  
-  useEffect(() => {
-    if (isActive) {
-      // Trigger haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(10);
-      }
-      
-      // Auto-dismiss after animation completes
-      timeoutRef.current = setTimeout(() => {
-        onComplete();
-      }, 700); // Slight delay to ensure animation completes
+  const trigger = useCallback(() => {
+    // Verificar se o navegador suporta vibração
+    if (!navigator.vibrate) {
+      console.warn('Vibration API não suportada neste dispositivo');
+      return false;
     }
     
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [isActive, onComplete]);
+    const now = Date.now();
+    
+    // Prevenir acionamentos muito frequentes (throttling)
+    if (now - lastTriggerTime < throttleMs) {
+      return false;
+    }
+    
+    setLastTriggerTime(now);
+    
+    try {
+      // Acionar vibração
+      const vibrationPattern = getPattern();
+      navigator.vibrate(vibrationPattern);
+      return true;
+    } catch (err) {
+      console.error('Erro ao acionar vibração:', err);
+      return false;
+    }
+  }, [getPattern, lastTriggerTime, throttleMs]);
   
-  if (!isActive) return null;
+  // Acionar automaticamente na montagem se autoTrigger=true
+  useEffect(() => {
+    if (autoTrigger) {
+      trigger();
+    }
+  }, [autoTrigger, trigger]);
   
-  return (
-    <AnimatePresence>
-      {isActive && (
-        <div
-          className="fixed pointer-events-none z-50"
-          style={{
-            top: y - sizeValue.outer / 2,
-            left: x - sizeValue.outer / 2,
-          }}
-        >
-          {/* Outer dot */}
-          <motion.div
-            initial={{ scale: 0.5, opacity: 1 }}
-            animate={{ scale: 1, opacity: 0 }}
-            exit={{ scale: 1.2, opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{
-              width: sizeValue.outer,
-              height: sizeValue.outer,
-              borderRadius: '50%',
-              backgroundColor: color,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-            }}
-          />
-          
-          {/* Ripple effect */}
-          <motion.div
-            initial={{ scale: 0, opacity: 0.7 }}
-            animate={{ scale: 2, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            style={{
-              width: sizeValue.ripple,
-              height: sizeValue.ripple,
-              borderRadius: '50%',
-              border: `2px solid ${color}`,
-              position: 'absolute',
-              top: -sizeValue.ripple / 2 + sizeValue.outer / 2,
-              left: -sizeValue.ripple / 2 + sizeValue.outer / 2,
-            }}
-          />
-        </div>
-      )}
-    </AnimatePresence>
-  );
+  // Componente não renderiza nada visualmente
+  return null;
 }
 
-interface UseTactileFeedbackResult {
-  feedbackProps: {
-    x: number;
-    y: number;
-    isActive: boolean;
-    onComplete: () => void;
-  };
-  triggerFeedback: (x: number, y: number) => void;
-}
-
-export function useTactileFeedback(): UseTactileFeedbackResult {
-  const [isActive, setIsActive] = React.useState(false);
-  const [position, setPosition] = React.useState({ x: 0, y: 0 });
+// Hook personalizado para usar feedback tátil em qualquer componente
+export function useTactileFeedback(options: TactileFeedbackOptions = {}) {
+  const [lastTriggerTime, setLastTriggerTime] = useState(0);
   
-  const triggerFeedback = (x: number, y: number) => {
-    setPosition({ x, y });
-    setIsActive(true);
-  };
+  const getPattern = useCallback(() => {
+    if (options.pattern) return options.pattern;
+    
+    switch (options.type) {
+      case 'success':
+        return [15, 50, 50];
+      case 'error':
+        return [60, 50, 60, 50, 60];
+      case 'warning':
+        return [40, 30, 80];
+      case 'notification':
+        return [20, 50, 50, 50, 20];
+      case 'tap':
+      default:
+        return 15;
+    }
+  }, [options.pattern, options.type]);
   
-  const handleComplete = () => {
-    setIsActive(false);
-  };
+  const trigger = useCallback(() => {
+    // Verificar se o navegador suporta vibração
+    if (!navigator.vibrate) {
+      return false;
+    }
+    
+    const now = Date.now();
+    const throttleMs = options.throttleMs || 300;
+    
+    // Prevenir acionamentos muito frequentes
+    if (now - lastTriggerTime < throttleMs) {
+      return false;
+    }
+    
+    setLastTriggerTime(now);
+    
+    try {
+      const vibrationPattern = getPattern();
+      navigator.vibrate(vibrationPattern);
+      return true;
+    } catch (err) {
+      console.error('Erro ao acionar vibração:', err);
+      return false;
+    }
+  }, [getPattern, lastTriggerTime, options.throttleMs]);
   
-  return {
-    feedbackProps: {
-      x: position.x,
-      y: position.y,
-      isActive,
-      onComplete: handleComplete,
-    },
-    triggerFeedback,
-  };
+  return { trigger };
 }
