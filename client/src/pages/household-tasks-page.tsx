@@ -25,6 +25,7 @@ import TaskDetailsModal from "@/components/household/task-details-modal";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 import { AnimatedList } from "@/components/ui/animated-list";
 import { RippleButton } from "@/components/ui/ripple-button";
+import { AnimatedCheckbox } from "@/components/ui/animated-checkbox";
 import { motion, useAnimation } from "framer-motion";
 import {
   Loader2,
@@ -463,32 +464,48 @@ export default function HouseholdTasksPage() {
   // Renderiza um card de tarefa
   const renderTaskCard = (task: HouseholdTaskType) => {
     return (
-      <Card
-        className={`p-4 relative ${
-          task.completed
-            ? "bg-gray-50 border-gray-200"
-            : "bg-white hover:bg-primary-light/10 border-primary-light"
-        } shadow-sm hover:shadow-md transition-all`}
-        onClick={() => handleOpenTaskDetails(task)}
+      <motion.div
+        whileHover={{ 
+          y: -2, 
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)" 
+        }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 500, 
+          damping: 30 
+        }}
       >
-        <div className="flex items-start gap-4">
-          <motion.div
-            className="mt-1 flex-shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleTaskComplete(task);
-            }}
-            whileTap={{ scale: 0.8 }}
-          >
-            <Checkbox
-              checked={task.completed}
-              className={`h-5 w-5 rounded-sm ${
-                !task.completed
-                  ? "border-primary hover:border-primary-dark"
-                  : "text-green-600"
-              }`}
-            />
-          </motion.div>
+        <Card
+          className={`p-4 relative ${
+            task.completed
+              ? "bg-gray-50 border-gray-200"
+              : "bg-white hover:bg-primary-light/10 border-primary-light"
+          } shadow-sm transition-all`}
+          onClick={() => handleOpenTaskDetails(task)}
+        >
+          <div className="flex items-start gap-4">
+            <motion.div
+              className="mt-1 flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleTaskComplete(task);
+              }}
+              whileTap={{ scale: 0.85 }}
+            >
+              <AnimatedCheckbox
+                checked={task.completed}
+                size="md"
+                shape="rounded"
+                color={task.completed ? "var(--green-600)" : "var(--primary)"}
+                animationDuration={0.4}
+                rippleEffect={true}
+                className={`${
+                  !task.completed
+                    ? "border-primary hover:border-primary-dark"
+                    : "border-green-600 bg-green-50"
+                }`}
+              />
+            </motion.div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3
