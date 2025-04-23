@@ -110,9 +110,9 @@ export async function sendFirebaseMessageToMultipleDevices(
   try {
     const messaging = getMessaging();
 
-    // Preparar a mensagem
-    const message = {
-      tokens,
+    // Criar uma mensagem para cada token
+    const messages = tokens.map((token) => ({
+      token,
       notification,
       data,
       webpush: {
@@ -139,22 +139,21 @@ export async function sendFirebaseMessageToMultipleDevices(
           imageUrl: notification.imageUrl,
         },
       },
-    };
+    }));
 
-    // Enviar a mensagem para cada dispositivo individualmente
-    const responses = await Promise.all(
-      tokens.map((token) => messaging.send({ ...message, token }))
-    );
+    // Enviar todas as mensagens em batch
+    const response = await messaging.sendAll(messages);
 
     console.log(
-      `Mensagem Firebase enviada para ${responses.length} dispositivos`
+      `Mensagem Firebase enviada para ${response.successCount} de ${tokens.length} dispositivos`
     );
 
     // Retornar detalhes de sucesso/falha
     return {
-      success: responses.length > 0,
-      successCount: responses.length,
-      responses,
+      success: response.successCount > 0,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+      responses: response.responses,
     };
   } catch (error) {
     console.error(

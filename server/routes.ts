@@ -137,6 +137,21 @@ function expandRecurringEvents(
   return result;
 }
 
+/**
+ * Registers all API routes for the application, including authentication, events, tasks,
+ * partner management, device registration, and WebSocket configuration.
+ *
+ * @param {Express} app - The Express application instance to register routes on
+ * @returns {Promise<Server>} A Promise resolving to the configured HTTP server
+ *
+ * @description This function sets up comprehensive routing for the application, including:
+ * - Authentication routes
+ * - Event management endpoints
+ * - Household task management
+ * - Partner invitation and connection
+ * - Device and push notification registration
+ * - WebSocket server for real-time communication
+ */
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
@@ -1684,6 +1699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (platform) {
           // Buscar dispositivos da plataforma específica
           const devices = await storage.getUserDevices(userId);
+          console.log(userId, devices);
           const filteredDevices = devices.filter(
             (device) => device.deviceType === platform && device.pushEnabled
           );

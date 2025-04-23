@@ -10,7 +10,12 @@ app.use(express.urlencoded({ extended: false }));
 
 // Rota dedicada para servir o service-worker.js com os cabeçalhos corretos
 app.get("/service-worker.js", (req, res) => {
-  const swPath = path.join(process.cwd(), "client", "public", "service-worker.js");
+  const swPath = path.join(
+    process.cwd(),
+    "client",
+    "public",
+    "service-worker.js"
+  );
   console.log(`Servindo service worker de: ${swPath}`);
   res.set("Service-Worker-Allowed", "/");
   res.set("Content-Type", "application/javascript");
@@ -51,11 +56,11 @@ app.use((req, res, next) => {
   // Inicializar Firebase Admin SDK
   try {
     initializeFirebase();
-    console.log('Firebase inicializado com sucesso no servidor');
+    console.log("Firebase inicializado com sucesso no servidor");
   } catch (error) {
-    console.error('Erro ao inicializar Firebase:', error);
+    console.error("Erro ao inicializar Firebase:", error);
   }
-  
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -79,11 +84,14 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      log(`serving on port ${port}`);
+    }
+  );
 })();

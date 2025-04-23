@@ -212,7 +212,7 @@ export function PushNotificationsProvider({
         },
         body: JSON.stringify({
           deviceToken: JSON.stringify(subscription),
-          deviceType: deviceType || DeviceType.WEB,
+          deviceType: DeviceType.WEB,
           deviceName: navigator.userAgent,
           pushEnabled: true,
         }),
