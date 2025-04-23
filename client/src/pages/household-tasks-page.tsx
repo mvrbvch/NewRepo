@@ -24,8 +24,8 @@ import CreateTaskModal from "@/components/household/create-task-modal";
 import TaskDetailsModal from "@/components/household/task-details-modal";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 import { AnimatedList } from "@/components/ui/animated-list";
-import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
+import { SwipeAction } from "@/components/ui/swipe-action";
 import { motion, useAnimation } from "framer-motion";
 import {
   Loader2,
@@ -464,13 +464,27 @@ export default function HouseholdTasksPage() {
   // Renderiza um card de tarefa
   const renderTaskCard = (task: HouseholdTaskType) => {
     return (
-      <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
+      <SwipeAction
+        key={task.id}
+        onSwipeLeft={() => handleOpenTaskDetails(task)}
+        onSwipeRight={() => handleToggleTaskComplete(task)}
+        leftActionIcon="complete"
+        rightActionIcon="delete"
+        leftActionColor="bg-emerald-500"
+        rightActionColor="bg-primary"
+        swipeLeftLabel="Detalhes"
+        swipeRightLabel={task.completed ? "Desfazer" : "Concluir"}
+        className="rounded-lg overflow-hidden my-1"
+        hapticFeedback={true}
+        threshold={0.3}
+      >
         <Card
           className={`p-4 relative ${
             task.completed
               ? "bg-gray-50 border-gray-200"
               : "bg-white hover:bg-primary-light/10 border-primary-light"
           } shadow-sm hover:shadow-md transition-all`}
+          onClick={() => handleOpenTaskDetails(task)}
         >
           <div className="flex items-start gap-4">
             <motion.div
@@ -566,7 +580,7 @@ export default function HouseholdTasksPage() {
             </div>
           </div>
         </Card>
-      </TactileFeedback>
+      </SwipeAction>
     );
   };
 
