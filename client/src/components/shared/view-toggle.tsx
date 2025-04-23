@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
-import { TactileFeedback } from "@/components/ui/tactile-feedback";
+import TactileFeedback from "@/components/ui/tactile-feedback";
 
 interface ViewToggleProps {
   view: "day" | "week" | "month";

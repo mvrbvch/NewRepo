@@ -45,8 +45,8 @@ export default function HomePage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const { toast } = useToast();
-  const pushNotificationContext = usePushNotifications();
-  const subscriptionStatus = pushNotificationContext?.status || PushSubscriptionStatus.UNSUPPORTED;
+  const pushNotifications = usePushNotifications();
+  const subscriptionStatus = pushNotifications?.pushStatus || PushSubscriptionStatus.UNSUPPORTED;
 
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
