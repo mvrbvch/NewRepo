@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
@@ -15,84 +15,28 @@ import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
-import { useState, useEffect, ReactNode } from "react";
-import { PageTransition } from "./components/ui/page-transition";
-
-// Componente para envolver as páginas com transição
-function TransitionedPage({ children, effect = "fade" }: { children: ReactNode, effect?: string }) {
-  return (
-    <PageTransition effect={effect as any} duration={0.35}>
-      <div>
-        {children}
-      </div>
-    </PageTransition>
-  );
-}
-
-// Versões com transição dos componentes de página
-const TransitionedPages = {
-  // A página Home tem formatação específica e não deve usar o wrapper de transição
-  // para evitar problemas com os seletores de calendário
-  Home: HomePage,
-  
-  Auth: () => (
-    <TransitionedPage effect="fade">
-      <AuthPage />
-    </TransitionedPage>
-  ),
-  
-  Onboarding: () => (
-    <TransitionedPage effect="slide">
-      <OnboardingPage />
-    </TransitionedPage>
-  ),
-  
-  PartnerInvite: () => (
-    <TransitionedPage effect="slide">
-      <PartnerInvitePage />
-    </TransitionedPage>
-  ),
-  
-  NotificationSettings: () => (
-    <TransitionedPage effect="slide-up">
-      <NotificationSettingsPage />
-    </TransitionedPage>
-  ),
-  
-  HouseholdTasks: () => (
-    <TransitionedPage effect="slide-up">
-      <HouseholdTasksPage />
-    </TransitionedPage>
-  ),
-  
-  NotFound: () => (
-    <TransitionedPage effect="fade">
-      <NotFound />
-    </TransitionedPage>
-  )
-};
+import { useState, useEffect } from "react";
 
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={TransitionedPages.Home} />
-      <Route path="/auth" component={TransitionedPages.Auth} />
-      <ProtectedRoute path="/onboarding" component={TransitionedPages.Onboarding} />
-      <ProtectedRoute path="/invite-partner" component={TransitionedPages.PartnerInvite} />
+      <ProtectedRoute path="/" component={HomePage} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/onboarding" component={OnboardingPage} />
+      <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
       <ProtectedRoute
         path="/notifications"
-        component={TransitionedPages.NotificationSettings}
+        component={NotificationSettingsPage}
       />
-      <ProtectedRoute path="/tasks" component={TransitionedPages.HouseholdTasks} />
-      <Route path="/accept-invite/:token" component={TransitionedPages.PartnerInvite} />
-      <Route component={TransitionedPages.NotFound} />
+      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
+      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
-  const [location] = useLocation();
 
   // Handle splash screen finish
   const handleSplashFinish = () => {
@@ -104,9 +48,7 @@ function AppContent() {
       {showSplash && <SplashScreen onFinished={handleSplashFinish} />}
       <TooltipProvider>
         <Toaster />
-        <div>
-          <Router />
-        </div>
+        <Router />
       </TooltipProvider>
     </>
   );

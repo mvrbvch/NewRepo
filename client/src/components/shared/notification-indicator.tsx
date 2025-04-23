@@ -4,7 +4,7 @@ import { Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import TactileFeedback, { useTactileFeedback } from "@/components/ui/tactile-feedback";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
 
 // Interface para as notificações
 interface Notification {
@@ -90,51 +90,49 @@ export function NotificationIndicator({
     setHasNewNotifications(unreadCount > 0);
   }, [notifications, count]);
 
-  // Hook para feedback tátil ao clicar
-  const { trigger: triggerFeedback } = useTactileFeedback({ type: 'notification' });
-  
   return (
     <Link
       to="/notifications"
       className={`relative flex flex-col items-center ${className}`}
       aria-label={`Notificações${count > 0 ? ` (${count} não lidas)` : ""}`}
-      onClick={() => triggerFeedback()}
     >
-      <div className="relative">
-        <motion.div
-          animate={isAnimating ? { scale: [1, 1.2, 1] } : {}}
-          transition={{ duration: 0.5 }}
-        >
-          <Bell
-            className={`${getIconSize()} ${hasNewNotifications ? "text-white/70" : "text-white"}`}
-          />
-        </motion.div>
+      <TactileFeedback>
+        <div className="relative">
+          <motion.div
+            animate={isAnimating ? { scale: [1, 1.2, 1] } : {}}
+            transition={{ duration: 0.5 }}
+          >
+            <Bell
+              className={`${getIconSize()} ${hasNewNotifications ? "text-white/70" : "text-white"}`}
+            />
+          </motion.div>
 
-        <AnimatePresence>
-          {hasNewNotifications && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className={`absolute ${getBadgePosition()}`}
-            >
-              <Badge
-                className={`bg-primary text-white px-1 flex items-center justify-center rounded-full ${getBadgeSize()}`}
+          <AnimatePresence>
+            {hasNewNotifications && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className={`absolute ${getBadgePosition()}`}
               >
-                {count > 99 ? "99+" : count}
-              </Badge>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                <Badge
+                  className={`bg-primary text-white px-1 flex items-center justify-center rounded-full ${getBadgeSize()}`}
+                >
+                  {count > 99 ? "99+" : count}
+                </Badge>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-      {showLabel && (
-        <span
-          className={`text-xs mt-1 ${hasNewNotifications ? "text-primary font-medium" : "text-gray-600"}`}
-        >
-          Notificações
-        </span>
-      )}
+        {showLabel && (
+          <span
+            className={`text-xs mt-1 ${hasNewNotifications ? "text-primary font-medium" : "text-gray-600"}`}
+          >
+            Notificações
+          </span>
+        )}
+      </TactileFeedback>
     </Link>
   );
 }

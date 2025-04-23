@@ -7,7 +7,7 @@ import { AnimatedList } from "@/components/ui/animated-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTactileFeedback } from "@/components/ui/tactile-feedback";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { useToast } from "@/hooks/use-toast";
 import {
   Bell,
@@ -201,21 +201,19 @@ export function NotificationCenter() {
         keyExtractor={(item) => item.id}
         className="p-4 space-y-3"
         renderItem={(notification) => (
+          <TactileFeedback
+            onClick={() => {
+              if (!notification.isRead) {
+                handleMarkAsRead(notification.id);
+              }
+            }}
+          >
             <Card
               className={`p-4 ${
                 notification.isRead
                   ? "bg-gray-50"
                   : "bg-white border-l-4 border-l-primary"
               }`}
-              onClick={() => {
-                if (!notification.isRead) {
-                  handleMarkAsRead(notification.id);
-                  // Acionar vibração ao marcar como lida
-                  if (navigator.vibrate) {
-                    navigator.vibrate(15);
-                  }
-                }
-              }}
             >
               <div className="flex gap-3">
                 <div className="flex-shrink-0 mt-1">
@@ -291,6 +289,7 @@ export function NotificationCenter() {
                 </div>
               </div>
             </Card>
+          </TactileFeedback>
         )}
       />
     );

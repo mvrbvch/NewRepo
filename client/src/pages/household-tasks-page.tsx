@@ -24,8 +24,8 @@ import CreateTaskModal from "@/components/household/create-task-modal";
 import TaskDetailsModal from "@/components/household/task-details-modal";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 import { AnimatedList } from "@/components/ui/animated-list";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
-import { AnimatedCheckbox } from "@/components/ui/animated-checkbox";
 import { motion, useAnimation } from "framer-motion";
 import {
   Loader2,
@@ -464,24 +464,13 @@ export default function HouseholdTasksPage() {
   // Renderiza um card de tarefa
   const renderTaskCard = (task: HouseholdTaskType) => {
     return (
-      <motion.div
-        whileHover={{ 
-          y: -2, 
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)" 
-        }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 500, 
-          damping: 30 
-        }}
-      >
+      <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
         <Card
           className={`p-4 relative ${
             task.completed
               ? "bg-gray-50 border-gray-200"
               : "bg-white hover:bg-primary-light/10 border-primary-light"
-          } shadow-sm transition-all`}
-          onClick={() => handleOpenTaskDetails(task)}
+          } shadow-sm hover:shadow-md transition-all`}
         >
           <div className="flex items-start gap-4">
             <motion.div
@@ -490,19 +479,14 @@ export default function HouseholdTasksPage() {
                 e.stopPropagation();
                 handleToggleTaskComplete(task);
               }}
-              whileTap={{ scale: 0.85 }}
+              whileTap={{ scale: 0.8 }}
             >
-              <AnimatedCheckbox
+              <Checkbox
                 checked={task.completed}
-                size="md"
-                shape="rounded"
-                color={task.completed ? "var(--green-600)" : "var(--primary)"}
-                animationDuration={0.4}
-                rippleEffect={true}
-                className={`${
+                className={`h-5 w-5 rounded-sm ${
                   !task.completed
                     ? "border-primary hover:border-primary-dark"
-                    : "border-green-600 bg-green-50"
+                    : "text-green-600"
                 }`}
               />
             </motion.div>
@@ -582,7 +566,7 @@ export default function HouseholdTasksPage() {
             </div>
           </div>
         </Card>
-      </motion.div>
+      </TactileFeedback>
     );
   };
 
