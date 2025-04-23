@@ -13,6 +13,9 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
+import { SplashScreenProvider } from "./hooks/use-splash-screen";
+import { SplashScreen } from "./components/pwa/splash-screen";
+import { useState, useEffect } from "react";
 
 function Router() {
   return (
@@ -32,17 +35,35 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Handle splash screen finish
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
+
+  return (
+    <>
+      {showSplash && <SplashScreen onFinished={handleSplashFinish} />}
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PushNotificationsProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </PushNotificationsProvider>
-      </AuthProvider>
+      <SplashScreenProvider>
+        <AuthProvider>
+          <PushNotificationsProvider>
+            <AppContent />
+          </PushNotificationsProvider>
+        </AuthProvider>
+      </SplashScreenProvider>
     </QueryClientProvider>
   );
 }
