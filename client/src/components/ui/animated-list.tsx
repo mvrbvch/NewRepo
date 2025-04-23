@@ -210,7 +210,7 @@ export function AnimatedList({
         itemVariants = {
           hidden: { 
             opacity: 0,
-            x: isVertical ? (index % 2 === 0 ? -50 : 50) : 100,
+            x: isVertical ? -50 : 100,
             y: isVertical ? 100 : 0
           },
           visible: { 
@@ -226,7 +226,7 @@ export function AnimatedList({
           },
           exit: { 
             opacity: 0,
-            x: isVertical ? (index % 2 === 0 ? -20 : 20) : -50,
+            x: isVertical ? -20 : -50,
             y: isVertical ? -50 : 0,
             transition: { duration: 0.3 / speedFactor }
           },
@@ -246,25 +246,25 @@ export function AnimatedList({
             x: isVertical ? 0 : 30,
             scale: 0.9
           },
-          visible: (index) => ({ 
+          visible: (customIndex) => ({ 
             opacity: 1,
             y: 0,
             x: 0,
             scale: 1,
             transition: {
-              delay: index * (adjustedStaggerDelay * 3), // Stagger individual mais acentuado
+              delay: (typeof customIndex === 'number' ? customIndex : 0) * (adjustedStaggerDelay * 3), // Stagger individual mais acentuado
               type: "spring",
               damping: 12,
               stiffness: 200,
               duration: 0.6 / speedFactor
             }
           }),
-          exit: (index) => ({ 
+          exit: (customIndex) => ({ 
             opacity: 0,
             y: isVertical ? -20 : 0,
             x: isVertical ? 0 : -20,
             transition: { 
-              delay: index * 0.05 / speedFactor,
+              delay: (typeof customIndex === 'number' ? customIndex : 0) * 0.05 / speedFactor,
               duration: 0.2 / speedFactor 
             }
           }),

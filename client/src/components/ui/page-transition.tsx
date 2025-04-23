@@ -41,89 +41,79 @@ export function PageTransition({
     }
   }, [location, locations]);
   
-  // Definindo as variantes de animação baseadas no efeito escolhido
-  const getVariants = () => {
-    switch (effect) {
-      case "fade":
-        return {
-          initial: { opacity: 0 },
-          animate: { opacity: 1 },
-          exit: { opacity: 0 }
-        };
-        
-      case "slide":
-        return {
-          initial: { x: "100%", opacity: 0 },
-          animate: { x: 0, opacity: 1 },
-          exit: { x: "-100%", opacity: 0 }
-        };
-        
-      case "scale":
-        return {
-          initial: { scale: 0.8, opacity: 0 },
-          animate: { scale: 1, opacity: 1 },
-          exit: { scale: 0.8, opacity: 0 }
-        };
-        
-      case "slide-up":
-        return {
-          initial: { y: "30%", opacity: 0 },
-          animate: { y: 0, opacity: 1 },
-          exit: { y: "-30%", opacity: 0 }
-        };
-        
-      case "slide-down":
-        return {
-          initial: { y: "-30%", opacity: 0 },
-          animate: { y: 0, opacity: 1 },
-          exit: { y: "30%", opacity: 0 }
-        };
-        
-      case "push-left":
-        return {
-          initial: { x: "100%", opacity: 0 },
-          animate: { x: 0, opacity: 1 },
-          exit: { x: "-100%", opacity: 0, position: "absolute", width: "100%" }
-        };
-        
-      case "push-right":
-        return {
-          initial: { x: "-100%", opacity: 0 },
-          animate: { x: 0, opacity: 1 },
-          exit: { x: "100%", opacity: 0, position: "absolute", width: "100%" }
-        };
-        
-      case "flip":
-        return {
-          initial: { rotateY: 90, opacity: 0 },
-          animate: { rotateY: 0, opacity: 1 },
-          exit: { rotateY: -90, opacity: 0 }
-        };
-        
-      case "none":
-      default:
-        return {
-          initial: { opacity: 1 },
-          animate: { opacity: 1 },
-          exit: { opacity: 1 }
-        };
-    }
-  };
-  
-  const variants = getVariants();
-  
+  // Configura as animações baseadas no efeito escolhido
+  let initialAnimation = {};
+  let animateAnimation = {};
+  let exitAnimation = {};
+
+  switch (effect) {
+    case "fade":
+      initialAnimation = { opacity: 0 };
+      animateAnimation = { opacity: 1 };
+      exitAnimation = { opacity: 0 };
+      break;
+      
+    case "slide":
+      initialAnimation = { x: 100, opacity: 0 };
+      animateAnimation = { x: 0, opacity: 1 };
+      exitAnimation = { x: -100, opacity: 0 };
+      break;
+      
+    case "scale":
+      initialAnimation = { scale: 0.8, opacity: 0 };
+      animateAnimation = { scale: 1, opacity: 1 };
+      exitAnimation = { scale: 0.8, opacity: 0 };
+      break;
+      
+    case "slide-up":
+      initialAnimation = { y: 30, opacity: 0 };
+      animateAnimation = { y: 0, opacity: 1 };
+      exitAnimation = { y: -30, opacity: 0 };
+      break;
+      
+    case "slide-down":
+      initialAnimation = { y: -30, opacity: 0 };
+      animateAnimation = { y: 0, opacity: 1 };
+      exitAnimation = { y: 30, opacity: 0 };
+      break;
+      
+    case "push-left":
+      initialAnimation = { x: 100, opacity: 0 };
+      animateAnimation = { x: 0, opacity: 1 };
+      exitAnimation = { x: -100, opacity: 0 };
+      break;
+      
+    case "push-right":
+      initialAnimation = { x: -100, opacity: 0 };
+      animateAnimation = { x: 0, opacity: 1 };
+      exitAnimation = { x: 100, opacity: 0 };
+      break;
+      
+    case "flip":
+      initialAnimation = { rotateY: 90, opacity: 0 };
+      animateAnimation = { rotateY: 0, opacity: 1 };
+      exitAnimation = { rotateY: -90, opacity: 0 };
+      break;
+      
+    case "none":
+    default:
+      initialAnimation = { opacity: 1 };
+      animateAnimation = { opacity: 1 };
+      exitAnimation = { opacity: 1 };
+      break;
+  }
+
   return (
     <div className="relative w-full h-full overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={key}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={variants}
+          initial={initialAnimation}
+          animate={animateAnimation}
+          exit={exitAnimation}
           transition={{ 
             duration: duration,
-            delay: variants.initial === "animate" ? enterDelay : exitDelay,
+            delay: enterDelay,
             ease: "easeInOut"
           }}
           className="w-full h-full"
