@@ -1,38 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover"
+    />
     <title>Por Nós</title>
-    <meta name="description" content="Todo dia é uma nova chance de nos escolher." />
-    
+    <meta
+      name="description"
+      content="Todo dia é uma nova chance de nos escolher."
+    />
+
     <!-- Favicon e ícones -->
     <link rel="icon" href="/icons/icon-192x192.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#f15a59" />
-    
+
     <!-- Metatags para iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="Por Nós" />
-    
+
     <!-- Splash Screen para iOS -->
     <link rel="apple-touch-startup-image" href="/icons/apple-touch-icon.png" />
     <!-- iOS Splash Screen Images -->
     <!-- iPhone X (1125px x 2436px) -->
-    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/icons/apple-launch-1125x2436.svg" />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)"
+      href="/icons/apple-launch-1125x2436.svg"
+    />
     <!-- iPhone 8, 7, 6s, 6 (750px x 1334px) -->
-    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/icons/apple-launch-750x1334.svg" />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
+      href="/icons/apple-launch-750x1334.svg"
+    />
     <!-- iPhone 8 Plus, 7 Plus, 6s Plus, 6 Plus (1242px x 2208px) -->
-    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="/icons/apple-launch-1242x2208.svg" />
-    
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)"
+      href="/icons/apple-launch-1242x2208.svg"
+    />
+
     <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json" />
-    
+
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
     <style>
       /* Inline splash screen styles for immediate display */
       #initial-loader {
@@ -41,7 +68,11 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, rgba(241, 90, 89, 0.9) 0%, rgb(241, 90, 89) 100%);
+        background: linear-gradient(
+          135deg,
+          rgba(241, 90, 89, 0.9) 0%,
+          rgb(241, 90, 89) 100%
+        );
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -57,7 +88,7 @@
       }
       #initial-loader p {
         color: white;
-        font-family: 'Inter', sans-serif;
+        font-family: "Inter", sans-serif;
         font-size: 20px;
         font-weight: 500;
         margin: 24px 0;
@@ -81,13 +112,26 @@
         animation: spin 1s linear infinite;
       }
       @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
       @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.9; }
-        100% { transform: scale(1); opacity: 1; }
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.9;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
     </style>
   </head>
@@ -97,38 +141,44 @@
       <img src="/logo-white.png" alt="Por Nós" />
       <p>Todo dia é uma nova chance de nos escolher</p>
       <div class="loader-spinner"></div>
-      <div class="version">v1.0</div>
     </div>
-    
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
+
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
-    
+    <script
+      type="text/javascript"
+      src="https://replit.com/public/js/replit-dev-banner.js"
+    ></script>
+
     <!-- Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(function(registration) {
-              console.log('Service Worker registrado com sucesso:', registration.scope);
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("/service-worker.js")
+            .then(function (registration) {
+              console.log(
+                "Service Worker registrado com sucesso:",
+                registration.scope
+              );
             })
-            .catch(function(error) {
-              console.log('Falha ao registrar Service Worker:', error);
+            .catch(function (error) {
+              console.log("Falha ao registrar Service Worker:", error);
             });
         });
       }
-      
+
       // Hide initial loader when the app has loaded, with a delay
-      window.addEventListener('load', function() {
-        const loader = document.getElementById('initial-loader');
+      window.addEventListener("load", function () {
+        const loader = document.getElementById("initial-loader");
         if (loader) {
           // Keep the loader visible for 1 second after load completes
-          setTimeout(function() {
-            loader.style.opacity = '0';
-            setTimeout(function() {
-              loader.style.display = 'none';
+          setTimeout(function () {
+            loader.style.opacity = "0";
+            setTimeout(function () {
+              loader.style.display = "none";
             }, 500);
           }, 1000);
         }
