@@ -169,9 +169,11 @@ export default function EditEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar evento</DialogTitle>
+          <DialogTitle className="text-title title-gradient">
+            Editar evento
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
