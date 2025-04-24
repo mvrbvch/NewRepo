@@ -25,6 +25,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { EventType } from "@/lib/types";
 import { Loader2 } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
 
 interface EditEventModalProps {
   event: EventType;
@@ -51,26 +52,29 @@ export default function EditEventModal({
     "never" | "daily" | "weekly" | "monthly" | "custom"
   >(event.recurrence);
   const [emoji, setEmoji] = useState(event.emoji || "");
+  const [changeEmoji, setChangeEmoji] = useState(false);
+
   const [shareWithPartner, setShareWithPartner] = useState(
-    event.isShared || false,
+    event.isShared || false
   );
   const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
-    (event.sharePermission as "view" | "edit") || "view",
+    (event.sharePermission as "view" | "edit") || "view"
   );
 
   // Set initial form values when modal opens or event changes
   useEffect(() => {
     if (isOpen && event) {
       setTitle(event.title);
-      
+
       // Format date from event.date which could be string or Date object
       // Remove 'Z' from the ISO string to prevent timezone shift
-      let dateStr = typeof event.date === 'string' ? event.date : event.date.toISOString();
-      dateStr = dateStr.replace('Z', '');
-      
+      let dateStr =
+        typeof event.date === "string" ? event.date : event.date.toISOString();
+      dateStr = dateStr.replace("Z", "");
+
       const eventDate = new Date(dateStr);
       setDate(format(eventDate, "yyyy-MM-dd"));
-      
+
       setPeriod(event.period);
       setStartTime(event.startTime);
       setEndTime(event.endTime);
@@ -180,7 +184,25 @@ export default function EditEventModal({
               placeholder="Ex: Reunião, Aniversário..."
             />
           </div>
-
+          <div>
+            <Label>Emoji</Label>
+            <Button
+              variant="outline"
+              size={"lg"}
+              onClick={() => setChangeEmoji(true)}
+              className={`w-full sm:w-auto ${emoji ? "text-3xl" : ""}`}
+            >
+              {emoji || "Selecionar"}
+            </Button>
+            {changeEmoji && (
+              <EmojiPicker
+                onEmojiClick={(emojiData) => {
+                  setEmoji(emojiData.emoji);
+                  setChangeEmoji(false);
+                }}
+              />
+            )}
+          </div>
           {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -300,7 +322,11 @@ export default function EditEventModal({
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="w-full sm:w-auto"
+          >
             Cancelar
           </Button>
           <Button

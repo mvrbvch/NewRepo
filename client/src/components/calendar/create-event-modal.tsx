@@ -25,6 +25,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Textarea } from "../ui/textarea";
+import EmojiPicker from "emoji-picker-react";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export default function CreateEventModal({
 }: CreateEventModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [changeEmoji, setChangeEmoji] = useState(false);
 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(format(defaultDate, "yyyy-MM-dd"));
@@ -166,6 +168,26 @@ export default function CreateEventModal({
             />
           </div>
 
+          <div>
+            <Label>Emoji</Label>
+            <Button
+              variant="outline"
+              size={"lg"}
+              onClick={() => setChangeEmoji(true)}
+              className={`w-full sm:w-auto ${emoji ? "text-3xl" : ""}`}
+            >
+              {emoji || "Selecionar"}
+            </Button>
+            {changeEmoji && (
+              <EmojiPicker
+                onEmojiClick={(emojiData) => {
+                  setEmoji(emojiData.emoji);
+                  setChangeEmoji(false);
+                }}
+              />
+            )}
+          </div>
+
           {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -193,7 +215,7 @@ export default function CreateEventModal({
               </Select>
             </div>
           </div>
-          
+
           {/* Horários de início e fim em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -254,24 +276,6 @@ export default function CreateEventModal({
             </Select>
           </div>
 
-          <div>
-            <Label>Emoji</Label>
-            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 border border-gray-200 rounded-lg p-2 mt-1">
-              {commonEmojis.map((em) => (
-                <button
-                  key={em}
-                  type="button"
-                  className={`h-8 w-8 flex items-center justify-center text-lg hover:bg-gray-100 rounded ${
-                    emoji === em ? "bg-gray-200" : ""
-                  }`}
-                  onClick={() => setEmoji(em)}
-                >
-                  {em}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Show partner sharing option only if user has a partner */}
           {user?.partnerId && (
             <div className="space-y-3">
@@ -314,7 +318,11 @@ export default function CreateEventModal({
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="w-full sm:w-auto"
+          >
             Cancelar
           </Button>
           <Button
