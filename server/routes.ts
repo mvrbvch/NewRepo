@@ -1462,6 +1462,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/tasks/reorder", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { tasks } = req.body;
+
+      if (
+        !Array.isArray(tasks) ||
+        !tasks.every(
+          (t) => typeof t.id === "number" && typeof t.position === "number"
+        )
+      ) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "Invalid request format. Expected array of tasks with id and position.",
+        });
+      }
+
+      const success = await storage.updateTaskPositions(tasks);
+
+      if (success) {
+        return res.status(200).json({
+          status: "success",
+          message: "Tasks reordered successfully",
+        });
+      } else {
+        return res.status(500).json({
+          status: "error",
+          message: "Failed to reorder tasks",
+        });
+      }
+    } catch (error) {
+      console.error("Error reordering tasks:", error);
+      return res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
   // POST - Notificar parceiro via WhatsApp (stub para expansão futura)
   app.post("/api/tasks/:id/notify", async (req, res) => {
     if (!req.isAuthenticated()) {

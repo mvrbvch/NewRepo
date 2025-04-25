@@ -944,7 +944,10 @@ export default function HouseholdTasksPage() {
   return (
     <div className="h-screen flex flex-col">
       <Header />
-      <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
+      <div
+        className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light"
+        style={{ marginTop: 100 }}
+      >
         <h2 className="text-xl font-semibold text-rose-900">
           {getTasksTitle()}
         </h2>

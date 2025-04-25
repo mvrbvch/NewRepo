@@ -76,6 +76,7 @@ export default function NotificationSettingsPage() {
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex-1"
+        style={{ marginTop: 110 }}
       >
         <div className="px-4 pt-4">
           <TabsList className="grid grid-cols-2 w-full">

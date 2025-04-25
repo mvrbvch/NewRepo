@@ -36,8 +36,8 @@ export default function Header() {
 
   return (
     <header
-      style={{ paddingTop: 50 }}
-      className="px-4 py-3 flex items-center justify-between border-b bg-primary-dark shadow-md text-white"
+      className="px-4 w-full fixed py-3 flex items-center justify-between bg-primary-dark shadow-md text-white"
+      style={{ zIndex: 50, paddingTop: 50 }}
     >
       <div className="flex items-center">
         <Link href="/">

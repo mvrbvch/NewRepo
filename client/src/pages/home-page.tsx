@@ -95,7 +95,7 @@ export default function HomePage() {
         const eventDate = new Date(event.date);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
         const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate),
+          new Date(selectedDate)
         )?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
@@ -136,7 +136,7 @@ export default function HomePage() {
     const eventDate = new Date(event.date);
     const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
     const formattedSelectedDate = formatDateSafely(
-      new Date(selectedDate),
+      new Date(selectedDate)
     )?.split("T")[0];
 
     if (!formattedEventDate || !formattedSelectedDate) {
@@ -148,10 +148,10 @@ export default function HomePage() {
   });
   // Group events by period for day view
   const morningEvents = dailyEvents.filter(
-    (event) => event.period === "morning",
+    (event) => event.period === "morning"
   );
   const afternoonEvents = dailyEvents.filter(
-    (event) => event.period === "afternoon",
+    (event) => event.period === "afternoon"
   );
   const nightEvents = dailyEvents.filter((event) => event.period === "night");
 
@@ -215,12 +215,12 @@ export default function HomePage() {
 
   // Calcular quantos eventos são compartilhados no período atual
   const sharedEventsCount = filteredEvents.filter(
-    (event) => event.isShared,
+    (event) => event.isShared
   ).length;
 
   return (
     <motion.div
-      className="flex flex-col"
+      className="flex flex-col h-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -228,6 +228,7 @@ export default function HomePage() {
       <Header />
 
       <motion.div
+        style={{ marginTop: 98 }}
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.1 }}

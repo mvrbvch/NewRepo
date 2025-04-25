@@ -39,7 +39,10 @@ export default function DayView({
     nightEvents.length > 0;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar">
+    <div
+      className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar"
+      style={{ minHeight: "100vh" }}
+    >
       {/* Morning section */}
       <div className="p-4 pb-2">
         <div className="flex items-center mb-3">

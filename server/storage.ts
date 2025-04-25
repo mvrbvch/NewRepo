@@ -33,7 +33,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes } from "crypto";
 import { db } from "./db";
-import { eq, and, or, SQL, inArray, desc } from "drizzle-orm";
+import { eq, and, or, SQL, inArray, desc, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { formatDateSafely } from "./utils";
@@ -1111,7 +1111,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEvent(id: number): Promise<boolean> {
     await db.delete(events).where(eq(events.id, id));
-    // Since we don't have a reliable way to get the count, assume it succeeded
+    // Since we donan't have a reliable way to get the count, assume it succeeded
     return true;
   }
 
@@ -1302,94 +1302,33 @@ export class DatabaseStorage implements IStorage {
     return updatedInvite;
   }
   // Household tasks methods
-  async createHouseholdTask(
-    insertTask: InsertHouseholdTask
-  ): Promise<HouseholdTask> {
-    try {
-      console.log(
-        "Criando tarefa doméstica com dados:",
-        JSON.stringify(insertTask, null, 2)
-      );
+  async createHouseholdTask(task: InsertHouseholdTask): Promise<HouseholdTask> {
+    // Get the highest current position
+    const [maxPositionResult] = await db
+      .select({
+        maxPosition: sql`COALESCE(MAX(${householdTasks.position}), -1)`,
+      })
+      .from(householdTasks)
+      .where(eq(householdTasks.id, task.id));
 
-      // Processa as datas antes de inserir
-      let dueDate: Date | null = null;
-      if (insertTask.dueDate) {
-        console.log("dueDate original:", insertTask.dueDate);
-        if (insertTask.dueDate instanceof Date) {
-          dueDate = insertTask.dueDate;
-          console.log("dueDate é um objeto Date");
-        } else if (typeof insertTask.dueDate === "string") {
-          dueDate = new Date(insertTask.dueDate);
-          console.log("dueDate convertido de string:", dueDate);
-        }
-      }
+    const nextPosition = (Number(maxPositionResult?.maxPosition) ?? -1) + 1;
 
-      let nextDueDate: Date | null = null;
-      if (insertTask.nextDueDate) {
-        console.log("nextDueDate original:", insertTask.nextDueDate);
-        if (insertTask.nextDueDate instanceof Date) {
-          nextDueDate = insertTask.nextDueDate;
-          console.log("nextDueDate é um objeto Date");
-        } else if (typeof insertTask.nextDueDate === "string") {
-          nextDueDate = new Date(insertTask.nextDueDate);
-          console.log("nextDueDate convertido de string:", nextDueDate);
-        }
-      }
-
-      // Verificar se as datas são válidas
-      if (dueDate && isNaN(dueDate.getTime())) {
-        console.log("dueDate inválido, definindo como null");
-        dueDate = null;
-      }
-
-      if (nextDueDate && isNaN(nextDueDate.getTime())) {
-        console.log("nextDueDate inválido, definindo como null");
-        nextDueDate = null;
-      }
-
-      // Remover campos desnecessários antes de passar para o banco de dados
-      const { dueDate: _, nextDueDate: __, ...restOfInsertTask } = insertTask;
-
-      const taskData = {
-        ...restOfInsertTask,
-        dueDate,
-        nextDueDate,
-        completed: insertTask.completed || false,
-      };
-
-      console.log(
-        "Dados finais para inserção:",
-        JSON.stringify(taskData, null, 2)
-      );
-
-      const [task] = await db
-        .insert(householdTasks)
-        .values(taskData)
-        .returning();
-
-      console.log(
-        "Tarefa criada com sucesso, dados do banco:",
-        JSON.stringify(task, null, 2)
-      );
-
-      // Processar para retorno
-      const formatted = {
+    const [newTask] = await db
+      .insert(householdTasks)
+      .values({
         ...task,
-        dueDate: dueDate ? dueDate.toISOString() : null,
-        nextDueDate: nextDueDate ? nextDueDate.toISOString() : null,
-        createdAt: task.createdAt
-          ? new Date(task.createdAt).toISOString()
-          : null,
-      };
+        position: nextPosition,
+        createdAt: new Date(),
+      })
+      .returning();
 
-      console.log("Tarefa formatada:", JSON.stringify(formatted, null, 2));
-      return formatted as HouseholdTask;
-    } catch (error) {
-      console.error("Erro crítico ao criar tarefa:", error);
-      throw error;
-    }
+    return {
+      ...newTask,
+      dueDate: newTask.dueDate ? newTask.dueDate.toISOString() : null,
+      completedAt: newTask.completedAt
+      createdAt: newTask.createdAt ? newTask.createdAt.toISOString() : null,
+    };
   }
-
   // Função auxiliar para formatar as datas das tarefas
   private formatHouseholdTaskDates(task: any): HouseholdTask {
     const formattedTask = { ...task };
@@ -1676,6 +1615,25 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao marcar tarefa como concluída:", error);
       return undefined;
+    }
+  }
+
+  async updateTaskPositions(
+    tasks: { id: number; position: number }[]
+  ): Promise<boolean> {
+    try {
+      await db.transaction(async (tx) => {
+        for (const task of tasks) {
+          await tx
+            .update(householdTasks)
+            .set({ position: task.position })
+            .where(eq(householdTasks.id, task.id));
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error("Error updating task positions:", error);
+      return false;
     }
   }
 }

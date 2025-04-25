@@ -41,7 +41,10 @@ import {
   Star,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { TaskCompletionCelebration, QuickTaskCelebration } from "@/components/household/task-completion-celebration";
+import {
+  TaskCompletionCelebration,
+  QuickTaskCelebration,
+} from "@/components/household/task-completion-celebration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -177,14 +180,16 @@ export default function HouseholdTasksPage() {
       once: true,
     }
   );
-  
+
   // Celebration animation state
   const [showCelebration, setShowCelebration] = useState(false);
-  const [completedTaskTitle, setCompletedTaskTitle] = useState('');
+  const [completedTaskTitle, setCompletedTaskTitle] = useState("");
   const [taskStreak, setTaskStreak] = useState(0);
-  
+
   // Track completed tasks to calculate streaks
-  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<number[]>([]);
+  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<
+    number[]
+  >([]);
 
   // Busca todas as tarefas do usuário
   const {
@@ -199,14 +204,14 @@ export default function HouseholdTasksPage() {
   const { data: partnerTasks = [], refetch: refetchPartnerTasks } = useQuery<
     HouseholdTaskType[]
   >({
-    queryKey: ["/api/partner-tasks"],
+    queryKey: ["/api/tasks/partner"],
     enabled: !!user?.partnerId, // Somente ativa se o usuário tiver um parceiro
   });
 
   // Estado para controlar a animação rápida
   const [showQuickCelebration, setShowQuickCelebration] = useState(false);
-  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>('');
-  
+  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>("");
+
   // Mutação para marcar tarefa como concluída/pendente
   const toggleCompleteMutation = useMutation({
     mutationFn: async ({
@@ -223,12 +228,12 @@ export default function HouseholdTasksPage() {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
+
       // Mostrar mensagem de sucesso e celebração simples quando marcar como concluída
       if (variables.completed) {
         // Encontrar o título da tarefa que foi concluída
-        const task = tasks.find(t => t.id === variables.id);
+        const task = tasks.find((t) => t.id === variables.id);
         if (task) {
           setQuickCelebrationTask(task.title);
         }
@@ -261,7 +266,7 @@ export default function HouseholdTasksPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
       setSelectedTask(null);
       toast({
         title: "Tarefa excluída",
@@ -279,13 +284,15 @@ export default function HouseholdTasksPage() {
 
   // Mutação para atualizar a ordem das tarefas
   const reorderTasksMutation = useMutation({
-    mutationFn: async (tasks: { id: number; sortOrder: number }[]) => {
-      const response = await apiRequest("PATCH", "/api/tasks-reorder", { tasks });
+    mutationFn: async (tasks: { id: number; position: number }[]) => {
+      const response = await apiRequest("PUT", "/api/tasks/reorder", {
+        tasks,
+      });
       return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
       toast({
         title: "Tarefas reordenadas",
         description: "A ordem das tarefas foi atualizada com sucesso.",
@@ -294,7 +301,8 @@ export default function HouseholdTasksPage() {
     onError: (error) => {
       toast({
         title: "Erro ao reordenar tarefas",
-        description: "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
+        description:
+          "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -319,7 +327,7 @@ export default function HouseholdTasksPage() {
         break;
     }
 
-    // Ordenar tarefas: primeiro por status (pendentes antes das concluídas), 
+    // Ordenar tarefas: primeiro por status (pendentes antes das concluídas),
     // em seguida por prioridade (alta para baixa) e finalmente por data
     return filteredTasks.sort((a, b) => {
       // Se uma tarefa está completa e a outra não, a pendente vem primeiro
@@ -329,11 +337,11 @@ export default function HouseholdTasksPage() {
       // Se ambas têm o mesmo status de conclusão, ordenar por prioridade (alta para baixa)
       const priorityA = a.priority || 0;
       const priorityB = b.priority || 0;
-      
+
       if (priorityA !== priorityB) {
         return priorityB - priorityA; // Ordem decrescente: 2 (alta) vem antes de 0 (baixa)
       }
-      
+
       // Se ambas têm a mesma prioridade, ordenar por data de vencimento
       if (a.dueDate && b.dueDate) {
         const dateA = new Date(a.dueDate);
@@ -424,7 +432,7 @@ export default function HouseholdTasksPage() {
     if (!task.completed) {
       // Set the task title for the celebration message
       setCompletedTaskTitle(task.title);
-      
+
       // Calculate streak (counting this task)
       const updatedRecentlyCompleted = [...recentlyCompletedTasks];
       // Add this task ID if not already in the list
@@ -432,20 +440,20 @@ export default function HouseholdTasksPage() {
         updatedRecentlyCompleted.push(task.id);
         setRecentlyCompletedTasks(updatedRecentlyCompleted);
       }
-      
+
       // Calculate streak (limit to last 24 hours for consecutive tasks)
       const streak = Math.min(updatedRecentlyCompleted.length, 10); // Cap at 10 for UI purposes
       setTaskStreak(streak);
-      
+
       // Show the celebration animation
       setShowCelebration(true);
-      
+
       // Auto-hide celebration after animation completes
       setTimeout(() => {
         setShowCelebration(false);
       }, 3000);
     }
-    
+
     toggleCompleteMutation.mutate({
       id: task.id,
       completed: !task.completed,
@@ -495,27 +503,27 @@ export default function HouseholdTasksPage() {
   // Função para lidar com evento de arrastar e soltar
   const handleDragEnd = (event: DragEndEvent, tasks: HouseholdTaskType[]) => {
     const { active, over } = event;
-    
+
     if (!over) return;
-    
+
     // Se a ordem não mudou, não faça nada
     if (active.id === over.id) return;
-    
+
     // Encontre o índice das tarefas
     const oldIndex = tasks.findIndex((task) => task.id === active.id);
     const newIndex = tasks.findIndex((task) => task.id === over.id);
-    
+
     if (oldIndex < 0 || newIndex < 0) return;
-    
+
     // Reorganize o array de tarefas
     const updatedTasks = arrayMove(tasks, oldIndex, newIndex);
-    
+
     // Prepare os dados para atualizar no banco de dados
     const taskUpdates = updatedTasks.map((task, index) => ({
       id: task.id,
-      sortOrder: index
+      position: index,
     }));
-    
+
     // Chame a mutação para salvar a ordem no banco de dados
     reorderTasksMutation.mutate(taskUpdates);
   };
@@ -590,7 +598,7 @@ export default function HouseholdTasksPage() {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="p-4 space-y-4">
-            <SortableTaskList 
+            <SortableTaskList
               tasks={tasks}
               onDragEnd={handleDragEnd}
               onClick={handleOpenTaskDetails}
@@ -610,7 +618,10 @@ export default function HouseholdTasksPage() {
     <div className="h-screen flex flex-col">
       <Header />
 
-      <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
+      <div
+        style={{ marginTop: 100 }}
+        className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light"
+      >
         <h2 className="text-xl font-semibold text-primary-dark">
           Minhas Tarefas
         </h2>
@@ -644,14 +655,14 @@ export default function HouseholdTasksPage() {
                   <Clock className="mr-2 h-4 w-4" />
                   <span>Lista simples</span>
                 </DropdownMenuItem>
-                
-                {process.env.NODE_ENV === 'development' && (
+
+                {process.env.NODE_ENV === "development" && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
                         // Add a test task completion
-                        setCompletedTaskTitle('Teste de tarefa');
+                        setCompletedTaskTitle("Teste de tarefa");
                         setTaskStreak(Math.floor(Math.random() * 10) + 1);
                         setShowCelebration(true);
                         // Auto-hide after a few seconds
@@ -713,7 +724,7 @@ export default function HouseholdTasksPage() {
           </TabsTrigger>
         </TabsList>
 
-        <PullToRefresh onRefresh={handleRefresh}>
+        <div onRefresh={handleRefresh}>
           <div className="mt-4 pb-16 px-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-48">
@@ -756,7 +767,7 @@ export default function HouseholdTasksPage() {
                   <>
                     {groupedTasks.ungrouped &&
                     groupedTasks.ungrouped.length > 0 ? (
-                      <SortableTaskList 
+                      <SortableTaskList
                         tasks={groupedTasks.ungrouped}
                         onDragEnd={handleDragEnd}
                         onClick={handleOpenTaskDetails}
@@ -788,7 +799,7 @@ export default function HouseholdTasksPage() {
               </>
             )}
           </div>
-        </PullToRefresh>
+        </div>
       </Tabs>
 
       <BottomNavigation onCreateEvent={handleOpenCreateModal} />
@@ -807,7 +818,7 @@ export default function HouseholdTasksPage() {
           onToggleComplete={handleToggleTaskComplete}
         />
       )}
-      
+
       {/* Task completion celebration animation */}
       <TaskCompletionCelebration
         isActive={showCelebration}
@@ -815,7 +826,7 @@ export default function HouseholdTasksPage() {
         streakCount={taskStreak}
         onComplete={() => setShowCelebration(false)}
       />
-      
+
       {/* Quick celebration animation for checkbox toggles */}
       <QuickTaskCelebration
         isActive={showQuickCelebration}

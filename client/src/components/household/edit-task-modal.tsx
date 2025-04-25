@@ -100,7 +100,7 @@ export default function EditTaskModal({
 
   // Get partner data if available
   const { data: partner } = useQuery({
-    queryKey: ["/api/partner"],
+    queryKey: ["/api/tasks/partner"],
     enabled: !!user?.partnerId,
   });
   console.log(partner);
@@ -121,7 +121,7 @@ export default function EditTaskModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
       toast({
         title: "Tarefa atualizada",
         description: "A tarefa foi atualizada com sucesso.",
