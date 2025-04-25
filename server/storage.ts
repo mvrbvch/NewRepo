@@ -1305,7 +1305,7 @@ export class DatabaseStorage implements IStorage {
   async createHouseholdTask(task: InsertHouseholdTask): Promise<HouseholdTask> {
     // Get the highest current position
     const [maxPositionResult] = await db
-      .select({
+      .select({s
         maxPosition: sql`COALESCE(MAX(${householdTasks.position}), -1)`,
       })
       .from(householdTasks)
@@ -1325,7 +1325,6 @@ export class DatabaseStorage implements IStorage {
     return {
       ...newTask,
       dueDate: newTask.dueDate ? newTask.dueDate.toISOString() : null,
-      completedAt: newTask.completedAt
       createdAt: newTask.createdAt ? newTask.createdAt.toISOString() : null,
     };
   }
