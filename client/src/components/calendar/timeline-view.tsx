@@ -164,7 +164,7 @@ export default function TimelineView({
   }
 
   return (
-    <div className="timeline-view p-2 md:p-4 overflow-y-auto">
+    <div className="timeline-view p-2 md:p-4 overflow-y-auto pb-24">
       {/* Cabeçalho da data */}
       <div className="mb-4 sticky top-0 bg-background z-10 p-2 rounded-lg shadow-sm">
         <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -186,7 +186,7 @@ export default function TimelineView({
       )}
 
       {/* Timeline */}
-      <div className="relative pl-10 border-l border-gray-200 dark:border-gray-800">
+      <div className="relative pl-10 border-l border-gray-200 dark:border-gray-800 mb-16">
         {HOURS.map((hour) => {
           const hasEvents = eventsByHour[hour] && eventsByHour[hour].length > 0;
           const isExpanded = expandedHours[hour] || false;
