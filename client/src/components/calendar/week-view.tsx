@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays, startOfWeek, subDays, subWeeks, addWeeks } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "../../hooks/use-mobile";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 
 interface WeekViewProps {
@@ -25,7 +25,7 @@ export default function WeekView({
   onDayChange,
   onWeekChange,
 }: WeekViewProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useMobile();
   
   // Generate week days from selected date
   const weekDays = useMemo(() => {

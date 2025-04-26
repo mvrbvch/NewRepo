@@ -9,7 +9,7 @@ interface DayViewProps {
   afternoonEvents: EventType[];
   nightEvents: EventType[];
   isLoading: boolean;
-  user?: UserType;
+  user?: UserType | null;
   onEventClick: (event: EventType) => void;
 }
 
