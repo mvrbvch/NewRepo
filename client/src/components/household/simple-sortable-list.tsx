@@ -6,14 +6,14 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { HouseholdTaskType } from "@/lib/types";
@@ -27,9 +27,9 @@ import {
   AlertCircle,
   User as UserIcon,
   Star,
-  GripVertical
+  GripVertical,
 } from "lucide-react";
-import { isBefore } from 'date-fns';
+import { isBefore } from "date-fns";
 
 interface SortableItemProps {
   id: number;
@@ -40,13 +40,13 @@ interface SortableItemProps {
   user?: any;
 }
 
-function SortableItem({ 
-  id, 
-  task, 
-  onClick, 
-  onToggleComplete, 
+function SortableItem({
+  id,
+  task,
+  onClick,
+  onToggleComplete,
   getFormattedDueDate,
-  user
+  user,
 }: SortableItemProps) {
   const {
     attributes,
@@ -54,7 +54,7 @@ function SortableItem({
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({ id: Number(id) });
 
   const style = {
@@ -67,11 +67,13 @@ function SortableItem({
   return (
     <div ref={setNodeRef} style={style} className="mb-4 relative group">
       <Card
+        {...attributes}
+        {...listeners}
         className={`p-4 relative ${
           task.completed
             ? "bg-gray-50 border-gray-200"
             : "bg-white hover:bg-primary-light/10 border-primary-light"
-        } shadow-sm hover:shadow-md transition-all ${isDragging ? 'ring-2 ring-primary' : ''}`}
+        } shadow-sm hover:shadow-md transition-all ${isDragging ? "ring-2 ring-primary" : ""}`}
       >
         <div className="flex items-start gap-4">
           <motion.div
@@ -91,14 +93,11 @@ function SortableItem({
               }`}
             />
           </motion.div>
-          
-          <div 
-            className="flex-1 min-w-0"
-            onClick={() => onClick(task)}
-          >
+
+          <div className="flex-1 min-w-0" onClick={() => onClick(task)}>
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3
-                className={`font-semibold text-lg break-words ${
+                className={`font-semibold text-lg break-words prevent-select ${
                   task.completed ? "line-through text-gray-500" : "text-dark"
                 }`}
               >
@@ -108,15 +107,16 @@ function SortableItem({
 
             {task.description && (
               <p
-                className={`text-sm mt-2 break-words ${
+                className={`text-sm mt-2 break-words prevent-select ${
                   task.completed ? "text-gray-500" : "text-medium"
                 }`}
+                style={{ userSelect: "none" }}
               >
                 {task.description}
               </p>
             )}
 
-            <div className="mt-3 flex flex-wrap gap-2 items-center">
+            <div className="mt-3 flex flex-wrap gap-2 items-center prevent-select">
               {task.dueDate && (
                 <div className="text-xs flex items-center">
                   <CalendarIcon className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
@@ -147,14 +147,14 @@ function SortableItem({
 
               {/* Completed status */}
               {task.completed ? (
-                <div className="text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                <div className="prevent-select text-xs flex items-center bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
                   <Check className="h-3 w-3 mr-1 flex-shrink-0" />
                   Concluída
                 </div>
               ) : (
                 task.assignedTo &&
                 task.assignedTo === user?.partnerId && (
-                  <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                  <div className="prevent-select text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
                     <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
                     Atribuída ao parceiro
                   </div>
@@ -164,7 +164,7 @@ function SortableItem({
               {/* Priority indicator */}
               {!task.completed && (
                 <div
-                  className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
+                  className={`prevent-select text-xs flex items-center px-2 py-1 rounded-full font-medium ${
                     task.priority === 2
                       ? "bg-red-50 text-red-600"
                       : task.priority === 1
@@ -184,11 +184,7 @@ function SortableItem({
           </div>
 
           {/* Drag handle */}
-          <div 
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing" 
-            {...attributes} 
-            {...listeners}
-          >
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing">
             <GripVertical className="h-5 w-5 text-gray-400" />
           </div>
         </div>
@@ -206,23 +202,23 @@ interface SortableListProps {
   user?: any;
 }
 
-export function SimpleSortableList({ 
-  tasks, 
+export function SimpleSortableList({
+  tasks,
   onDragEnd,
   onClick,
   onToggleComplete,
   getFormattedDueDate,
-  user
+  user,
 }: SortableListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8
-      }
+        distance: 8,
+      },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   function handleDragEnd(event: DragEndEvent) {
@@ -230,16 +226,19 @@ export function SimpleSortableList({
   }
 
   return (
-    <DndContext 
-      sensors={sensors} 
-      collisionDetection={closestCenter} 
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext items={tasks.map(t => Number(t.id))} strategy={verticalListSortingStrategy}>
-        {tasks.map(task => (
-          <SortableItem 
-            key={task.id} 
-            id={task.id} 
+      <SortableContext
+        items={tasks.map((t) => Number(t.id))}
+        strategy={verticalListSortingStrategy}
+      >
+        {tasks.map((task) => (
+          <SortableItem
+            key={task.id}
+            id={task.id}
             task={task}
             onClick={onClick}
             onToggleComplete={onToggleComplete}
