@@ -1477,7 +1477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { tasks } = req.body;
-      console.log("Received task reorder request:", tasks);
+      console.log("Received task reorder request:", JSON.stringify(tasks));
       
       // Obter o ID do usuário atual
       const userId = req.user?.id as number;
@@ -1493,32 +1493,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Importações e preparações necessárias
+      const { db } = require('./db');
+      const { sql, eq } = require('drizzle-orm');
+      const { householdTasks } = require('../shared/schema');
+      
       // Strict validation and conversion of task IDs and positions
-      const validTasks = [];
+      let validTasks = [];
       
       for (const task of tasks) {
+        // Task deve ter um ID e uma posição
+        if (!task || task.id === undefined || task.position === undefined) {
+          console.warn(`Task inválida ou incompleta recebida: ${JSON.stringify(task)}`);
+          continue;
+        }
+        
         // Make sure both values are numeric
         let id, position;
         
         try {
-          // Force conversion to number and validate
-          id = Number(task.id);
-          position = Number(task.position);
+          // Tratar múltiplos tipos de dados para ID
+          if (typeof task.id === 'number') {
+            id = task.id;
+          } else if (typeof task.id === 'string') {
+            id = parseInt(task.id, 10);
+          } else {
+            console.warn(`Tipo de ID não tratável: ${typeof task.id}`);
+            continue;
+          }
           
+          // Tratar múltiplos tipos de dados para posição
+          if (typeof task.position === 'number') {
+            position = task.position;
+          } else if (typeof task.position === 'string') {
+            position = parseInt(task.position, 10);
+          } else {
+            console.warn(`Tipo de posição não tratável: ${typeof task.position}`);
+            continue;
+          }
+          
+          // Validar após conversão
           if (isNaN(id) || !Number.isInteger(id) || id <= 0) {
-            console.warn(`Invalid task ID: ${task.id}, skipping`);
+            console.warn(`ID de tarefa inválido após conversão: ${task.id} => ${id}`);
             continue;
           }
           
           if (isNaN(position) || !Number.isInteger(position) || position < 0) {
-            console.warn(`Invalid position: ${task.position}, skipping`);
+            console.warn(`Posição inválida após conversão: ${task.position} => ${position}`);
             continue;
           }
           
           // Add to valid tasks
           validTasks.push({ id, position });
         } catch (err) {
-          console.warn(`Error processing task: ${JSON.stringify(task)}`, err);
+          console.warn(`Erro ao processar tarefa: ${JSON.stringify(task)}`, err);
           continue;
         }
       }
@@ -1526,7 +1554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validTasks.length === 0) {
         return res.status(400).json({
           status: "error",
-          message: "No valid tasks provided for reordering",
+          message: "Nenhuma tarefa válida fornecida para reordenação",
         });
       }
 
@@ -1534,28 +1562,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Obter IDs de todas as tarefas que queremos reordenar
       const taskIds = validTasks.map(task => task.id);
       
-      // Verificar se todas as tarefas pertencem ao usuário
-      const tasksExistForUser = await storage.verifyTasksBelongToUser(userId, taskIds);
-      
-      if (!tasksExistForUser) {
-        return res.status(403).json({
+      // Verificar se alguma tarefa está com ID NaN
+      const nanTasks = taskIds.filter(id => isNaN(id));
+      if (nanTasks.length > 0) {
+        console.error("ID de tarefa inválido recebido como NaN:", nanTasks);
+        return res.status(400).json({
           status: "error",
-          message: "You don't have permission to reorder one or more of these tasks",
+          message: "Invalid task ID received",
+          details: { invalidIds: nanTasks }
         });
       }
-
-      console.log("Validated tasks for reorder:", validTasks);
-      const success = await storage.updateTaskPositions(validTasks);
-
-      if (success) {
-        return res.status(200).json({
-          status: "success",
-          message: "Tasks reordered successfully",
+      
+      // Verificar diretamente no banco se as tarefas existem e pertencem ao usuário
+      try {
+        // Log detalhado para depuração
+        console.log("Executando consulta SQL para verificar tarefas. IDs das tarefas:", taskIds);
+        console.log("UserID atual:", userId);
+        
+        const results = await db.execute(
+          sql`SELECT id FROM household_tasks 
+              WHERE id IN (${sql.join(taskIds, sql`, `)}) 
+              AND (created_by = ${userId} OR assigned_to = ${userId})`
+        );
+        
+        console.log("Resultados da consulta:", results.rows);
+        
+        const foundIds = results.rows.map(row => Number(row.id));
+        console.log("IDs encontrados no banco:", foundIds);
+        
+        const missingIds = taskIds.filter(id => !foundIds.includes(id));
+        console.log("IDs de tarefas não encontrados:", missingIds);
+        
+        if (missingIds.length > 0) {
+          console.warn(`Tarefas não encontradas ou sem permissão: ${missingIds.join(', ')}`);
+          
+          // Verificar se qualquer ID existe no banco de dados (independente do dono)
+          const taskExistenceCheck = await db.execute(
+            sql`SELECT id FROM household_tasks WHERE id IN (${sql.join(missingIds, sql`, `)})`
+          );
+          
+          const existingIds = taskExistenceCheck.rows.map(row => Number(row.id));
+          const nonExistentIds = missingIds.filter(id => !existingIds.includes(id));
+          const unauthorizedIds = missingIds.filter(id => existingIds.includes(id));
+          
+          if (nonExistentIds.length > 0) {
+            console.error("Tarefas inexistentes:", nonExistentIds);
+          }
+          
+          if (unauthorizedIds.length > 0) {
+            console.error("Tarefas existentes, mas sem permissão:", unauthorizedIds);
+          }
+          
+          // Filtrar apenas tarefas que foram encontradas
+          const filteredTasks = validTasks.filter(task => foundIds.includes(task.id));
+          
+          if (filteredTasks.length === 0) {
+            console.error("Nenhuma tarefa válida encontrada após filtragem");
+            return res.status(404).json({
+              status: "error",
+              message: "Task not found",
+              details: {
+                nonExistentIds,
+                unauthorizedIds,
+                message: "None of the provided tasks belong to you or exist"
+              }
+            });
+          }
+          
+          // Atualizar a referência
+          console.log(`Continuando com ${filteredTasks.length} tarefas válidas:`, 
+            filteredTasks.map(t => ({ id: t.id, position: t.position })));
+          
+          // Usar a lista filtrada
+          validTasks = filteredTasks;
+        }
+        
+        // Se chegou aqui, temos pelo menos algumas tarefas válidas
+        console.log("Tarefas validadas para reordenação:", validTasks);
+        
+        // Tentar atualizar diretamente no banco com uma transação
+        let success = false;
+        
+        await db.transaction(async (tx) => {
+          // Atualizar cada tarefa diretamente
+          for (const task of validTasks) {
+            await tx
+              .update(householdTasks)
+              .set({ position: task.position })
+              .where(eq(householdTasks.id, task.id));
+          }
+          success = true;
         });
-      } else {
-        return res.status(404).json({
+        
+        if (success) {
+          return res.status(200).json({
+            status: "success",
+            message: "Tasks reordered successfully",
+            count: validTasks.length
+          });
+        } else {
+          return res.status(500).json({
+            status: "error",
+            message: "Failed to update task positions",
+          });
+        }
+      } catch (error) {
+        console.error("Erro durante verificação ou atualização de tarefas:", error);
+        return res.status(500).json({
           status: "error",
-          message: "One or more tasks not found",
+          message: "Error processing tasks",
+          details: error instanceof Error ? error.message : String(error)
         });
       }
     } catch (error) {

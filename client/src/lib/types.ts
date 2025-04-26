@@ -78,5 +78,6 @@ export interface HouseholdTaskType {
   nextDueDate: string | Date | null;
   recurrenceRule: string | null;
   priority: number; // 0: baixa, 1: média, 2: alta
+  position: number; // posição para ordenação na lista
   createdAt: string | Date | null;
 }

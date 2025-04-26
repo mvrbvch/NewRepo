@@ -9,7 +9,7 @@ import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
 import OnboardingPage from "./pages/onboarding-page";
 import PartnerInvitePage from "./pages/partner-invite-page";
-import HouseholdTasksPage from "./pages/household-tasks-page-drag";
+import HouseholdTasksPage from "./pages/household-tasks-page";
 import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";

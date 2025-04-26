@@ -6,6 +6,7 @@ import { HouseholdTaskType } from "@/lib/types";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { Link, useLocation } from "wouter";
 import {
   format,
   isToday,
@@ -79,7 +80,6 @@ import { formatDateSafely } from "@/lib/utils";
 import { SimpleSortableList } from "@/components/household/simple-sortable-list";
 // Alias SimpleSortableList as SortableTaskList to fix errors
 const SortableTaskList = SimpleSortableList;
-import { Link } from "wouter";
 
 // Pull to Refresh Component
 function PullToRefresh({
@@ -945,6 +945,13 @@ export default function HouseholdTasksPage() {
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Todas as tarefas</span>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <Link href="/tasks/reorder">
+            <DropdownMenuItem>
+              <GripVertical className="mr-2 h-4 w-4" />
+              <span>Reordenar tarefas</span>
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Data</DropdownMenuLabel>

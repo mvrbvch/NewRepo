@@ -1714,11 +1714,56 @@ export class DatabaseStorage implements IStorage {
       // Log the tasks being updated
       console.log("Updating task positions for:", tasks);
       
+      // Validação extra detalhada para depuração
+      for (const task of tasks) {
+        console.log(`Validando tarefa:`, {
+          id: task.id,
+          tipo_id: typeof task.id,
+          isNaN_id: isNaN(task.id),
+          isInteger_id: Number.isInteger(task.id),
+          position: task.position,
+          tipo_position: typeof task.position,
+          isNaN_position: isNaN(task.position),
+          isInteger_position: Number.isInteger(task.position)
+        });
+      }
+      
       // First, filter out any tasks with invalid IDs or positions
-      const validTasks = tasks.filter(task => 
-        typeof task.id === 'number' && !isNaN(task.id) && Number.isInteger(task.id) && task.id > 0 &&
-        typeof task.position === 'number' && !isNaN(task.position) && Number.isInteger(task.position) && task.position >= 0
-      );
+      const validTasks = tasks.filter(task => {
+        // Validação de ID
+        if (task.id === undefined || task.id === null) {
+          console.warn(`Tarefa com ID undefined/null rejeitada`);
+          return false;
+        }
+        
+        if (isNaN(task.id)) {
+          console.warn(`Tarefa com ID NaN rejeitada: ${task.id}`);
+          return false;
+        }
+        
+        if (!Number.isInteger(task.id) || task.id <= 0) {
+          console.warn(`Tarefa com ID não inteiro ou negativo rejeitada: ${task.id}`);
+          return false;
+        }
+        
+        // Validação de posição
+        if (task.position === undefined || task.position === null) {
+          console.warn(`Tarefa com posição undefined/null rejeitada`);
+          return false;
+        }
+        
+        if (isNaN(task.position)) {
+          console.warn(`Tarefa com posição NaN rejeitada: ${task.position}`);
+          return false;
+        }
+        
+        if (!Number.isInteger(task.position) || task.position < 0) {
+          console.warn(`Tarefa com posição não inteira ou negativa rejeitada: ${task.position}`);
+          return false;
+        }
+        
+        return true;
+      });
       
       // Log any filtered out tasks
       if (validTasks.length !== tasks.length) {
@@ -1732,12 +1777,33 @@ export class DatabaseStorage implements IStorage {
         return false;
       }
       
-      // Verify all task IDs exist first
+      // Verificar existência de cada tarefa individualmente
       const taskIds = validTasks.map(t => t.id);
-      const allTasksExist = await this.verifyTasksExist(taskIds);
       
-      if (!allTasksExist) {
-        console.error("One or more tasks in the reorder operation do not exist:", taskIds);
+      try {
+        // Verificar cada tarefa diretamente
+        const tasks = await db.select({ id: householdTasks.id })
+          .from(householdTasks)
+          .where(inArray(householdTasks.id, taskIds));
+        
+        const foundIds = tasks.map(t => t.id);
+        const missingIds = taskIds.filter(id => !foundIds.includes(id));
+        
+        if (missingIds.length > 0) {
+          console.warn(`IDs não encontrados no banco: ${missingIds.join(', ')}`);
+          
+          // Remover tarefas não encontradas em vez de falhar completamente
+          validTasks = validTasks.filter(task => foundIds.includes(task.id));
+          
+          if (validTasks.length === 0) {
+            console.error("Nenhuma tarefa válida após remover IDs inexistentes");
+            return false;
+          }
+          
+          console.log(`Continuando com ${validTasks.length} tarefas válidas após filtrar IDs inexistentes`);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar existência das tarefas:", error);
         return false;
       }
       
