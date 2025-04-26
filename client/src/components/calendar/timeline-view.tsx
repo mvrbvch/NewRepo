@@ -93,7 +93,7 @@ export default function TimelineView({
       }
     });
     setExpandedHours(autoExpand);
-  }, [sortedEvents]);
+  }, [JSON.stringify(eventsByHour)]);
 
   // Renderizar um evento na timeline
   const renderEvent = (event: EventType) => {

@@ -189,11 +189,12 @@ export default function MonthView({
         })}
       </div>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .day-grid-cell {
           min-height: 5rem;
         }
-      `}</style>
+      `}} />
     </div>
   );
 }
