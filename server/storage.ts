@@ -33,7 +33,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes } from "crypto";
 import { db } from "./db";
-import { eq, and, or, SQL, inArray, desc, sql } from "drizzle-orm";
+import { eq, and, or, SQL, inArray, desc, sql, count } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { formatDateSafely } from "./utils";
@@ -1622,18 +1622,84 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Verify if tasks exist before attempting to update them
+  async verifyTasksExist(taskIds: number[]): Promise<boolean> {
+    try {
+      if (taskIds.length === 0) return false;
+      
+      // Filter out any invalid IDs (like NaN)
+      const validIds = taskIds.filter(id => 
+        typeof id === 'number' && !isNaN(id) && Number.isInteger(id) && id > 0
+      );
+      
+      // If we lost any IDs during filtering, log it
+      if (validIds.length !== taskIds.length) {
+        console.warn(`Filtered out ${taskIds.length - validIds.length} invalid IDs from verification`);
+        console.warn(`Original IDs:`, taskIds);
+        console.warn(`Valid IDs:`, validIds);
+      }
+      
+      if (validIds.length === 0) return false;
+      
+      // Count how many tasks exist with the given IDs using SQL
+      const results = await db.execute(
+        sql`SELECT COUNT(*) as count FROM household_tasks WHERE id IN (${sql.join(validIds, sql`, `)})`
+      );
+      
+      // Extract the count from the result
+      const foundCount = parseInt(results.rows[0]?.count as string || '0', 10);
+      return foundCount === validIds.length;
+    } catch (error) {
+      console.error("Error verifying tasks exist:", error);
+      return false;
+    }
+  }
+
   async updateTaskPositions(
     tasks: { id: number; position: number }[],
   ): Promise<boolean> {
     try {
+      // Log the tasks being updated
+      console.log("Updating task positions for:", tasks);
+      
+      // First, filter out any tasks with invalid IDs or positions
+      const validTasks = tasks.filter(task => 
+        typeof task.id === 'number' && !isNaN(task.id) && Number.isInteger(task.id) && task.id > 0 &&
+        typeof task.position === 'number' && !isNaN(task.position) && Number.isInteger(task.position) && task.position >= 0
+      );
+      
+      // Log any filtered out tasks
+      if (validTasks.length !== tasks.length) {
+        console.warn(`Filtered out ${tasks.length - validTasks.length} invalid tasks from position update`);
+        console.warn("Original tasks:", tasks);
+        console.warn("Valid tasks:", validTasks);
+      }
+      
+      if (validTasks.length === 0) {
+        console.error("No valid tasks remain after filtering");
+        return false;
+      }
+      
+      // Verify all task IDs exist first
+      const taskIds = validTasks.map(t => t.id);
+      const allTasksExist = await this.verifyTasksExist(taskIds);
+      
+      if (!allTasksExist) {
+        console.error("One or more tasks in the reorder operation do not exist:", taskIds);
+        return false;
+      }
+      
+      // Proceed with the update
       await db.transaction(async (tx) => {
-        for (const task of tasks) {
+        for (const task of validTasks) {
           await tx
             .update(householdTasks)
             .set({ position: task.position })
             .where(eq(householdTasks.id, task.id));
         }
       });
+      
+      console.log("Task positions updated successfully");
       return true;
     } catch (error) {
       console.error("Error updating task positions:", error);

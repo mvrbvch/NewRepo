@@ -1487,18 +1487,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Additional validation & sanitization
-      const validTasks = tasks.filter(t => {
-        // Ensure both id and position are valid integers
-        const id = typeof t.id === 'string' ? parseInt(t.id, 10) : Number(t.id);
-        const position = typeof t.position === 'string' ? parseInt(t.position, 10) : Number(t.position);
+      // Strict validation and conversion of task IDs and positions
+      const validTasks = [];
+      
+      for (const task of tasks) {
+        // Make sure both values are numeric
+        let id, position;
         
-        return Number.isInteger(id) && !isNaN(id) && 
-               Number.isInteger(position) && !isNaN(position);
-      }).map(t => ({
-        id: Number(t.id),
-        position: Number(t.position)
-      }));
+        try {
+          // Force conversion to number and validate
+          id = Number(task.id);
+          position = Number(task.position);
+          
+          if (isNaN(id) || !Number.isInteger(id) || id <= 0) {
+            console.warn(`Invalid task ID: ${task.id}, skipping`);
+            continue;
+          }
+          
+          if (isNaN(position) || !Number.isInteger(position) || position < 0) {
+            console.warn(`Invalid position: ${task.position}, skipping`);
+            continue;
+          }
+          
+          // Add to valid tasks
+          validTasks.push({ id, position });
+        } catch (err) {
+          console.warn(`Error processing task: ${JSON.stringify(task)}`, err);
+          continue;
+        }
+      }
       
       if (validTasks.length === 0) {
         return res.status(400).json({
@@ -1516,9 +1533,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Tasks reordered successfully",
         });
       } else {
-        return res.status(500).json({
+        return res.status(404).json({
           status: "error",
-          message: "Failed to reorder tasks",
+          message: "One or more tasks not found",
         });
       }
     } catch (error) {

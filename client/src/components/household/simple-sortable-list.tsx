@@ -55,7 +55,7 @@ function SortableItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id });
+  } = useSortable({ id: Number(id) });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -199,7 +199,7 @@ function SortableItem({
 
 interface SortableListProps {
   tasks: HouseholdTaskType[];
-  onDragEnd: (event: DragEndEvent, tasks: HouseholdTaskType[]) => void;
+  onDragEnd: (event: DragEndEvent) => void;
   onClick: (task: HouseholdTaskType) => void;
   onToggleComplete: (task: HouseholdTaskType) => void;
   getFormattedDueDate: (date: string | Date) => string;
@@ -226,7 +226,7 @@ export function SimpleSortableList({
   );
 
   function handleDragEnd(event: DragEndEvent) {
-    onDragEnd(event, tasks);
+    onDragEnd(event);
   }
 
   return (
@@ -235,7 +235,7 @@ export function SimpleSortableList({
       collisionDetection={closestCenter} 
       onDragEnd={handleDragEnd}
     >
-      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={tasks.map(t => Number(t.id))} strategy={verticalListSortingStrategy}>
         {tasks.map(task => (
           <SortableItem 
             key={task.id} 

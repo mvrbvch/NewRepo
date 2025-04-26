@@ -15,7 +15,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
-import { SplashScreenProvider } from "./hooks/use-splash-screen";
+import { SplashScreenProvider, SplashScreenContext } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
 
 function Router() {
@@ -38,6 +38,7 @@ function Router() {
 }
 
 function AppContent() {
+  // Using the splash screen hook to manage the splash screen state
   const [showSplash, setShowSplash] = React.useState(true);
 
   // Handle splash screen finish

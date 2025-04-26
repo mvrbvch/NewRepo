@@ -613,13 +613,40 @@ export default function HouseholdTasksPage() {
   };
   
   // Handle drag and drop to reorder tasks
-  const handleDragEnd = (event: DragEndEvent, taskList: HouseholdTaskType[]) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over) return;
 
     // If order hasn't changed, do nothing
     if (active.id === over.id) return;
+
+    // Get active tasks based on current filter
+    let activeTasks: HouseholdTaskType[] = [];
+    
+    // Determine which tasks are being dragged based on the current view
+    if (groupByFrequency) {
+      // In grouped view, determine the frequency from the active element's data
+      // Look at the active ID to determine which task we're working with
+      const activeIdNum = Number(active.id);
+      const activeTask = tasks.find(t => Number(t.id) === activeIdNum);
+      
+      if (!activeTask) {
+        console.error("Could not find active task with ID:", activeIdNum);
+        return;
+      }
+      
+      const frequency = activeTask.frequency;
+      activeTasks = tasks.filter(task => task.frequency === frequency && !task.completed);
+    } else {
+      // In non-grouped view, use all active tasks
+      activeTasks = tasks.filter(task => !task.completed);
+    }
+    
+    if (!activeTasks || activeTasks.length === 0) {
+      console.error("No active tasks found in the current view");
+      return;
+    }
 
     // Make sure IDs are numbers
     const activeId = Number(active.id);
@@ -631,20 +658,20 @@ export default function HouseholdTasksPage() {
     }
 
     // Find the indices of the tasks
-    const oldIndex = taskList.findIndex((task) => task.id === activeId);
-    const newIndex = taskList.findIndex((task) => task.id === overId);
+    const oldIndex = activeTasks.findIndex((task) => Number(task.id) === activeId);
+    const newIndex = activeTasks.findIndex((task) => Number(task.id) === overId);
 
     if (oldIndex < 0 || newIndex < 0) {
-      console.error("Could not find task indices", { oldIndex, newIndex, taskList });
+      console.error("Could not find task indices", { oldIndex, newIndex, activeTasks });
       return;
     }
 
     // Reorganize the task array
-    const updatedTasks = arrayMove(taskList, oldIndex, newIndex);
+    const updatedTasks = arrayMove(activeTasks, oldIndex, newIndex);
 
     // Prepare data to update in the database
     const taskUpdates = updatedTasks.map((task, index) => ({
-      id: task.id,
+      id: Number(task.id),
       position: index,
     }));
 

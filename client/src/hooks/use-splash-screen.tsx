@@ -1,16 +1,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+// Simplified SplashScreenContext
 type SplashScreenContextType = {
   isLoading: boolean;
   setIsLoading: (value: boolean) => void;
-  appIsReady: boolean;
 };
 
 // Create context with default values
-const SplashScreenContext = createContext<SplashScreenContextType>({
+export const SplashScreenContext = createContext<SplashScreenContextType>({
   isLoading: true,
   setIsLoading: () => {},
-  appIsReady: false,
 });
 
 interface SplashScreenProviderProps {
@@ -23,14 +22,13 @@ export function SplashScreenProvider({
   initialLoadingState = true,
 }: SplashScreenProviderProps) {
   const [isLoading, setIsLoading] = useState(initialLoadingState);
-  const [appIsReady, setAppIsReady] = useState(false);
-
+  
   // Set app as ready after initial load
   useEffect(() => {
-    // Simulate checking if assets/data are loaded
+    // This will automatically close the splash screen after a delay
     const timer = setTimeout(() => {
-      setAppIsReady(true);
-    }, 500);
+      setIsLoading(false);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -40,7 +38,6 @@ export function SplashScreenProvider({
       value={{
         isLoading,
         setIsLoading,
-        appIsReady,
       }}
     >
       {children}

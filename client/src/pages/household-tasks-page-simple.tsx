@@ -16,14 +16,14 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowLeft, GripVertical } from "lucide-react";
@@ -42,7 +42,7 @@ function SortableTaskItem({ id, task }: SortableTaskItemProps) {
     setNodeRef,
     transform,
     transition,
-    isDragging
+    isDragging,
   } = useSortable({ id });
 
   const style = {
@@ -54,10 +54,12 @@ function SortableTaskItem({ id, task }: SortableTaskItemProps) {
 
   return (
     <div ref={setNodeRef} style={style} className="mb-4 relative group">
-      <Card className={`p-4 relative ${isDragging ? 'ring-2 ring-primary' : ''}`}>
+      <Card
+        className={`p-4 relative ${isDragging ? "ring-2 ring-primary" : ""}`}
+      >
         <div className="flex items-center gap-4">
           <Checkbox checked={task.completed} className="h-5 w-5" />
-          
+
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg">{task.title}</h3>
             {task.description && (
@@ -66,9 +68,9 @@ function SortableTaskItem({ id, task }: SortableTaskItemProps) {
           </div>
 
           {/* Drag handle */}
-          <div 
-            className="opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing" 
-            {...attributes} 
+          <div
+            className="opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing"
+            {...attributes}
             {...listeners}
           >
             <GripVertical className="h-5 w-5 text-gray-400" />
@@ -82,29 +84,53 @@ function SortableTaskItem({ id, task }: SortableTaskItemProps) {
 export default function HouseholdTasksPageSimple() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [tasks, setTasks] = React.useState<HouseholdTaskType[]>([]);
 
   // Fetch tasks
-  const { data: tasks = [], isLoading } = useQuery<HouseholdTaskType[]>({
+  const { data: allTasks = [], isLoading } = useQuery<HouseholdTaskType[]>({
     queryKey: ["/api/tasks"],
   });
+
+  React.useEffect(() => {
+    const myTasks = allTasks.filter((task) => task.assignedTo === user?.id);
+    setTasks(myTasks);
+  }, [allTasks]);
 
   // Sensors for drag and drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8
-      }
+        distance: 8,
+      },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
+
+  // Ensure all tasks have numeric IDs for the sortable context
+  const ensureNumericIds = (taskList: HouseholdTaskType[]) => {
+    return taskList.map(task => ({
+      ...task,
+      id: Number(task.id)
+    }));
+  };
 
   // Mutation for reordering tasks
   const reorderTasksMutation = useMutation({
-    mutationFn: async (tasks: { id: number; position: number }[]) => {
+    mutationFn: async (taskUpdates: { id: number; position: number }[]) => {
+      // Ensure we're sending valid data to the server with explicit number casting
+      const validatedTasks = taskUpdates
+        .filter(task => !isNaN(Number(task.id)))
+        .map(task => ({
+          id: Number(task.id),
+          position: Number(task.position)
+        }));
+      
+      console.log("Sending validated task updates to server:", validatedTasks);
+      
       const response = await apiRequest("PUT", "/api/tasks/reorder", {
-        tasks,
+        tasks: validatedTasks,
       });
       return await response.json();
     },
@@ -119,7 +145,8 @@ export default function HouseholdTasksPageSimple() {
       console.error("Error reordering tasks:", error);
       toast({
         title: "Erro ao reordenar tarefas",
-        description: "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
+        description:
+          "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -137,33 +164,37 @@ export default function HouseholdTasksPageSimple() {
     console.log("Drag end event:", { active, over });
 
     // Make sure IDs are valid numbers
-    const activeId = typeof active.id === 'string' ? parseInt(active.id, 10) : Number(active.id);
-    const overId = typeof over.id === 'string' ? parseInt(over.id, 10) : Number(over.id);
-    
+    const activeId =
+      typeof active.id === "string"
+        ? parseInt(active.id, 10)
+        : Number(active.id);
+    const overId =
+      typeof over.id === "string" ? parseInt(over.id, 10) : Number(over.id);
+
     if (isNaN(activeId) || isNaN(overId)) {
       console.error("Invalid task IDs in drag operation", { active, over });
       toast({
         title: "Erro ao reordenar",
         description: "IDs de tarefas inválidos. Por favor, tente novamente.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     // Find the tasks in our active tasks list
-    const activeTasks = tasks.filter(task => !task.completed);
-    
+    const activeTasks = tasks.filter((task) => !task.completed);
+
     // Find the indices in the filtered list
     const oldIndex = activeTasks.findIndex((task) => task.id === activeId);
     const newIndex = activeTasks.findIndex((task) => task.id === overId);
 
     if (oldIndex < 0 || newIndex < 0) {
-      console.error("Could not find task indices", { 
-        oldIndex, 
-        newIndex, 
+      console.error("Could not find task indices", {
+        oldIndex,
+        newIndex,
         activeId,
         overId,
-        activeTasks: activeTasks.map(t => t.id) 
+        activeTasks: activeTasks.map((t) => t.id),
       });
       return;
     }
@@ -171,50 +202,77 @@ export default function HouseholdTasksPageSimple() {
     // Reorganize the task array
     const updatedTasks = arrayMove(activeTasks, oldIndex, newIndex);
 
-    // Prepare data to update in the database - only include tasks we've actually reordered
-    const taskUpdates = updatedTasks.map((task, index) => ({
-      id: task.id,
-      position: index
-    }));
+    // Prepare data to update in the database
+    // Convert all values to ensure they're valid numbers
+    const taskUpdates = updatedTasks.map((task, index) => {
+      // Force conversion to number to avoid NaN issues
+      const taskId = parseInt(String(task.id), 10);
+      return {
+        id: taskId,
+        position: index,
+      };
+    });
 
-    // Validate all IDs are valid integers before sending
-    const validTaskUpdates = taskUpdates.filter(update => 
-      Number.isInteger(update.id) && 
-      !isNaN(update.id) && 
-      Number.isInteger(update.position) && 
-      !isNaN(update.position)
-    );
+    // Double check to make sure we only have valid numbers
+    const validTaskUpdates = taskUpdates.filter(update => {
+      return Number.isInteger(update.id) && !isNaN(update.id);
+    });
 
     // If we lost any tasks due to invalid IDs, log an error
     if (validTaskUpdates.length !== taskUpdates.length) {
       console.error("Some tasks were filtered out due to invalid IDs", {
         original: taskUpdates,
-        filtered: validTaskUpdates
+        filtered: validTaskUpdates,
       });
     }
 
     // Call the mutation to save the order to the database
     console.log("Sending task updates:", validTaskUpdates);
-    
+
     if (validTaskUpdates.length > 0) {
-      reorderTasksMutation.mutate(validTaskUpdates);
+      try {
+        // Update the local state optimistically
+        setTasks(prevTasks => {
+          // Create a new array with updated positions
+          return prevTasks.map(task => {
+            const updateItem = validTaskUpdates.find(update => update.id === task.id);
+            if (updateItem) {
+              return { ...task, position: updateItem.position };
+            }
+            return task;
+          });
+        });
+        
+        // Send the update to the server
+        reorderTasksMutation.mutate(validTaskUpdates);
+      } catch (error) {
+        console.error("Error during task reordering:", error);
+        toast({
+          title: "Erro ao reordenar",
+          description: "Ocorreu um erro ao reordenar as tarefas.",
+          variant: "destructive",
+        });
+      }
     } else {
       toast({
         title: "Erro ao reordenar",
         description: "Não foi possível identificar as tarefas para reordenar.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }
 
   // Get only active (not completed) tasks for reordering
-  const activeTasks = tasks.filter(task => !task.completed);
+  const activeTasks = tasks.filter((task) => !task.completed);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <Header />
-      
-      <div className="flex items-center p-4 bg-white border-b" style={{ marginTop: 100 }}>
+
+      <div
+        className="flex items-center p-4 bg-white border-b"
+        style={{ marginTop: 100 }}
+      >
         <Link href="/tasks">
           <Button variant="ghost" size="icon" className="mr-2">
             <ArrowLeft className="h-5 w-5" />
@@ -222,38 +280,43 @@ export default function HouseholdTasksPageSimple() {
         </Link>
         <h1 className="text-xl font-semibold">Reordenar Tarefas</h1>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mb-6">
           <p className="text-gray-600 mb-4">
             Arraste as tarefas para reorganizá-las na sua lista de prioridades.
             As alterações serão salvas automaticamente.
           </p>
-          
+
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
           ) : activeTasks.length === 0 ? (
             <Card className="p-6 text-center">
-              <p className="text-gray-500">Nenhuma tarefa pendente para organizar.</p>
+              <p className="text-gray-500">
+                Nenhuma tarefa pendente para organizar.
+              </p>
             </Card>
           ) : (
-            <DndContext 
-              sensors={sensors} 
-              collisionDetection={closestCenter} 
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={activeTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                {activeTasks.map(task => (
-                  <SortableTaskItem key={task.id} id={task.id} task={task} />
+              <SortableContext
+                items={activeTasks.map((t) => Number(t.id))}
+                strategy={verticalListSortingStrategy}
+              >
+                {activeTasks.map((task) => (
+                  <SortableTaskItem key={task.id} id={Number(task.id)} task={task} />
                 ))}
               </SortableContext>
             </DndContext>
           )}
         </div>
       </div>
-      
+
       <BottomNavigation />
     </div>
   );
