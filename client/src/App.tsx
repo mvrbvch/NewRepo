@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -9,13 +10,13 @@ import AuthPage from "./pages/auth-page";
 import OnboardingPage from "./pages/onboarding-page";
 import PartnerInvitePage from "./pages/partner-invite-page";
 import HouseholdTasksPage from "./pages/household-tasks-page";
+import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
-import { useState, useEffect } from "react";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
         component={NotificationSettingsPage}
       />
       <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
+      <ProtectedRoute path="/tasks/reorder" component={HouseholdTasksPageSimple} />
       <Route path="/accept-invite/:token" component={PartnerInvitePage} />
       <Route component={NotFound} />
     </Switch>
@@ -36,7 +38,7 @@ function Router() {
 }
 
 function AppContent() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = React.useState(true);
 
   // Handle splash screen finish
   const handleSplashFinish = () => {

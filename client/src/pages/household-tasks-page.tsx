@@ -32,6 +32,7 @@ import {
   ChevronDown,
   ChevronUp,
   Star,
+  GripVertical,
 } from "lucide-react";
 
 // Components
@@ -74,7 +75,11 @@ import {
 } from "@/components/ui/popover";
 import EditTaskModal from "@/components/household/edit-task-modal";
 import { formatDateSafely } from "@/lib/utils";
-import { SortableTaskList } from "@/components/household/draggable-task-list";
+// Using a simple implementation of sortable list for now
+import { SimpleSortableList } from "@/components/household/simple-sortable-list";
+// Alias SimpleSortableList as SortableTaskList to fix errors
+const SortableTaskList = SimpleSortableList;
+import { Link } from "wouter";
 
 // Pull to Refresh Component
 function PullToRefresh({
@@ -608,7 +613,7 @@ export default function HouseholdTasksPage() {
   };
   
   // Handle drag and drop to reorder tasks
-  const handleDragEnd = (event: DragEndEvent, tasks: HouseholdTaskType[]) => {
+  const handleDragEnd = (event: DragEndEvent, taskList: HouseholdTaskType[]) => {
     const { active, over } = event;
 
     if (!over) return;
@@ -616,14 +621,26 @@ export default function HouseholdTasksPage() {
     // If order hasn't changed, do nothing
     if (active.id === over.id) return;
 
-    // Find the indices of the tasks
-    const oldIndex = tasks.findIndex((task) => task.id === active.id);
-    const newIndex = tasks.findIndex((task) => task.id === over.id);
+    // Make sure IDs are numbers
+    const activeId = Number(active.id);
+    const overId = Number(over.id);
+    
+    if (isNaN(activeId) || isNaN(overId)) {
+      console.error("Invalid task IDs in drag operation", { active, over });
+      return;
+    }
 
-    if (oldIndex < 0 || newIndex < 0) return;
+    // Find the indices of the tasks
+    const oldIndex = taskList.findIndex((task) => task.id === activeId);
+    const newIndex = taskList.findIndex((task) => task.id === overId);
+
+    if (oldIndex < 0 || newIndex < 0) {
+      console.error("Could not find task indices", { oldIndex, newIndex, taskList });
+      return;
+    }
 
     // Reorganize the task array
-    const updatedTasks = arrayMove(tasks, oldIndex, newIndex);
+    const updatedTasks = arrayMove(taskList, oldIndex, newIndex);
 
     // Prepare data to update in the database
     const taskUpdates = updatedTasks.map((task, index) => ({
@@ -632,6 +649,7 @@ export default function HouseholdTasksPage() {
     }));
 
     // Call the mutation to save the order to the database
+    console.log("Sending task updates:", taskUpdates);
     reorderTasksMutation.mutate(taskUpdates);
   };
 
@@ -819,13 +837,14 @@ export default function HouseholdTasksPage() {
           </div>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="p-4 space-y-4">
-            <AnimatedList
-              items={tasks}
-              keyExtractor={(task) => task.id}
-              staggerDelay={0.05}
-              className="space-y-4"
-              renderItem={(task) => renderTaskCard(task)}
+          <div className="p-4">
+            <SimpleSortableList
+              tasks={tasks}
+              onDragEnd={handleDragEnd}
+              onClick={handleOpenTaskDetails}
+              onToggleComplete={(task: HouseholdTaskType) => handleToggleTaskComplete(task, false)}
+              getFormattedDueDate={getFormattedDueDate}
+              user={user}
             />
           </div>
         </CollapsibleContent>
@@ -985,12 +1004,13 @@ export default function HouseholdTasksPage() {
     } else {
       // Simple list view
       return groupedTasks.ungrouped && groupedTasks.ungrouped.length > 0 ? (
-        <AnimatedList
-          items={groupedTasks.ungrouped}
-          keyExtractor={(task) => task.id}
-          staggerDelay={0.05}
-          className="space-y-4"
-          renderItem={(task) => renderTaskCard(task)}
+        <SimpleSortableList
+          tasks={groupedTasks.ungrouped}
+          onDragEnd={handleDragEnd}
+          onClick={handleOpenTaskDetails}
+          onToggleComplete={(task: HouseholdTaskType) => handleToggleTaskComplete(task, false)}
+          getFormattedDueDate={getFormattedDueDate}
+          user={user}
         />
       ) : (
         renderEmptyState()
@@ -1016,6 +1036,16 @@ export default function HouseholdTasksPage() {
         </h2>
         <div className="flex gap-2">
           {renderFiltersDropdown()}
+          
+          <Link href="/tasks/reorder">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <GripVertical className="h-4 w-4" /> Reordenar
+            </Button>
+          </Link>
 
           <Button
             onClick={handleOpenCreateModal}

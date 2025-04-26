@@ -10,10 +10,10 @@ export function SplashScreen({
   minDisplayTime = 2000, // Increased from 2000ms to 3500ms
   onFinished,
 }: SplashScreenProps) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [shouldFadeOut, setShouldFadeOut] = useState(false);
+  const [isVisible, setIsVisible] = React.useState(true);
+  const [shouldFadeOut, setShouldFadeOut] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Start fadeout animation before completely removing
     const fadeTimer = setTimeout(() => {
       setShouldFadeOut(true);

@@ -1477,21 +1477,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { tasks } = req.body;
+      console.log("Received task reorder request:", tasks);
 
-      if (
-        !Array.isArray(tasks) ||
-        !tasks.every(
-          (t) => typeof t.id === "number" && typeof t.position === "number"
-        )
-      ) {
+      // Validate input
+      if (!Array.isArray(tasks)) {
         return res.status(400).json({
           status: "error",
-          message:
-            "Invalid request format. Expected array of tasks with id and position.",
+          message: "Expected an array of tasks",
+        });
+      }
+      
+      // Additional validation & sanitization
+      const validTasks = tasks.filter(t => {
+        // Ensure both id and position are valid integers
+        const id = typeof t.id === 'string' ? parseInt(t.id, 10) : Number(t.id);
+        const position = typeof t.position === 'string' ? parseInt(t.position, 10) : Number(t.position);
+        
+        return Number.isInteger(id) && !isNaN(id) && 
+               Number.isInteger(position) && !isNaN(position);
+      }).map(t => ({
+        id: Number(t.id),
+        position: Number(t.position)
+      }));
+      
+      if (validTasks.length === 0) {
+        return res.status(400).json({
+          status: "error",
+          message: "No valid tasks provided for reordering",
         });
       }
 
-      const success = await storage.updateTaskPositions(tasks);
+      console.log("Validated tasks for reorder:", validTasks);
+      const success = await storage.updateTaskPositions(validTasks);
 
       if (success) {
         return res.status(200).json({
