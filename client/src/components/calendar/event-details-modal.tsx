@@ -11,7 +11,7 @@ import { formatDate, formatTime, periodLabels } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -33,6 +33,8 @@ export default function EventDetailsModal({
   const { toast } = useToast();
   const [comment, setComment] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [commentUsers, setCommentUsers] = useState<Record<number, string>>({});
+  const [loadingUsers, setLoadingUsers] = useState<Record<number, boolean>>({});
 
   // Determine background color based on period
   const periodColor =
@@ -48,10 +50,10 @@ export default function EventDetailsModal({
         new Date(
           typeof event.date === "string"
             ? event.date.replace("Z", "")
-            : event.date.toISOString().replace("Z", ""),
+            : event.date.toISOString().replace("Z", "")
         ), // Remove Z to keep local time instead of UTC
         "EEEE, d 'de' MMMM yyyy",
-        { locale: ptBR },
+        { locale: ptBR }
       )
     : "";
 
@@ -75,7 +77,46 @@ export default function EventDetailsModal({
     enabled: isOpen && !!event.id,
   });
 
-  // Add comment mutation
+  // Function to fetch user by ID
+  const getUserById = async (userId: number) => {
+    setLoadingUsers((prev) => ({ ...prev, [userId]: true }));
+    try {
+      const response = await apiRequest("GET", `/api/user/byId/${userId}`);
+      const data = await response.json();
+      if (data && data.user) {
+        setCommentUsers((prev) => ({ ...prev, [userId]: data.user }));
+      }
+      return data;
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return null;
+    } finally {
+      setLoadingUsers((prev) => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  // Fetch user information for each comment
+  useEffect(() => {
+    if (
+      eventDetails &&
+      typeof eventDetails === "object" &&
+      "comments" in eventDetails &&
+      eventDetails.comments.length > 0
+    ) {
+      const userIds = Array.from(
+        new Set(
+          eventDetails.comments.map(
+            (comment: { userId: number }) => comment.userId
+          )
+        )
+      );
+      userIds.forEach((userId) => {
+        if (userId && !commentUsers[userId] && !loadingUsers[userId]) {
+          getUserById(userId);
+        }
+      });
+    }
+  }, [eventDetails?.comments]); // Add comment mutation
   const addCommentMutation = useMutation({
     mutationFn: async (content: string) => {
       const res = await apiRequest("POST", `/api/events/${event.id}/comments`, {
@@ -153,6 +194,22 @@ export default function EventDetailsModal({
   // Handle edit modal close
   const handleEditModalClose = () => {
     setIsEditModalOpen(false);
+  };
+
+  // Get user display name for a comment
+  const getCommentUserName = (userId: number) => {
+    // If it's the current user, use their name
+    if (user && userId === user.id) {
+      return user.name || "You";
+    }
+
+    // If we've already fetched this user's name, use it
+    if (commentUsers[userId]) {
+      return commentUsers[userId];
+    }
+    console.log(commentUsers);
+    // Otherwise show loading or user ID
+    return loadingUsers[userId] ? "Loading..." : commentUsers[userId];
   };
 
   return (
@@ -244,11 +301,12 @@ export default function EventDetailsModal({
                         >
                           <div className="flex items-start mb-1">
                             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm mr-2">
-                              {user?.name?.[0] || "U"}
+                              {getCommentUserName(comment.userId)?.charAt(0) ||
+                                "U"}
                             </div>
                             <div>
                               <div className="text-sm font-medium">
-                                {user?.name}
+                                {getCommentUserName(comment.userId)}
                               </div>
                               <div className="text-sm">{comment.content}</div>
                             </div>

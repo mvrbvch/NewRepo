@@ -27,6 +27,7 @@ export interface EventCommentType {
   id: number;
   eventId: number;
   userId: number;
+  userName?: string;
   content: string;
   createdAt: string | Date;
 }

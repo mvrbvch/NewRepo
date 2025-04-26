@@ -1213,6 +1213,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(eventComments.eventId, eventId));
 
     // Sort comments manually to handle null createdAt values
+    comments.map((comment) => ({
+      ...comment,
+      userName: this.getUser(comment.userId).then((user) => user?.name),
+    }));
+
     return comments.sort((a, b) => {
       if (!a.createdAt) return 1;
       if (!b.createdAt) return -1;
