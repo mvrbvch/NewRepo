@@ -20,7 +20,7 @@ export default function DayView({
   nightEvents = [],
   isLoading,
   onEventClick,
-  user,
+  user = undefined,
 }: DayViewProps) {
   if (isLoading) {
     return (
