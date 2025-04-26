@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import JourneyTimeline from "./journey-timeline";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import {
   Sparkles,
   Calendar,
   CheckCircle2,
-  Home
+  Home,
+  UserPlus
 } from "lucide-react";
 
 // Etapas da tela de boas-vindas
@@ -318,13 +319,31 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
             </motion.h1>
             
             <motion.p 
-              className="text-muted-foreground text-lg mb-8 max-w-md"
+              className="text-muted-foreground text-lg mb-6 max-w-md"
               variants={itemVariants}
             >
               {partner ? 
                 `Agora vocês podem começar a organizar a vida juntos com mais conexão, harmonia e propósito!` : 
-                `Agora você já pode começar a usar o aplicativo. Não esqueça de convidar seu parceiro(a) para aproveitar todos os recursos!`}
+                `Agora você já pode começar a usar o aplicativo. O Nós Juntos fica ainda melhor com seu parceiro(a)!`}
             </motion.p>
+            
+            {!partner && (
+              <motion.div
+                variants={itemVariants}
+                className="mb-8 bg-primary/5 p-6 rounded-xl border border-primary/10 max-w-md"
+              >
+                <h3 className="text-lg font-medium mb-3">Convide seu parceiro(a) para o Nós Juntos</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Compartilhem o calendário, tarefas domésticas e organizem a vida juntos com mais facilidade!
+                </p>
+                <Link href="/invite-partner" className="inline-block">
+                  <Button variant="outline" size="sm" className="text-primary border-primary/20">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Convidar parceiro(a)
+                  </Button>
+                </Link>
+              </motion.div>
+            )}
             
             <motion.div
               variants={itemVariants}
