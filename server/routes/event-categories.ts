@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { db } from "../db";
-import { eventCategories, insertEventCategorySchema } from "../../shared/schema";
+import { eventCategories, events, users, insertEventCategorySchema } from "../../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
@@ -9,20 +9,22 @@ const router = Router();
 // Obter todas as categorias do usuário (incluindo as compartilhadas pelo parceiro)
 router.get("/", async (req: Request, res: Response) => {
   try {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Não autorizado" });
     }
 
+    const userId = req.user?.id as number;
+    
     const userCategoriesQuery = await db
       .select()
       .from(eventCategories)
       .where(
-        eq(eventCategories.userId, req.session.userId)
+        eq(eventCategories.userId, userId)
       );
     
     // Obter informações do parceiro, se existir
     const userData = await db.query.users.findFirst({
-      where: eq(db.query.users.id, req.session.userId),
+      where: eq(users.id, userId),
       columns: {
         partnerId: true
       }
@@ -56,14 +58,16 @@ router.get("/", async (req: Request, res: Response) => {
 // Criar nova categoria
 router.post("/", async (req: Request, res: Response) => {
   try {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Não autorizado" });
     }
 
+    const userId = req.user?.id as number;
+    
     // Validar os dados recebidos
     const categoryData = {
       ...req.body,
-      userId: req.session.userId
+      userId: userId
     };
     
     const parsedData = insertEventCategorySchema.safeParse(categoryData);
@@ -92,10 +96,11 @@ router.post("/", async (req: Request, res: Response) => {
 // Atualizar categoria existente
 router.patch("/:id", async (req: Request, res: Response) => {
   try {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Não autorizado" });
     }
     
+    const userId = req.user?.id as number;
     const categoryId = parseInt(req.params.id);
     
     if (isNaN(categoryId)) {
@@ -103,14 +108,18 @@ router.patch("/:id", async (req: Request, res: Response) => {
     }
     
     // Verificar se a categoria pertence ao usuário
-    const existingCategory = await db.query.eventCategories.findFirst({
-      where: and(
-        eq(eventCategories.id, categoryId),
-        eq(eventCategories.userId, req.session.userId)
+    const existingCategory = await db
+      .select()
+      .from(eventCategories)
+      .where(
+        and(
+          eq(eventCategories.id, categoryId),
+          eq(eventCategories.userId, userId)
+        )
       )
-    });
+      .limit(1);
     
-    if (!existingCategory) {
+    if (existingCategory.length === 0) {
       return res.status(404).json({ error: "Categoria não encontrada ou não pertence ao usuário" });
     }
     
@@ -135,7 +144,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
       .where(
         and(
           eq(eventCategories.id, categoryId),
-          eq(eventCategories.userId, req.session.userId)
+          eq(eventCategories.userId, userId)
         )
       )
       .returning();
@@ -154,10 +163,11 @@ router.patch("/:id", async (req: Request, res: Response) => {
 // Excluir categoria
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Não autorizado" });
     }
     
+    const userId = req.user?.id as number;
     const categoryId = parseInt(req.params.id);
     
     if (isNaN(categoryId)) {
@@ -165,22 +175,26 @@ router.delete("/:id", async (req: Request, res: Response) => {
     }
     
     // Verificar se a categoria pertence ao usuário
-    const existingCategory = await db.query.eventCategories.findFirst({
-      where: and(
-        eq(eventCategories.id, categoryId),
-        eq(eventCategories.userId, req.session.userId)
+    const existingCategory = await db
+      .select()
+      .from(eventCategories)
+      .where(
+        and(
+          eq(eventCategories.id, categoryId),
+          eq(eventCategories.userId, userId)
+        )
       )
-    });
+      .limit(1);
     
-    if (!existingCategory) {
+    if (existingCategory.length === 0) {
       return res.status(404).json({ error: "Categoria não encontrada ou não pertence ao usuário" });
     }
     
     // Remover a categoria dos eventos que a utilizam antes de excluí-la
     await db
-      .update(db.query.events)
+      .update(events)
       .set({ categoryId: null })
-      .where(eq(db.query.events.categoryId, categoryId));
+      .where(eq(events.categoryId, categoryId));
     
     // Excluir a categoria
     await db
@@ -188,7 +202,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       .where(
         and(
           eq(eventCategories.id, categoryId),
-          eq(eventCategories.userId, req.session.userId)
+          eq(eventCategories.userId, userId)
         )
       );
     

@@ -81,10 +81,7 @@ export default function CategorySelect({
   // Criar categoria
   const createMutation = useMutation({
     mutationFn: async (category: Omit<EventCategory, "id" | "userId" | "isShared">) => {
-      return apiRequest("/api/event-categories", {
-        method: "POST",
-        body: JSON.stringify(category)
-      });
+      return apiRequest("/api/event-categories", "POST", JSON.stringify(category));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/event-categories"] });

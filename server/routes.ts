@@ -36,6 +36,7 @@ import { WebSocketServer } from "ws";
 import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
 import { getVapidPublicKey } from "./pushNotifications";
+import eventCategoriesRouter from "./routes/event-categories";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(
@@ -161,6 +162,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rotas de autenticação biométrica WebAuthn
   registerWebAuthnRoutes(app);
+  
+  // Registrar rotas para categorias de eventos
+  app.use("/api/event-categories", eventCategoriesRouter);
 
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get("/api/db-health", async (req: Request, res: Response) => {
