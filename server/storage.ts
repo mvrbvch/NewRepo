@@ -65,7 +65,7 @@ export interface IStorage {
   getSharedEvents(userId: number): Promise<Event[]>;
   updateEventSharePermission(
     id: number,
-    permission: string
+    permission: string,
   ): Promise<EventShare | undefined>;
   removeEventShare(id: number): Promise<boolean>;
 
@@ -75,7 +75,7 @@ export interface IStorage {
 
   // Calendar connections
   addCalendarConnection(
-    connection: InsertCalendarConnection
+    connection: InsertCalendarConnection,
   ): Promise<CalendarConnection>;
   getUserCalendarConnections(userId: number): Promise<CalendarConnection[]>;
   removeCalendarConnection(id: number): Promise<boolean>;
@@ -85,7 +85,7 @@ export interface IStorage {
   getPartnerInviteByToken(token: string): Promise<PartnerInvite | undefined>;
   updatePartnerInvite(
     id: number,
-    updates: Partial<PartnerInvite>
+    updates: Partial<PartnerInvite>,
   ): Promise<PartnerInvite | undefined>;
 
   // Household tasks
@@ -95,12 +95,12 @@ export interface IStorage {
   getPartnerHouseholdTasks(userId: number): Promise<HouseholdTask[]>;
   updateHouseholdTask(
     id: number,
-    updates: Partial<HouseholdTask>
+    updates: Partial<HouseholdTask>,
   ): Promise<HouseholdTask | undefined>;
   deleteHouseholdTask(id: number): Promise<boolean>;
   markHouseholdTaskAsCompleted(
     id: number,
-    completed: boolean
+    completed: boolean,
   ): Promise<HouseholdTask | undefined>;
 
   // User devices for push notifications
@@ -109,7 +109,7 @@ export interface IStorage {
   getUserDeviceByToken(token: string): Promise<UserDevice | undefined>;
   updateUserDevice(
     id: number,
-    updates: Partial<UserDevice>
+    updates: Partial<UserDevice>,
   ): Promise<UserDevice | undefined>;
   deleteUserDevice(id: number): Promise<boolean>;
 
@@ -180,13 +180,13 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.usersMap.values()).find(
-      (user) => user.username === username
+      (user) => user.username === username,
     );
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.usersMap.values()).find(
-      (user) => user.email === email
+      (user) => user.email === email,
     );
   }
 
@@ -205,7 +205,7 @@ export class MemStorage implements IStorage {
 
   async updateUser(
     id: number,
-    updates: Partial<User>
+    updates: Partial<User>,
   ): Promise<User | undefined> {
     const user = this.usersMap.get(id);
     if (!user) return undefined;
@@ -229,13 +229,13 @@ export class MemStorage implements IStorage {
 
   async getUserEvents(userId: number): Promise<Event[]> {
     return Array.from(this.eventsMap.values()).filter(
-      (event) => event.createdBy === userId
+      (event) => event.createdBy === userId,
     );
   }
 
   async updateEvent(
     id: number,
-    updates: Partial<Event>
+    updates: Partial<Event>,
   ): Promise<Event | undefined> {
     const event = this.eventsMap.get(id);
     if (!event) return undefined;
@@ -263,13 +263,13 @@ export class MemStorage implements IStorage {
 
   async getEventShares(eventId: number): Promise<EventShare[]> {
     return Array.from(this.eventSharesMap.values()).filter(
-      (share) => share.eventId === eventId
+      (share) => share.eventId === eventId,
     );
   }
 
   async getSharedEvents(userId: number): Promise<Event[]> {
     const shares = Array.from(this.eventSharesMap.values()).filter(
-      (share) => share.userId === userId
+      (share) => share.userId === userId,
     );
 
     return shares
@@ -279,7 +279,7 @@ export class MemStorage implements IStorage {
 
   async updateEventSharePermission(
     id: number,
-    permission: string
+    permission: string,
   ): Promise<EventShare | undefined> {
     const share = this.eventSharesMap.get(id);
     if (!share) return undefined;
@@ -295,7 +295,7 @@ export class MemStorage implements IStorage {
 
   // Event comments
   async addEventComment(
-    insertComment: InsertEventComment
+    insertComment: InsertEventComment,
   ): Promise<EventComment> {
     const id = this.eventCommentIdCounter++;
     const comment: EventComment = {
@@ -309,7 +309,7 @@ export class MemStorage implements IStorage {
 
   async getEventComments(eventId: number): Promise<EventComment[]> {
     const comments = Array.from(this.eventCommentsMap.values()).filter(
-      (comment) => comment.eventId === eventId
+      (comment) => comment.eventId === eventId,
     );
 
     // Sort comments manually to handle null createdAt values (for consistency with DB implementation)
@@ -322,7 +322,7 @@ export class MemStorage implements IStorage {
 
   // Calendar connections
   async addCalendarConnection(
-    insertConnection: InsertCalendarConnection
+    insertConnection: InsertCalendarConnection,
   ): Promise<CalendarConnection> {
     const id = this.calendarConnectionIdCounter++;
     const connection: CalendarConnection = {
@@ -335,10 +335,10 @@ export class MemStorage implements IStorage {
   }
 
   async getUserCalendarConnections(
-    userId: number
+    userId: number,
   ): Promise<CalendarConnection[]> {
     return Array.from(this.calendarConnectionsMap.values()).filter(
-      (conn) => conn.userId === userId
+      (conn) => conn.userId === userId,
     );
   }
 
@@ -348,7 +348,7 @@ export class MemStorage implements IStorage {
 
   // Partner invites
   async createPartnerInvite(
-    insertInvite: InsertPartnerInvite
+    insertInvite: InsertPartnerInvite,
   ): Promise<PartnerInvite> {
     const id = this.partnerInviteIdCounter++;
     const invite: PartnerInvite = {
@@ -362,16 +362,16 @@ export class MemStorage implements IStorage {
   }
 
   async getPartnerInviteByToken(
-    token: string
+    token: string,
   ): Promise<PartnerInvite | undefined> {
     return Array.from(this.partnerInvitesMap.values()).find(
-      (invite) => invite.token === token
+      (invite) => invite.token === token,
     );
   }
 
   async updatePartnerInvite(
     id: number,
-    updates: Partial<PartnerInvite>
+    updates: Partial<PartnerInvite>,
   ): Promise<PartnerInvite | undefined> {
     const invite = this.partnerInvitesMap.get(id);
     if (!invite) return undefined;
@@ -383,7 +383,7 @@ export class MemStorage implements IStorage {
 
   // Household tasks methods
   async createHouseholdTask(
-    insertTask: InsertHouseholdTask
+    insertTask: InsertHouseholdTask,
   ): Promise<HouseholdTask> {
     const id = this.householdTaskIdCounter++;
     const task: HouseholdTask = {
@@ -407,7 +407,7 @@ export class MemStorage implements IStorage {
 
   async getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
     return Array.from(this.householdTasksMap.values()).filter(
-      (task) => task.assignedTo === userId || task.createdBy === userId
+      (task) => task.assignedTo === userId || task.createdBy === userId,
     );
   }
 
@@ -419,13 +419,13 @@ export class MemStorage implements IStorage {
     // Retorne as tarefas atribuídas ao parceiro
     return Array.from(this.householdTasksMap.values()).filter(
       (task) =>
-        task.assignedTo === user.partnerId || task.createdBy === user.partnerId
+        task.assignedTo === user.partnerId || task.createdBy === user.partnerId,
     );
   }
 
   async updateHouseholdTask(
     id: number,
-    updates: Partial<HouseholdTask>
+    updates: Partial<HouseholdTask>,
   ): Promise<HouseholdTask | undefined> {
     const task = this.householdTasksMap.get(id);
     if (!task) return undefined;
@@ -441,7 +441,7 @@ export class MemStorage implements IStorage {
 
   async markHouseholdTaskAsCompleted(
     id: number,
-    completed: boolean
+    completed: boolean,
   ): Promise<HouseholdTask | undefined> {
     const task = this.householdTasksMap.get(id);
     if (!task) return undefined;
@@ -457,7 +457,7 @@ export class MemStorage implements IStorage {
         nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
       } else if (task.frequency === "monthly") {
         nextDueDate = new Date(
-          currentDate.setMonth(currentDate.getMonth() + 1)
+          currentDate.setMonth(currentDate.getMonth() + 1),
         );
       }
     }
@@ -469,7 +469,7 @@ export class MemStorage implements IStorage {
 
   // Métodos para dispositivos do usuário
   async registerUserDevice(
-    insertDevice: InsertUserDevice
+    insertDevice: InsertUserDevice,
   ): Promise<UserDevice> {
     const id = this.userDeviceIdCounter++;
     const device: UserDevice = {
@@ -484,19 +484,19 @@ export class MemStorage implements IStorage {
 
   async getUserDevices(userId: number): Promise<UserDevice[]> {
     return Array.from(this.userDevicesMap.values()).filter(
-      (device) => device.userId === userId
+      (device) => device.userId === userId,
     );
   }
 
   async getUserDeviceByToken(token: string): Promise<UserDevice | undefined> {
     return Array.from(this.userDevicesMap.values()).find(
-      (device) => device.deviceToken === token
+      (device) => device.deviceToken === token,
     );
   }
 
   async updateUserDevice(
     id: number,
-    updates: Partial<UserDevice>
+    updates: Partial<UserDevice>,
   ): Promise<UserDevice | undefined> {
     const device = this.userDevicesMap.get(id);
     if (!device) return undefined;
@@ -522,7 +522,7 @@ export class MemStorage implements IStorage {
 
   // Métodos para notificações
   async createNotification(
-    insertNotification: InsertNotification
+    insertNotification: InsertNotification,
   ): Promise<Notification> {
     const id = this.notificationIdCounter++;
     const notification: Notification = {
@@ -536,7 +536,7 @@ export class MemStorage implements IStorage {
 
   async getUserNotifications(userId: number): Promise<Notification[]> {
     const notifications = Array.from(this.notificationsMap.values()).filter(
-      (notification) => notification.userId === userId
+      (notification) => notification.userId === userId,
     );
 
     // Ordenar notificações pela data de criação (mais recentes primeiro)
@@ -625,7 +625,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserDevice(
     id: number,
-    updates: Partial<Omit<UserDevice, "createdAt">>
+    updates: Partial<Omit<UserDevice, "createdAt">>,
   ): Promise<UserDevice | undefined> {
     const [device] = await db
       .update(userDevices)
@@ -651,7 +651,7 @@ export class DatabaseStorage implements IStorage {
 
   // Notifications methods
   async createNotification(
-    notification: InsertNotification
+    notification: InsertNotification,
   ): Promise<Notification> {
     const [newNotification] = await db
       .insert(notifications)
@@ -762,7 +762,7 @@ export class DatabaseStorage implements IStorage {
   }
   async updateUser(
     id: number,
-    updates: Partial<User>
+    updates: Partial<User>,
   ): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
@@ -784,7 +784,7 @@ export class DatabaseStorage implements IStorage {
         } else {
           console.error(
             "Data inválida recebida como objeto Date:",
-            insertEvent.date
+            insertEvent.date,
           );
         }
       } else if (typeof insertEvent.date === "string") {
@@ -795,7 +795,7 @@ export class DatabaseStorage implements IStorage {
           } else {
             console.error(
               "Data inválida recebida como string:",
-              insertEvent.date
+              insertEvent.date,
             );
           }
         } catch (err) {
@@ -820,7 +820,7 @@ export class DatabaseStorage implements IStorage {
         } catch (err) {
           console.error(
             "Erro ao converter string de recorrenceEnd para data:",
-            err
+            err,
           );
         }
       }
@@ -835,7 +835,7 @@ export class DatabaseStorage implements IStorage {
     ) {
       recurrenceRule = this.generateRecurrenceRule(
         insertEvent.recurrence,
-        recurrenceEndDate
+        recurrenceEndDate,
       );
     }
 
@@ -861,7 +861,7 @@ export class DatabaseStorage implements IStorage {
   // Método para gerar regra de recorrência baseada na frequência escolhida
   private generateRecurrenceRule(
     recurrence: string,
-    endDate: Date | null
+    endDate: Date | null,
   ): string {
     let rule = "";
 
@@ -924,14 +924,14 @@ export class DatabaseStorage implements IStorage {
     // Debug log
     console.log(
       `Formatando evento ${formattedEvent.id}, data original:`,
-      formattedEvent.date
+      formattedEvent.date,
     );
 
     // Processar a data principal do evento
     if (!formattedEvent.date) {
       // Se a data for null ou undefined, definir a data atual para evitar erros na renderização
       console.warn(
-        `Evento ${formattedEvent.id} sem data definida - usando data atual`
+        `Evento ${formattedEvent.id} sem data definida - usando data atual`,
       );
       formattedEvent.date = new Date();
     } else if (formattedEvent.date instanceof Date) {
@@ -941,14 +941,14 @@ export class DatabaseStorage implements IStorage {
           console.log(`Evento ${formattedEvent.id} - data objeto válida`);
         } else {
           console.warn(
-            `Evento ${formattedEvent.id} tem data inválida (objeto Date) - usando data atual`
+            `Evento ${formattedEvent.id} tem data inválida (objeto Date) - usando data atual`,
           );
           formattedEvent.date = new Date();
         }
       } catch (error) {
         console.error(
           `Erro ao validar Date no evento ${formattedEvent.id}:`,
-          error
+          error,
         );
         formattedEvent.date = new Date();
       }
@@ -965,14 +965,14 @@ export class DatabaseStorage implements IStorage {
         // Verificar se é uma data válida
         if (isNaN(formattedEvent.date.getTime())) {
           console.warn(
-            `Evento ${formattedEvent.id} tem data string inválida - usando data atual`
+            `Evento ${formattedEvent.id} tem data string inválida - usando data atual`,
           );
           formattedEvent.date = new Date();
         }
       } catch (err) {
         console.error(
           `Erro ao converter string para Date para evento ${formattedEvent.id}:`,
-          err
+          err,
         );
         formattedEvent.date = new Date();
       }
@@ -980,7 +980,7 @@ export class DatabaseStorage implements IStorage {
       // Para qualquer outro tipo de valor, converter para data atual
       console.warn(
         `Evento ${formattedEvent.id} tem formato de data desconhecido:`,
-        typeof formattedEvent.date
+        typeof formattedEvent.date,
       );
       formattedEvent.date = new Date();
     }
@@ -989,21 +989,21 @@ export class DatabaseStorage implements IStorage {
     if (formattedEvent.recurrenceEnd) {
       console.log(
         `Processando recurrenceEnd para evento ${formattedEvent.id}:`,
-        formattedEvent.recurrenceEnd
+        formattedEvent.recurrenceEnd,
       );
 
       if (formattedEvent.recurrenceEnd instanceof Date) {
         try {
           if (isNaN(formattedEvent.recurrenceEnd.getTime())) {
             console.warn(
-              `Evento ${formattedEvent.id} tem recurrenceEnd inválido (objeto Date) - definindo como null`
+              `Evento ${formattedEvent.id} tem recurrenceEnd inválido (objeto Date) - definindo como null`,
             );
             formattedEvent.recurrenceEnd = null;
           }
         } catch (error) {
           console.error(
             `Erro ao validar recurrenceEnd para evento ${formattedEvent.id}:`,
-            error
+            error,
           );
           formattedEvent.recurrenceEnd = null;
         }
@@ -1012,39 +1012,39 @@ export class DatabaseStorage implements IStorage {
           // Se a data estiver no formato YYYY-MM-DD, adicionar a parte de hora
           if (formattedEvent.recurrenceEnd.match(/^\d{4}-\d{2}-\d{2}$/)) {
             formattedEvent.recurrenceEnd = new Date(
-              `${formattedEvent.recurrenceEnd}T00:00:00`
+              `${formattedEvent.recurrenceEnd}T00:00:00`,
             );
           } else {
             formattedEvent.recurrenceEnd = new Date(
-              formattedEvent.recurrenceEnd
+              formattedEvent.recurrenceEnd,
             );
           }
 
           // Verificar se a data é válida
           if (isNaN(formattedEvent.recurrenceEnd.getTime())) {
             console.warn(
-              `Evento ${formattedEvent.id} tem recurrenceEnd string inválida - definindo como null`
+              `Evento ${formattedEvent.id} tem recurrenceEnd string inválida - definindo como null`,
             );
             formattedEvent.recurrenceEnd = null;
           }
         } catch (err) {
           console.error(
             `Erro ao converter recurrenceEnd string para Date para evento ${formattedEvent.id}:`,
-            err
+            err,
           );
           formattedEvent.recurrenceEnd = null;
         }
       } else {
         console.warn(
           `Evento ${formattedEvent.id} tem recurrenceEnd em formato desconhecido:`,
-          typeof formattedEvent.recurrenceEnd
+          typeof formattedEvent.recurrenceEnd,
         );
         formattedEvent.recurrenceEnd = null;
       }
     }
 
     console.log(
-      `Evento formatado: ID=${formattedEvent.id}, Data=${formattedEvent.date}`
+      `Evento formatado: ID=${formattedEvent.id}, Data=${formattedEvent.date}`,
     );
     return formattedEvent;
   }
@@ -1075,7 +1075,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateEvent(
     id: number,
-    updates: Partial<Event>
+    updates: Partial<Event>,
   ): Promise<Event | undefined> {
     // Para atualizações que envolvem uma data, precisamos garantir que é um objeto Date
     const processedUpdates: any = { ...updates };
@@ -1093,7 +1093,7 @@ export class DatabaseStorage implements IStorage {
     if (typeof processedUpdates.recurrenceEnd === "string") {
       try {
         processedUpdates.recurrenceEnd = new Date(
-          processedUpdates.recurrenceEnd
+          processedUpdates.recurrenceEnd,
         );
       } catch (error) {
         console.error("Error converting recurrenceEnd string to Date:", error);
@@ -1178,7 +1178,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateEventSharePermission(
     id: number,
-    permission: string
+    permission: string,
   ): Promise<EventShare | undefined> {
     const [updatedShare] = await db
       .update(eventShares)
@@ -1196,7 +1196,7 @@ export class DatabaseStorage implements IStorage {
 
   // Event comments
   async addEventComment(
-    insertComment: InsertEventComment
+    insertComment: InsertEventComment,
   ): Promise<EventComment> {
     const [comment] = await db
       .insert(eventComments)
@@ -1222,7 +1222,7 @@ export class DatabaseStorage implements IStorage {
 
   // Calendar connections
   async addCalendarConnection(
-    insertConnection: InsertCalendarConnection
+    insertConnection: InsertCalendarConnection,
   ): Promise<CalendarConnection> {
     // Garantir que os campos opcionais sejam null quando não fornecidos
     const connectionData = {
@@ -1244,7 +1244,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserCalendarConnections(
-    userId: number
+    userId: number,
   ): Promise<CalendarConnection[]> {
     return await db
       .select()
@@ -1260,7 +1260,7 @@ export class DatabaseStorage implements IStorage {
 
   // Partner invites
   async createPartnerInvite(
-    insertInvite: InsertPartnerInvite
+    insertInvite: InsertPartnerInvite,
   ): Promise<PartnerInvite> {
     // Garantir que os campos opcionais sejam null quando não fornecidos
     const inviteData = {
@@ -1281,7 +1281,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPartnerInviteByToken(
-    token: string
+    token: string,
   ): Promise<PartnerInvite | undefined> {
     const [invite] = await db
       .select()
@@ -1292,7 +1292,7 @@ export class DatabaseStorage implements IStorage {
 
   async updatePartnerInvite(
     id: number,
-    updates: Partial<Omit<PartnerInvite, "createdAt">>
+    updates: Partial<Omit<PartnerInvite, "createdAt">>,
   ): Promise<PartnerInvite | undefined> {
     const [updatedInvite] = await db
       .update(partnerInvites)
@@ -1305,7 +1305,7 @@ export class DatabaseStorage implements IStorage {
   async createHouseholdTask(task: InsertHouseholdTask): Promise<HouseholdTask> {
     // Get the highest current position
     const [maxPositionResult] = await db
-      .select({s
+      .select({
         maxPosition: sql`COALESCE(MAX(${householdTasks.position}), -1)`,
       })
       .from(householdTasks)
@@ -1396,7 +1396,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserHouseholdTasks(
     userId: number,
-    date?: Date
+    date?: Date,
   ): Promise<HouseholdTask[]> {
     try {
       let query = db
@@ -1405,8 +1405,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           or(
             eq(householdTasks.assignedTo, userId),
-            eq(householdTasks.createdBy, userId)
-          )
+            eq(householdTasks.createdBy, userId),
+          ),
         );
 
       // If a date is provided, add date filtering
@@ -1422,8 +1422,8 @@ export class DatabaseStorage implements IStorage {
         query = query.where(
           and(
             householdTasks.dueDate >= startOfDay,
-            householdTasks.dueDate <= endOfDay
-          )
+            householdTasks.dueDate <= endOfDay,
+          ),
         );
       }
 
@@ -1473,7 +1473,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateHouseholdTask(
     id: number,
-    updates: Partial<HouseholdTask>
+    updates: Partial<HouseholdTask>,
   ): Promise<HouseholdTask | undefined> {
     try {
       // Processar datas se estiverem sendo atualizadas
@@ -1550,7 +1550,7 @@ export class DatabaseStorage implements IStorage {
 
   async markHouseholdTaskAsCompleted(
     id: number,
-    completed: boolean
+    completed: boolean,
   ): Promise<HouseholdTask | undefined> {
     try {
       // Obter a tarefa atual
@@ -1570,15 +1570,15 @@ export class DatabaseStorage implements IStorage {
         // Calcular próxima data de vencimento com base na frequência
         if (task.frequency === "daily") {
           updateData.nextDueDate = new Date(
-            new Date().setDate(currentDate.getDate() + 1)
+            new Date().setDate(currentDate.getDate() + 1),
           );
         } else if (task.frequency === "weekly") {
           updateData.nextDueDate = new Date(
-            new Date().setDate(currentDate.getDate() + 7)
+            new Date().setDate(currentDate.getDate() + 7),
           );
         } else if (task.frequency === "monthly") {
           updateData.nextDueDate = new Date(
-            new Date().setMonth(currentDate.getMonth() + 1)
+            new Date().setMonth(currentDate.getMonth() + 1),
           );
         }
       }
@@ -1618,7 +1618,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTaskPositions(
-    tasks: { id: number; position: number }[]
+    tasks: { id: number; position: number }[],
   ): Promise<boolean> {
     try {
       await db.transaction(async (tx) => {
