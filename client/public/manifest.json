@@ -1,6 +1,6 @@
 {
-  "name": "Por Nós - Calendário para Casais",
-  "short_name": "Por Nós",
+  "name": "Nós Juntos - Calendário para Casais",
+  "short_name": "Nós Juntos",
   "description": "Todo dia é uma nova chance de nos escolher",
   "theme_color": "#f15a59",
   "background_color": "#f15a59",
@@ -51,5 +51,5 @@
   ],
   "apple_mobile_web_app_capable": "yes",
   "apple_mobile_web_app_status_bar_style": "black-translucent",
-  "apple_mobile_web_app_title": "Por Nós"
+  "apple_mobile_web_app_title": "Nós Juntos"
 }

@@ -1,361 +1,468 @@
+import { useEffect, useState } from "react";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
+import { UserPlus, Heart, LogIn, UserCircle, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
-import { useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useParams, useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
-import { randomBytes } from "crypto";
+
+// Schema de validação para o formulário de registro
+const registerSchema = z.object({
+  username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  name: z.string().min(2, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  phoneNumber: z.string().optional(),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
+// Schema de validação para o formulário de login
+const loginSchema = z.object({
+  username: z.string().min(1, "Nome de usuário ou email é obrigatório"),
+  password: z.string().min(1, "Senha é obrigatória"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+interface InviteInfo {
+  invite: {
+    id: number;
+    status: string;
+    createdAt: string;
+  };
+  inviter: {
+    id: number;
+    name: string;
+  };
+}
 
 export default function PartnerInvitePage() {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [, navigate] = useLocation();
-  const params = useParams();
-  const { token } = params;
-
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [inviteLink, setInviteLink] = useState("");
-  const [qrCodeVisible, setQrCodeVisible] = useState(false);
-
-  // For accepting an invite
-  const [inviterName, setInviterName] = useState("");
-  const [isLoadingInvite, setIsLoadingInvite] = useState(!!token);
-  const [inviteError, setInviteError] = useState("");
-
-  // Fetch invite details if token is present
+  const { user, loginMutation, registerMutation } = useAuth();
+  const { toast } = useToast();
+  const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [acceptLoading, setAcceptLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  // Extrair o token do invite da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('token');
+  
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      name: "",
+      email: "",
+      phoneNumber: "",
+    },
+  });
+  
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+  
+  // Buscar informações do convite quando a página carrega
   useEffect(() => {
-    if (token) {
-      setIsLoadingInvite(true);
-      fetch(`/api/partner/invite/${token}`)
-        .then((res) => {
-          if (!res.ok) throw new Error("Convite não encontrado ou expirado");
-          return res.json();
-        })
-        .then((data) => {
-          setInviterName(data.inviter.name);
-          setIsLoadingInvite(false);
-        })
-        .catch((err) => {
-          setInviteError(err.message);
-          setIsLoadingInvite(false);
-        });
-    }
-  }, [token]);
-
-  const inviteMutation = useMutation({
-    mutationFn: async (data: { email?: string; phoneNumber?: string }) => {
-      const res = await apiRequest("POST", "/api/partner/invite", data);
-      return res.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Convite enviado",
-        description: "Seu parceiro receberá o convite em breve.",
-      });
-
-      if (data.inviteLink) {
-        setInviteLink(data.inviteLink);
+    async function fetchInviteInfo() {
+      if (!inviteToken) {
+        setError("Token de convite não encontrado");
+        setLoading(false);
+        return;
       }
-    },
-    onError: () => {
-      toast({
-        title: "Erro",
-        description:
-          "Não foi possível enviar o convite. Verifique os dados e tente novamente.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const acceptInviteMutation = useMutation({
-    mutationFn: async (token: string) => {
-      const res = await apiRequest("POST", "/api/partner/accept", { token });
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Convite aceito",
-        description:
-          "Agora vocês estão conectados e podem compartilhar eventos!",
-      });
-      navigate("/");
-    },
-    onError: () => {
-      if (!user) {
-        navigate("/");
-      } else {
-        toast({
-          title: "Erro",
-          description: "Não foi possível aceitar o convite. Tente novamente.",
-          variant: "destructive",
-        });
+      
+      try {
+        const response = await fetch(`/api/partner/invite/${inviteToken}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Convite não encontrado ou expirado");
+          } else {
+            const data = await response.json();
+            setError(data.message || "Erro ao buscar informações do convite");
+          }
+          setLoading(false);
+          return;
+        }
+        
+        const data = await response.json();
+        setInviteInfo(data);
+        
+        // Preencher o email no formulário se estiver disponível
+        if (data.invite.email) {
+          registerForm.setValue("email", data.invite.email);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar convite:", err);
+        setError("Erro ao processar seu convite. Por favor, tente novamente.");
+      } finally {
+        setLoading(false);
       }
-    },
-  });
-
-  const handleSendInvite = () => {
-    if (!email && !phoneNumber) {
-      toast({
-        title: "Erro",
-        description: "Informe um email ou telefone para enviar o convite.",
-        variant: "destructive",
-      });
-      return;
     }
-
-    inviteMutation.mutate({
-      email: email || undefined,
-      phoneNumber: phoneNumber || undefined,
+    
+    fetchInviteInfo();
+  }, [inviteToken, registerForm]);
+  
+  const onSubmitRegister = (data: RegisterFormValues) => {
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        if (user && inviteToken) {
+          acceptInvite();
+        }
+      }
     });
   };
-
-  const handleAcceptInvite = () => {
-    if (token) {
-      acceptInviteMutation.mutate(token);
+  
+  const onSubmitLogin = (data: LoginFormValues) => {
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        if (inviteToken) {
+          acceptInvite();
+        }
+      }
+    });
+  };
+  
+  const acceptInvite = async () => {
+    if (!inviteToken || !user) return;
+    
+    setAcceptLoading(true);
+    
+    try {
+      const response = await apiRequest('POST', '/api/partner/accept', { token: inviteToken });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Erro ao aceitar convite",
+          description: data.message || "Ocorreu um erro ao aceitar o convite.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "Convite aceito com sucesso!",
+        description: "Vocês agora estão conectados como parceiros.",
+        variant: "default"
+      });
+      
+      // Redirecionar para a página de boas-vindas após aceitar o convite
+      navigate("/welcome");
+    } catch (err) {
+      console.error("Erro ao aceitar convite:", err);
+      toast({
+        title: "Erro ao aceitar convite",
+        description: "Ocorreu um erro ao processar o convite. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setAcceptLoading(false);
     }
   };
-
-  const handleGenerateLink = () => {
-    inviteMutation.mutate({});
-  };
-
-  const handleShowQrCode = () => {
-    if (!inviteLink) {
-      handleGenerateLink();
+  
+  // Se o usuário já aceitou o convite, redirecionar para a home
+  useEffect(() => {
+    if (user && inviteInfo && inviteInfo.invite.status === "accepted") {
+      navigate("/");
     }
-    setQrCodeVisible(true);
-  };
-
-  const handleBack = () => {
-    navigate("/");
-  };
-
-  // Accepting an invite view
-  if (token) {
-    if (isLoadingInvite) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-      );
-    }
-
-    if (inviteError) {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4">
-          <div className="text-center mb-6">
-            <span className="material-icons text-red-500 text-5xl mb-2">
-              error
-            </span>
-            <h1 className="text-2xl font-bold">Erro no convite</h1>
-            <p className="text-gray-600 mt-2">{inviteError}</p>
-          </div>
-          <Button onClick={() => navigate("/")}>Voltar ao início</Button>
-        </div>
-      );
-    }
-
+  }, [user, inviteInfo, navigate]);
+  
+  // Renderização condicional baseada no estado de carregamento e no resultado
+  if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
-            <span className="material-icons">arrow_back</span>
-          </Button>
-          <h1 className="text-lg font-semibold">Convite de parceiro</h1>
-          <div className="w-8"></div>
-        </div>
-
-        <div className="flex-1 p-6 flex flex-col items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-32 h-32 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
-                <span className="material-icons text-5xl text-secondary">
-                  favorite
-                </span>
-              </div>
-              <h2 className="text-xl font-bold mb-2">
-                Você acaba de receber um convite incrível!
-              </h2>
-              <p className="text-gray-600">
-                Se você está aqui, é porque alguém muito especial,{" "}
-                <strong>{inviterName}</strong>, acredita que a vida ao seu lado
-                pode ser ainda mais maravilhosa. <br /> <br /> É o momento
-                perfeito para criar uma rotina cheia de amor, equilíbrio e
-                diversão, onde tudo flui melhor e fica mais significativo.
-                Juntos, a jornada é mais leve e cheia de momentos incríveis!
-                💫❤️
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Button
-                onClick={handleAcceptInvite}
-                className="w-full"
-                disabled={acceptInviteMutation.isPending}
-              >
-                {acceptInviteMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <span className="material-icons text-sm mr-2">check</span>
-                )}
-                Aceitar convite
-              </Button>
-
-              <Button variant="outline" onClick={handleBack} className="w-full">
-                Rejeitar
-              </Button>
-            </div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando informações do convite...</p>
         </div>
       </div>
     );
   }
-
-  // Sending an invite view
-  return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
-          <span className="material-icons">arrow_back</span>
-        </Button>
-        <h1 className="text-lg font-semibold">Convidar parceiro</h1>
-        <div className="w-8"></div>
+  
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-red-500">Erro no Convite</CardTitle>
+            <CardDescription className="text-center">{error}</CardDescription>
+          </CardHeader>
+          <CardFooter className="flex justify-center">
+            <Button asChild>
+              <Link href="/">Voltar para a página inicial</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
-
-      <div className="flex-1 p-6 overflow-auto">
-        <div className="mb-8 text-center">
-          <div className="mx-auto w-32 h-32 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
-            <span className="material-icons text-5xl text-secondary">
-              favorite
-            </span>
+    );
+  }
+  
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="mx-auto bg-primary/10 p-3 rounded-full mb-4">
+              <UserPlus className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-center">Aceitar Convite</CardTitle>
+            <CardDescription className="text-center">
+              {inviteInfo ? (
+                <motion.p
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <span className="font-semibold">{inviteInfo.inviter.name}</span> convidou você para se conectar no Nós Juntos! Ao aceitar, vocês poderão compartilhar calendários, tarefas e muito mais.
+                </motion.p>
+              ) : (
+                <p>Vocês poderão compartilhar calendários, tarefas e muito mais.</p>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex justify-center">
+            <Button onClick={acceptInvite} disabled={acceptLoading}>
+              {acceptLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Heart className="mr-2 h-4 w-4" />
+                  Aceitar Convite
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="mx-auto bg-primary/10 p-3 rounded-full inline-flex mb-4">
+            <UserPlus className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-xl font-bold mb-2">Compartilhe sua rotina</h2>
-          <p className="text-gray-600">
-            Convide seu parceiro(a) para compartilhar eventos e organizar a
-            agenda juntos.
+          <h1 className="text-2xl font-bold mb-2">
+            {inviteInfo ? (
+              <motion.span
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                Convite de <span className="text-primary">{inviteInfo.inviter.name}</span>
+              </motion.span>
+            ) : (
+              "Convite para o Nós Juntos"
+            )}
+          </h1>
+          <p className="text-muted-foreground">
+            Para aceitar o convite, você precisa criar uma conta ou entrar com sua conta existente.
           </p>
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Digite o email"
-            />
-          </div>
+        <Tabs defaultValue="register" className="space-y-6">
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="register">
+              <UserCircle className="h-4 w-4 mr-2" />
+              Criar Conta
+            </TabsTrigger>
+            <TabsTrigger value="login">
+              <LogIn className="h-4 w-4 mr-2" />
+              Entrar
+            </TabsTrigger>
+          </TabsList>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Telefone (opcional)
-            </label>
-            <Input
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Digite o telefone"
-            />
-          </div>
+          <TabsContent value="register">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <Form {...registerForm}>
+                  <form
+                    onSubmit={registerForm.handleSubmit(onSubmitRegister)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={registerForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome Completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Seu nome" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-          <Button
-            className="w-full"
-            onClick={handleSendInvite}
-            disabled={inviteMutation.isPending}
-          >
-            {inviteMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Enviar convite
-          </Button>
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="seu@email.com"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-          <div className="relative flex items-center my-6">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="flex-shrink mx-3 text-gray-500 text-sm">ou</span>
-            <div className="flex-grow border-t border-gray-300"></div>
-          </div>
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome de Usuário</FormLabel>
+                          <FormControl>
+                            <Input placeholder="seunome" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-between"
-              onClick={handleGenerateLink}
-            >
-              <div className="flex items-center">
-                <span className="material-icons text-gray-500 mr-3">link</span>
-                <span>Gerar link de convite</span>
-              </div>
-              <span className="material-icons text-gray-400">
-                chevron_right
-              </span>
-            </Button>
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="********"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-between"
-              onClick={handleShowQrCode}
-            >
-              <div className="flex items-center">
-                <span className="material-icons text-gray-500 mr-3">
-                  qr_code_2
-                </span>
-                <span>Mostrar QR Code</span>
-              </div>
-              <span className="material-icons text-gray-400">
-                chevron_right
-              </span>
-            </Button>
-          </div>
+                    <FormField
+                      control={registerForm.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone (opcional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="(00) 00000-0000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-          {inviteLink && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium mb-2">Link de convite:</p>
-              <div className="flex">
-                <Input
-                  readOnly
-                  value={`${window.location.origin}/accept-invite/${inviteLink}`}
-                  className="text-sm"
-                />
-                <Button
-                  variant="ghost"
-                  className="ml-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      `${window.location.origin}/accept-invite/${inviteLink}`,
-                    );
-                    toast({
-                      title: "Link copiado",
-                      description:
-                        "O link de convite foi copiado para sua área de transferência.",
-                    });
-                  }}
-                >
-                  <span className="material-icons">content_copy</span>
-                </Button>
-              </div>
-            </div>
-          )}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Cadastrando...
+                        </>
+                      ) : (
+                        "Cadastrar e Aceitar Convite"
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {qrCodeVisible && inviteLink && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg text-center">
-              <p className="text-sm font-medium mb-2">QR Code:</p>
-              <div className="bg-white p-4 inline-block rounded">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/accept-invite/${inviteLink}`)}`}
-                  alt="QR Code do convite"
-                  className="mx-auto"
-                />
-              </div>
-            </div>
-          )}
-        </div>
+          <TabsContent value="login">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <Form {...loginForm}>
+                  <form
+                    onSubmit={loginForm.handleSubmit(onSubmitLogin)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email ou Nome de Usuário</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="digite seu email ou nome de usuário"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Senha</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="********"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Entrando...
+                        </>
+                      ) : (
+                        "Entrar e Aceitar Convite"
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
