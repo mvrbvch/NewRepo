@@ -6,9 +6,9 @@ import {
   ScrollView, 
   TouchableOpacity,
   ActivityIndicator,
-  FlatList
+  FlatList,
+  Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/api';
 
@@ -158,7 +158,7 @@ const CalendarScreen = () => {
   const eventsForSelectedDate = getEventsForSelectedDate();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 50 : 30 }]}>
       <View style={styles.calendarContainer}>
         {/* Calendar Header */}
         <View style={styles.calendarHeader}>
@@ -226,7 +226,7 @@ const CalendarScreen = () => {
       <TouchableOpacity style={styles.addButton}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 

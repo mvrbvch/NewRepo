@@ -6,9 +6,9 @@ import {
   FlatList, 
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/api';
 import { useAuth } from '../hooks/useAuth';
@@ -138,7 +138,7 @@ const TasksScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 50 : 30 }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Household Tasks</Text>
       </View>
@@ -257,7 +257,7 @@ const TasksScreen = () => {
       <TouchableOpacity style={styles.addButton}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 

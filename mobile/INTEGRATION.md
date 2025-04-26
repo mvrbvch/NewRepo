@@ -179,6 +179,54 @@ export async function apiRequest<T>(
 }
 ```
 
+## UI and Component Considerations
+
+1. **SafeAreaView Replacement**
+
+To avoid issues with the "topInsetsChange" error in React Native, we've replaced SafeAreaView components with regular Views with manual padding:
+
+```typescript
+// Instead of using SafeAreaView
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+return (
+  <SafeAreaView style={styles.container}>
+    {/* content */}
+  </SafeAreaView>
+);
+
+// Use this pattern instead
+import { View, Platform } from 'react-native';
+
+return (
+  <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 50 : 30 }]}>
+    {/* content */}
+  </View>
+);
+```
+
+This approach provides more consistent behavior across different React Native environments and avoids issues with native modules that might not be properly linked.
+
+2. **Cross-Platform Styling**
+
+Ensure your styles are compatible with both platforms by using platform-specific code where needed:
+
+```typescript
+const styles = StyleSheet.create({
+  button: {
+    elevation: Platform.OS === 'android' ? 4 : 0, // Android shadow
+    shadowColor: Platform.OS === 'ios' ? '#000' : 'transparent', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    // Common styles
+    backgroundColor: '#4F46E5',
+    borderRadius: 8,
+    padding: 12,
+  }
+});
+```
+
 ## WebSocket Integration
 
 If your app uses WebSockets for real-time features:
