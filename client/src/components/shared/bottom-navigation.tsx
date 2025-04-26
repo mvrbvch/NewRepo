@@ -47,22 +47,14 @@ export default function BottomNavigation({
             <Plus className="h-8 w-8" />
           </Button>
         </div>
-
-        <Link href="/tasks">
-          <Button
-            variant="ghost"
-            className={`flex flex-col items-center py-1 px-3 h-auto ${
-              location === "/tasks"
-                ? "text-primary-dark font-medium"
-                : "text-dark"
-            }`}
-            asChild
-          >
-            <a>
-              <span className="material-icons text-[22px]">task_alt</span>
-              <span className="text-xs mt-1">Tarefas</span>
-            </a>
-          </Button>
+        <Link
+          to="/tasks"
+          className={`flex flex-col items-center justify-center w-12 h-12 ${
+            isActive("/tasks") ? "text-primary" : "text-gray-600"
+          }`}
+        >
+          <span className="material-icons text-[22px]">task_alt</span>
+          <span className="text-xs mt-1">Tarefas</span>
         </Link>
       </div>
     </div>
