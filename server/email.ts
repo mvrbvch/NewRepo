@@ -19,7 +19,7 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const { to, subject, html, text } = options;
-    const from = "💜 Por Nós <rotina@no-reply.murbach.work>";
+    const from = "💜 Nós Juntos <rotina@no-reply.murbach.work>";
 
     console.log(`Enviando e-mail para ${to} com assunto "${subject}"`);
 
@@ -58,10 +58,10 @@ export function generatePartnerInviteEmail(
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #4f46e5;">Convite Especial do Por Nós 💜</h1>
+      <h1 style="color: #4f46e5;">Convite Especial do Nós Juntos 💜</h1>
       <p>Ei, olha só que momento lindo!</p>
-      <p><strong>${inviterName}</strong> quer te convidar para viver uma nova fase ao lado do amor da sua vida no aplicativo <strong>Por Nós</strong>! 🌟</p>
-      <p>Com o Por Nós, vocês vão poder organizar a rotina juntos, dividir tarefas, criar hábitos saudáveis e fortalecer ainda mais a parceria no dia a dia.</p>
+      <p><strong>${inviterName}</strong> quer te convidar para viver uma nova fase ao lado do amor da sua vida no aplicativo <strong>Nós Juntos</strong>! 🌟</p>
+      <p>Com o Nós Juntos, vocês vão poder organizar a rotina juntos, dividir tarefas, criar hábitos saudáveis e fortalecer ainda mais a parceria no dia a dia.</p>
 
       <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px; margin: 24px 0;">
         <p style="margin-top: 0; color: #4b5563;">Para aceitar o convite e começar essa jornada, clique no botão abaixo:</p>
@@ -78,11 +78,11 @@ export function generatePartnerInviteEmail(
   `;
 
   const text = `
-Convite Especial do Por Nós 💜
+Convite Especial do Nós Juntos 💜
 
-Ei! ${inviterName} quer te convidar para viver uma nova fase ao lado do amor da sua vida no app Por Nós!
+Ei! ${inviterName} quer te convidar para viver uma nova fase ao lado do amor da sua vida no app Nós Juntos!
 
-Com o Por Nós, vocês organizam a rotina, dividem as tarefas e constroem juntos uma vida mais leve, conectada e cheia de amor.
+Com o Nós Juntos, vocês organizam a rotina, dividem as tarefas e constroem juntos uma vida mais leve, conectada e cheia de amor.
 
 Para aceitar o convite, acesse: ${inviteUrl}
 
@@ -113,7 +113,7 @@ export function generateTaskReminderEmail(
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #4f46e5;">Ping! Você tem uma missão no Por Nós 💌</h1>
+      <h1 style="color: #4f46e5;">Ping! Você tem uma missão no Nós Juntos 💌</h1>
       <p>Olá ${partnerName},</p>
       ${message}
       <div style="background-color: #f9fafb; border-left: 4px solid #4f46e5; padding: 16px; margin: 24px 0;">
@@ -122,7 +122,7 @@ export function generateTaskReminderEmail(
       </div>
       <a href="${taskUrl}" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 16px;">Ver Tarefa</a>
       <p style="margin-top: 32px; font-size: 0.875rem; color: #6b7280;">
-        Este é um lembrete enviado com carinho pelo aplicativo Por Nós 💜
+        Este é um lembrete enviado com carinho pelo aplicativo Nós Juntos 💜
       </p>
     </div>
   `;
