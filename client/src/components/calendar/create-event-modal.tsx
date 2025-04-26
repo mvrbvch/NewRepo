@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "emoji-picker-react";
+import CategorySelect from "./category-select";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -53,6 +54,8 @@ export default function CreateEventModal({
   const [emoji, setEmoji] = useState("");
   const [shareWithPartner, setShareWithPartner] = useState(false);
   const [partnerPermission, setPartnerPermission] = useState("view");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [color, setColor] = useState<string | null>(null);
 
   // Reset form when modal opens with a new default date
   useEffect(() => {
@@ -275,6 +278,16 @@ export default function CreateEventModal({
                 <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div>
+            <Label>Categoria</Label>
+            <CategorySelect 
+              selectedCategoryId={categoryId}
+              onCategoryChange={setCategoryId}
+              color={color}
+              onColorChange={setColor}
+            />
           </div>
 
           {/* Show partner sharing option only if user has a partner */}

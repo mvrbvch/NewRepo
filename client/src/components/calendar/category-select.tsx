@@ -81,7 +81,7 @@ export default function CategorySelect({
   // Criar categoria
   const createMutation = useMutation({
     mutationFn: async (category: Omit<EventCategory, "id" | "userId" | "isShared">) => {
-      return apiRequest("/api/event-categories", "POST", JSON.stringify(category));
+      return apiRequest("POST", "/api/event-categories", category);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/event-categories"] });
@@ -104,10 +104,7 @@ export default function CategorySelect({
   // Atualizar categoria
   const updateMutation = useMutation({
     mutationFn: async (category: Partial<EventCategory>) => {
-      return apiRequest(`/api/event-categories/${category.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(category)
-      });
+      return apiRequest("PATCH", `/api/event-categories/${category.id}`, category);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/event-categories"] });
@@ -129,9 +126,7 @@ export default function CategorySelect({
   // Excluir categoria
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/event-categories/${id}`, {
-        method: "DELETE"
-      });
+      return apiRequest("DELETE", `/api/event-categories/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/event-categories"] });
