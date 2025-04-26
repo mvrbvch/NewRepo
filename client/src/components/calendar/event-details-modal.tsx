@@ -45,11 +45,13 @@ export default function EventDetailsModal({
   // Format date for display, adjusting for timezone
   const formattedDate = event.date
     ? format(
-        new Date(typeof event.date === 'string' 
-          ? event.date.replace('Z', '') 
-          : event.date.toISOString().replace('Z', '')), // Remove Z to keep local time instead of UTC
-        "EEEE, d 'de' MMMM yyyy", 
-        { locale: ptBR }
+        new Date(
+          typeof event.date === "string"
+            ? event.date.replace("Z", "")
+            : event.date.toISOString().replace("Z", ""),
+        ), // Remove Z to keep local time instead of UTC
+        "EEEE, d 'de' MMMM yyyy",
+        { locale: ptBR },
       )
     : "";
 
@@ -181,6 +183,13 @@ export default function EventDetailsModal({
                     </div>
                   </div>
                 </div>
+
+                {event.description && (
+                  <div className="flex items-center text-gray-700">
+                    <span className="material-icons mr-3">book</span>
+                    <div>{event.description}</div>
+                  </div>
+                )}
 
                 {event.location && (
                   <div className="flex items-center text-gray-700">

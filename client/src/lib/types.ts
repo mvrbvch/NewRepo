@@ -12,6 +12,7 @@ export interface EventType {
   recurrenceRule?: string;
   createdBy: number;
   isShared?: boolean;
+  description?: string;
   sharePermission?: "view" | "edit";
 }
 

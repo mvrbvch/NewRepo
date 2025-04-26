@@ -47,6 +47,8 @@ export default function EditEventModal({
   const [period, setPeriod] = useState(event.period);
   const [startTime, setStartTime] = useState(event.startTime);
   const [endTime, setEndTime] = useState(event.endTime);
+  const [description, setDescription] = useState(event.description || "");
+
   const [location, setLocation] = useState(event.location || "");
   const [recurrence, setRecurrence] = useState<
     "never" | "daily" | "weekly" | "monthly" | "custom"
@@ -55,10 +57,10 @@ export default function EditEventModal({
   const [changeEmoji, setChangeEmoji] = useState(false);
 
   const [shareWithPartner, setShareWithPartner] = useState(
-    event.isShared || false
+    event.isShared || false,
   );
   const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
-    (event.sharePermission as "view" | "edit") || "view"
+    (event.sharePermission as "view" | "edit") || "view",
   );
 
   // Set initial form values when modal opens or event changes
@@ -160,6 +162,7 @@ export default function EditEventModal({
       endTime,
       location: location || null,
       recurrence,
+      description,
       emoji: emoji || null,
     };
 
@@ -204,6 +207,15 @@ export default function EditEventModal({
                 }}
               />
             )}
+          </div>
+          <div>
+            <Label htmlFor="description">Descrição</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Digite uma descrição para o evento"
+            />
           </div>
           {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
