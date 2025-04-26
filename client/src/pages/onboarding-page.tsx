@@ -99,32 +99,50 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="h-full flex flex-col min-h-screen relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
+    <div className="h-full flex flex-col min-h-screen relative overflow-hidden bg-gradient-to-tr from-primary/5 via-background to-primary/5">
       {/* Elementos decorativos de fundo */}
       <motion.div 
-        className="absolute top-[10%] right-[-10%] w-96 h-96 rounded-full bg-primary/5 blur-3xl"
+        className="absolute top-[5%] right-[-15%] w-[30rem] h-[30rem] rounded-full bg-primary/5 blur-3xl"
         animate={{ 
-          scale: [1, 1.1, 1],
-          opacity: [0.3, 0.2, 0.3],
+          scale: [1, 1.2, 1],
+          opacity: [0.4, 0.2, 0.4],
+          x: [0, 20, 0],
+          y: [0, -20, 0]
         }}
         transition={{ 
-          duration: 8, 
+          duration: 15, 
           repeat: Infinity,
           repeatType: "reverse" 
         }}
       />
       
       <motion.div 
-        className="absolute bottom-[10%] left-[-10%] w-96 h-96 rounded-full bg-primary/5 blur-3xl"
+        className="absolute bottom-[5%] left-[-15%] w-[30rem] h-[30rem] rounded-full bg-primary/5 blur-3xl"
         animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.2, 0.3, 0.2],
+          scale: [1, 1.3, 1],
+          opacity: [0.3, 0.5, 0.3],
+          x: [0, -20, 0],
+          y: [0, 20, 0]
         }}
         transition={{ 
-          duration: 10, 
+          duration: 18, 
           repeat: Infinity,
           repeatType: "reverse",
           delay: 2
+        }}
+      />
+      
+      <motion.div 
+        className="absolute top-[40%] right-[40%] w-[15rem] h-[15rem] rounded-full bg-rose-500/5 blur-3xl"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.2, 0.3],
+        }}
+        transition={{ 
+          duration: 12, 
+          repeat: Infinity,
+          repeatType: "reverse",
+          delay: 1
         }}
       />
       
@@ -157,9 +175,9 @@ export default function OnboardingPage() {
             >
               <motion.div 
                 variants={iconAnimation} 
-                className="bg-primary/10 inline-flex items-center justify-center w-20 h-20 rounded-full mb-5"
+                className="bg-gradient-to-br from-primary/20 to-primary/5 inline-flex items-center justify-center w-24 h-24 rounded-full mb-5 shadow-lg shadow-primary/10"
               >
-                <Users className="text-primary h-10 w-10" />
+                <Users className="text-primary h-12 w-12" />
               </motion.div>
               
               <motion.h2 
@@ -193,8 +211,8 @@ export default function OnboardingPage() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  <Card className="p-4 border border-primary/20 flex items-center gap-3 overflow-hidden">
-                    <div className="bg-primary/10 p-2 rounded-full">
+                  <Card className="p-4 border border-primary/20 flex items-center gap-3 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-2 rounded-full">
                       <CalendarDays className="h-5 w-5 text-primary" />
                     </div>
                     <div className="text-left">
@@ -210,8 +228,8 @@ export default function OnboardingPage() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  <Card className="p-4 border border-primary/20 flex items-center gap-3 overflow-hidden">
-                    <div className="bg-primary/10 p-2 rounded-full">
+                  <Card className="p-4 border border-primary/20 flex items-center gap-3 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-2 rounded-full">
                       <Home className="h-5 w-5 text-primary" />
                     </div>
                     <div className="text-left">
@@ -227,8 +245,8 @@ export default function OnboardingPage() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  <Card className="p-4 border border-primary/20 flex items-center gap-3 overflow-hidden">
-                    <div className="bg-primary/10 p-2 rounded-full">
+                  <Card className="p-4 border border-primary/20 flex items-center gap-3 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-2 rounded-full">
                       <Bell className="h-5 w-5 text-primary" />
                     </div>
                     <div className="text-left">
@@ -252,9 +270,9 @@ export default function OnboardingPage() {
               <div className="text-center">
                 <motion.div 
                   variants={iconAnimation}
-                  className="bg-primary/10 inline-flex items-center justify-center w-20 h-20 rounded-full mb-5"
+                  className="bg-gradient-to-br from-primary/20 to-primary/5 inline-flex items-center justify-center w-24 h-24 rounded-full mb-5 shadow-lg shadow-primary/10"
                 >
-                  <Users className="text-primary h-10 w-10" />
+                  <Users className="text-primary h-12 w-12" />
                 </motion.div>
                 
                 <motion.h2 
@@ -298,8 +316,8 @@ export default function OnboardingPage() {
                       type="email"
                       value={partnerEmail}
                       onChange={(e) => setPartnerEmail(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-shadow duration-300"
-                      placeholder="Digite o email"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-all duration-300 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md"
+                      placeholder="Digite o email do seu parceiro(a)"
                     />
                   </motion.div>
                   <motion.p 
