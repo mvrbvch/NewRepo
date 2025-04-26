@@ -154,12 +154,12 @@ export default function OnboardingPage() {
       if (isFromInvite) {
         toast({
           title: "Conexão realizada!",
-          description: `Você e ${inviterName} agora estão conectados no Por Nós.`,
+          description: `Você e ${inviterName} agora estão conectados no Sempre Nós.`,
         });
       } else {
         toast({
           title: "Tudo pronto!",
-          description: "Você já pode começar a usar o Por Nós.",
+          description: "Você já pode começar a usar o Sempre Nós.",
         });
       }
       
@@ -282,8 +282,8 @@ export default function OnboardingPage() {
                 className="text-2xl font-bold mb-3"
               >
                 {isFromInvite 
-                  ? `${inviterName} te convidou para o Por Nós!` 
-                  : 'Bem-vindo(a) ao Por Nós!'}
+                  ? `${inviterName} te convidou para o Sempre Nós!` 
+                  : 'Bem-vindo(a) ao Sempre Nós!'}
               </motion.h2>
               
               <motion.div 
@@ -427,7 +427,7 @@ export default function OnboardingPage() {
                           <Heart className="h-4 w-4" /> Convite de parceria
                         </div>
                         <p className="text-sm text-left">
-                          <span className="font-medium">{inviterName}</span> convidou você para se conectar no aplicativo Por Nós. Ao aceitar, vocês terão acesso compartilhado a calendários, tarefas domésticas e notificações como parceiros.
+                          <span className="font-medium">{inviterName}</span> convidou você para se conectar no aplicativo Sempre Nós. Ao aceitar, vocês terão acesso compartilhado a calendários, tarefas domésticas e notificações como parceiros.
                         </p>
                       </motion.div>
                     </>
@@ -473,7 +473,7 @@ export default function OnboardingPage() {
                       custom={3}
                       className="text-xs text-muted-foreground mt-2"
                     >
-                      Seu parceiro receberá um convite para se juntar a você no app
+                      Seu parceiro receberá um convite para se juntar a você no Sempre Nós
                     </motion.p>
                   </div>
                 </motion.div>
