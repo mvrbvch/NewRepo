@@ -121,6 +121,8 @@ export default function CreateEventModal({
       description,
       shareWithPartner,
       partnerPermission,
+      categoryId: categoryId || undefined,
+      color: !categoryId ? color || undefined : undefined, // Usar cor personalizada apenas se não tiver categoria
     });
   };
 
@@ -135,6 +137,8 @@ export default function CreateEventModal({
     setEmoji("");
     setShareWithPartner(false);
     setPartnerPermission("view");
+    setCategoryId(null);
+    setColor(null);
   };
 
   const handlePeriodChange = (value: string) => {
