@@ -93,11 +93,9 @@ const AppContent = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PushNotificationsProvider>
-          <AppContent />
-        </PushNotificationsProvider>
-      </AuthProvider>
+      <div>
+        <AppContent />
+      </div>
     </QueryClientProvider>
   );
 }
