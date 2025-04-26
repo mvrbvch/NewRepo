@@ -6,9 +6,9 @@ import {
   ScrollView, 
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/api';
@@ -98,7 +98,7 @@ const HomeScreen = () => {
   const todayTasks = getTodayTasks();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 50 : 30 }]}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -190,7 +190,7 @@ const HomeScreen = () => {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

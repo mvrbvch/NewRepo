@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, StyleSheet } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
@@ -42,7 +42,9 @@ export default function App() {
   useEffect(() => {
     if (appIsReady) {
       // Hide the splash screen after the app is ready
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        /* ignore errors */
+      });
     }
   }, [appIsReady]);
 
@@ -51,7 +53,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
+    <View style={styles.container}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <NavigationContainer>
@@ -60,6 +62,12 @@ export default function App() {
           </NavigationContainer>
         </AuthProvider>
       </QueryClientProvider>
-    </SafeAreaProvider>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
