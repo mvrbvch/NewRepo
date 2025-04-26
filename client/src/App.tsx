@@ -11,6 +11,7 @@ import OnboardingPage from "./pages/onboarding-page";
 import PartnerInvitePage from "./pages/partner-invite-page";
 import HouseholdTasksPage from "./pages/household-tasks-page";
 import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
+import LandingPage from "./pages/landing-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
@@ -24,6 +25,7 @@ import { SplashScreen } from "./components/pwa/splash-screen";
 function Router() {
   return (
     <Switch>
+      <Route path="/landing" component={LandingPage} />
       <ProtectedRoute path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/onboarding" component={OnboardingPage} />

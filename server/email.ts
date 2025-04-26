@@ -128,7 +128,7 @@ export function generateTaskReminderEmail(
   `;
 
   const text = `
-Lembrete de Tarefa no Por Nós 💌
+Lembrete de Tarefa no Nós Juntos 💌
 
 Olá ${partnerName},
 
@@ -139,7 +139,7 @@ ${taskDescription ? `Descrição: ${taskDescription}` : ""}
 
 Veja a tarefa aqui: ${taskUrl}
 
-Este é um lembrete enviado com carinho pelo app Por Nós 💜
+Este é um lembrete enviado com carinho pelo app Nós Juntos 💜
   `;
 
   return { html, text };
