@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, Link } from "wouter";
 import JourneyTimeline from "./journey-timeline";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { UserType } from "@/lib/types";
 import { 
   Heart, 
   ArrowRight, 
@@ -11,7 +14,8 @@ import {
   Calendar,
   CheckCircle2,
   Home,
-  UserPlus
+  UserPlus,
+  Mail
 } from "lucide-react";
 
 // Etapas da tela de boas-vindas
@@ -22,8 +26,14 @@ enum WelcomeStep {
   COMPLETE = "complete",
 }
 
+// Interface para as props do componente
 interface WelcomeScreenProps {
   onComplete: () => void;
+  partnerEmail?: string;
+  setPartnerEmail?: (email: string) => void;
+  isFromInvite?: boolean;
+  inviterName?: string;
+  user?: UserType | null;
 }
 
 // Adicionar tipo para parceiro se não existir no hook auth
@@ -32,32 +42,51 @@ interface Partner {
   createdAt?: string | Date;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
+  onComplete, 
+  partnerEmail = "", 
+  setPartnerEmail, 
+  isFromInvite = false,
+  inviterName = "",
+  user: userProp = null
+}) => {
   const [step, setStep] = useState<WelcomeStep>(WelcomeStep.WELCOME);
   const [_, setLocation] = useLocation();
-  // Mocking usuário e parceiro para demonstração
-  const [user, setUser] = useState({ name: "Usuário" });
+  
+  // Usar o usuário fornecido nas props, ou um valor padrão
+  const [user, setUser] = useState<UserType | null>(userProp || null);
   const [partner, setPartner] = useState<Partner | null>(null);
+  const [email, setEmail] = useState(partnerEmail);
 
-  // Para demonstração - simulação de carregamento de dados do usuário e parceiro
+  // Inicializar dados de usuário e parceiro
   useEffect(() => {
-    // Simulação de chamada à API para obter dados do usuário
-    const timer = setTimeout(() => {
-      // Em um cenário real, esses dados viriam da API
-      setUser({ name: "Teste" });
-      
-      // Simular presença ou ausência de parceiro para demonstração
-      const hasPartner = false; // Para demonstrar o botão de convite
-      if (hasPartner) {
-        setPartner({
-          name: "Parceiro(a)",
-          createdAt: new Date()
-        });
-      }
-    }, 500);
+    // Atualizar usuário se fornecido nas props
+    if (userProp) {
+      setUser(userProp);
+    }
     
-    return () => clearTimeout(timer);
-  }, []);
+    // Configurar parceiro baseado no isFromInvite e inviterName
+    if (isFromInvite && inviterName) {
+      setPartner({
+        name: inviterName,
+        createdAt: new Date()
+      });
+    }
+  }, [userProp, isFromInvite, inviterName]);
+  
+  // Sincronizar o estado email com partnerEmail
+  useEffect(() => {
+    if (partnerEmail !== email) {
+      setEmail(partnerEmail);
+    }
+  }, [partnerEmail]);
+  
+  // Propagar mudanças no email do parceiro para o componente pai
+  useEffect(() => {
+    if (setPartnerEmail && email !== partnerEmail) {
+      setPartnerEmail(email);
+    }
+  }, [email, partnerEmail, setPartnerEmail]);
 
   // Animações compartilhadas
   const containerVariants = {
@@ -178,8 +207,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
               variants={itemVariants}
             >
               {partner ? 
-                `Olá ${user?.name}, estamos muito felizes por você e ${partner.name} estarem aqui!` : 
-                `Olá ${user?.name}, estamos muito felizes por você estar aqui!`}
+                `Olá ${user?.name || 'Usuário'}, estamos muito felizes por você e ${partner.name} estarem aqui!` : 
+                `Olá ${user?.name || 'Usuário'}, estamos muito felizes por você estar aqui!`}
             </motion.p>
             
             <motion.p 
@@ -339,12 +368,54 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                 <p className="text-muted-foreground text-sm mb-4">
                   Compartilhem o calendário, tarefas domésticas e organizem a vida juntos com mais facilidade!
                 </p>
-                <Link href="/invite-partner" className="inline-block">
-                  <Button variant="outline" size="sm" className="text-primary border-primary/20">
+                
+                <div className="mb-4">
+                  <Label htmlFor="partner-email" className="text-sm font-medium mb-1 block text-left">
+                    E-mail do parceiro(a)
+                  </Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="partner-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="parceiro@email.com"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-primary border-primary/20 flex-1"
+                    onClick={() => {
+                      if (email) {
+                        console.log(`Enviando convite para: ${email}`);
+                      }
+                      onComplete();
+                    }}
+                  >
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Convidar parceiro(a)
+                    Convidar e começar
                   </Button>
-                </Link>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => {
+                      setEmail('');
+                      onComplete();
+                    }}
+                  >
+                    Pular
+                  </Button>
+                </div>
               </motion.div>
             )}
             

@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
+import React, { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "./use-toast";
@@ -33,8 +33,9 @@ type RegisterData = z.infer<typeof registerSchema>;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Simplificação do AuthProvider para evitar problemas com hooks
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Simplificação extrema do AuthProvider para resolver problemas com hooks
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { toast } = useToast();
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -96,9 +97,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: (userData: UserType) => {
       setUser(userData);
       queryClient.setQueryData(["/api/user"], userData);
+      toast({
+        title: "Login realizado com sucesso",
+        description: `Bem-vindo de volta, ${userData.name}!`,
+      });
     },
     onError: (err: Error) => {
       setError(err);
+      toast({
+        title: "Erro ao fazer login",
+        description: "Nome de usuário ou senha incorretos",
+        variant: "destructive",
+      });
     },
   });
 
@@ -110,9 +120,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: (userData: UserType) => {
       setUser(userData);
       queryClient.setQueryData(["/api/user"], userData);
+      toast({
+        title: "Conta criada com sucesso",
+        description: `Bem-vindo ao Nós Juntos, ${userData.name}!`,
+      });
     },
     onError: (err: Error) => {
       setError(err);
+      toast({
+        title: "Erro ao criar conta",
+        description: "Verifique os dados e tente novamente",
+        variant: "destructive",
+      });
     },
   });
 
@@ -123,9 +142,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       setUser(null);
       queryClient.setQueryData(["/api/user"], null);
+      toast({
+        title: "Logout realizado",
+        description: "Você saiu do Nós Juntos",
+      });
     },
     onError: (err: Error) => {
       setError(err);
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Tente novamente mais tarde",
+        variant: "destructive",
+      });
     },
   });
 
@@ -174,7 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export function useAuth() {
   const context = useContext(AuthContext);

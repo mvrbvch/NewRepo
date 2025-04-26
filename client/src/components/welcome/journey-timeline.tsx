@@ -130,18 +130,16 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
         Relembre os momentos especiais que construíram sua história de amor
       </motion.p>
 
-      {/* Timeline vertical */}
+      {/* Timeline responsiva - vertical para todos os dispositivos e otimizada para mobile */}
       <div className="relative w-full max-w-2xl">
-        {/* Linha vertical central */}
-        <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary/20 rounded-full z-0"></div>
+        {/* Linha vertical - à esquerda em mobile, centralizada em desktop */}
+        <div className="absolute md:left-1/2 left-6 md:transform md:-translate-x-1/2 h-full w-1 bg-primary/20 rounded-full z-0"></div>
         
         {/* Eventos da timeline */}
         {events.map((event, index) => (
           <motion.div
             key={event.id}
-            className={`relative mb-12 flex ${
-              index % 2 === 0 ? "flex-row" : "flex-row-reverse"
-            }`}
+            className="relative mb-10 flex flex-row"
             initial={{ opacity: 0, y: 40 }}
             animate={{ 
               opacity: index <= activeIndex ? 1 : 0.3,
@@ -152,8 +150,8 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
               }
             }}
           >
-            {/* Conector para a linha central */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/4">
+            {/* Conector para a linha */}
+            <div className="absolute md:left-1/2 left-6 md:transform md:-translate-x-1/2 top-2">
               <div 
                 className={`w-6 h-6 rounded-full ${
                   index <= activeIndex ? "bg-primary" : "bg-gray-200"
@@ -170,10 +168,10 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
               </div>
             </div>
 
-            {/* Conteúdo do evento */}
-            <div className={`w-5/12 px-4 ${index % 2 === 0 ? "text-right" : "text-left"}`}>
+            {/* Conteúdo do evento - sempre à direita no mobile */}
+            <div className="md:w-5/12 w-full pl-16 md:pl-4 md:pr-4 md:odd:text-right md:even:ml-auto">
               <motion.div
-                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ 
                   opacity: index <= activeIndex ? 1 : 0.5,
                   x: 0,
@@ -182,7 +180,7 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
                 className={`p-4 bg-white/80 rounded-lg border border-primary/10 shadow-sm 
                   ${index === activeIndex ? "ring-2 ring-primary/20" : ""}`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="bg-primary/10 p-2 rounded-full">
                     {event.icon}
                   </div>
@@ -194,9 +192,6 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
                 <p className="text-muted-foreground text-sm">{event.description}</p>
               </motion.div>
             </div>
-
-            {/* Espaço vazio do outro lado da linha do tempo */}
-            <div className="w-5/12"></div>
           </motion.div>
         ))}
 

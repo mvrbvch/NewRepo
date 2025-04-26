@@ -140,26 +140,26 @@ const LandingPage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="py-20 md:py-32">
-        <div className="container px-4 md:px-6">
+        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
           <motion.div 
             className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
             initial="hidden"
             animate="visible"
             variants={containerVariants}
           >
-            <motion.div variants={itemVariants} className="space-y-6">
+            <motion.div variants={itemVariants} className="space-y-6 text-center lg:text-left">
               <div className="inline-block bg-primary/10 px-4 py-2 rounded-full text-primary font-medium text-sm">
                 Organização para casais
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
                 Vivam a vida a dois com mais <span className="text-primary">conexão</span> e <span className="text-rose-500">harmonia</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-[600px]">
+              <p className="text-xl text-muted-foreground max-w-[600px] mx-auto lg:mx-0">
                 Calendário compartilhado, divisão de tarefas, notificações e muito mais para fortalecer sua relação e organizar a rotina juntos.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link href="/auth?redirect=welcome">
-                  <Button size="lg" className="group">
+                  <Button size="lg" className="group w-full sm:w-auto">
                     Começar agora
                     <motion.span
                       className="ml-2"
@@ -172,7 +172,7 @@ const LandingPage: React.FC = () => {
                   </Button>
                 </Link>
                 <a href="#features">
-                  <Button size="lg" variant="outline">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
                     Conhecer mais
                   </Button>
                 </a>
@@ -182,7 +182,7 @@ const LandingPage: React.FC = () => {
               variants={itemVariants}
               className="relative flex justify-center"
             >
-              <div className="relative w-full max-w-[400px] aspect-square">
+              <div className="relative w-full max-w-[400px] aspect-square mx-auto">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 blur-3xl transform -translate-x-4 translate-y-4" />
                 <img
                   src={iconPath}
@@ -197,7 +197,7 @@ const LandingPage: React.FC = () => {
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-white/70">
-        <div className="container px-4 md:px-6">
+        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Funcionalidades Principais</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -205,7 +205,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto">
             {[
               {
                 icon: <Calendar className="h-10 w-10 text-primary" />,
@@ -274,7 +274,7 @@ const LandingPage: React.FC = () => {
 
       {/* Benefits Section */}
       <section id="benefits" className="py-20">
-        <div className="container px-4 md:px-6">
+        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Benefícios para a Relação</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -282,7 +282,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mx-auto">
             <div className="order-2 md:order-1">
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
@@ -352,7 +352,7 @@ const LandingPage: React.FC = () => {
 
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20 bg-white/70">
-        <div className="container px-4 md:px-6">
+        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">O Que Dizem Nossos Usuários</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -360,7 +360,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mx-auto">
             {testimonials.map((testimonial, index) => (
               <motion.div 
                 key={index}
@@ -395,7 +395,7 @@ const LandingPage: React.FC = () => {
       <section id="welcome-preview" className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
         
-        <div className="container px-4 md:px-6 relative z-10">
+        <div className="container px-4 md:px-6 relative z-10 mx-auto max-w-6xl">
           <motion.div 
             className="max-w-4xl mx-auto text-center mb-12"
             initial={{ opacity: 0, y: 30 }}
@@ -404,13 +404,13 @@ const LandingPage: React.FC = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Nossa Nova Experiência de Boas-Vindas</h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Conhecendo a jornada e o significado por trás do Nós Juntos
             </p>
           </motion.div>
           
           {/* Demonstração visual da experiência de onboarding */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-8 max-w-6xl mx-auto">
             {/* Card 1: Tela de boas-vindas */}
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-primary/10">
               {/* Header da tela */}
