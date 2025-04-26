@@ -221,11 +221,7 @@ export default function DayView({
                   <span className="mr-1">{event.emoji || "📅"}</span>
                   <h4 className="font-medium">{event.title}</h4>
                 </div>
-                {event.description && (
-                  <div className="text-sm text-gray-600 mb-1">
-                    {event.description}
-                  </div>
-                )}
+
                 {event.location && (
                   <div className="text-sm text-gray-600 mb-1">
                     {event.location}

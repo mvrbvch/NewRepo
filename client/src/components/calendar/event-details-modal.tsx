@@ -187,7 +187,9 @@ export default function EventDetailsModal({
                 {event.description && (
                   <div className="flex items-center text-gray-700">
                     <span className="material-icons mr-3">book</span>
-                    <div>{event.description}</div>
+                    <div
+                      dangerouslySetInnerHTML={{ __html: event.description }}
+                    ></div>
                   </div>
                 )}
 

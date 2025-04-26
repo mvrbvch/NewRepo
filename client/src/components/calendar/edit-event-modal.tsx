@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -210,7 +210,7 @@ export default function EditEventModal({
           </div>
           <div>
             <Label htmlFor="description">Descrição</Label>
-            <Input
+            <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
