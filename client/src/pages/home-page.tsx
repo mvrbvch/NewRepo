@@ -6,6 +6,7 @@ import ViewToggle from "@/components/shared/view-toggle";
 import DayView from "@/components/calendar/day-view";
 import WeekView from "@/components/calendar/week-view";
 import MonthView from "@/components/calendar/month-view";
+import TimelineView from "@/components/calendar/timeline-view";
 import CreateEventModal from "@/components/calendar/create-event-modal";
 import EventDetailsModal from "@/components/calendar/event-details-modal";
 import { EventType } from "@/lib/types";
@@ -41,7 +42,7 @@ import { TransitionComponent } from "@/components/ui/transition-component";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function HomePage() {
-  const [view, setView] = useState<"day" | "week" | "month">("day");
+  const [view, setView] = useState<"day" | "week" | "month" | "timeline">("day");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
@@ -90,8 +91,8 @@ export default function HomePage() {
 
   // Calcular eventos com base na visualização atual
   const getEventsForCurrentView = () => {
-    if (view === "day") {
-      // Para visualização diária, apenas eventos do dia selecionado
+    if (view === "day" || view === "timeline") {
+      // Para visualização diária e timeline, apenas eventos do dia selecionado
       return events.filter((event) => {
         const eventDate = new Date(event.date);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
@@ -203,13 +204,13 @@ export default function HomePage() {
 
   // Determinar qual função de navegação usar baseado na visualização atual
   const handlePrev = () => {
-    if (view === "day") handlePrevDay();
+    if (view === "day" || view === "timeline") handlePrevDay();
     else if (view === "week") handlePrevWeek();
     else if (view === "month") handlePrevMonth();
   };
 
   const handleNext = () => {
-    if (view === "day") handleNextDay();
+    if (view === "day" || view === "timeline") handleNextDay();
     else if (view === "week") handleNextWeek();
     else if (view === "month") handleNextMonth();
   };
@@ -264,7 +265,7 @@ export default function HomePage() {
           >
             <DayView
               date={selectedDate}
-              user={user}
+              user={user || undefined}
               morningEvents={morningEvents}
               afternoonEvents={afternoonEvents}
               nightEvents={nightEvents}
@@ -310,6 +311,24 @@ export default function HomePage() {
               onEventClick={handleOpenEventDetails}
               onDayChange={setSelectedDate}
               onMonthChange={setSelectedDate}
+            />
+          </motion.div>
+        )}
+
+        {view === "timeline" && (
+          <motion.div
+            key="timeline-view"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
+          >
+            <TimelineView
+              date={selectedDate}
+              events={events}
+              isLoading={isLoading}
+              onEventClick={handleOpenEventDetails}
             />
           </motion.div>
         )}

@@ -13,7 +13,7 @@ interface DateNavigationProps {
   sharedCount: number;
   onPrev: () => void;
   onNext: () => void;
-  calendarView?: 'day' | 'week' | 'month';
+  calendarView?: 'day' | 'week' | 'month' | 'timeline';
 }
 
 export default function DateNavigation({
@@ -64,6 +64,19 @@ export default function DateNavigation({
     // Verificar se é o mês atual
     if (isSameMonth(date, today)) {
       displayDate = `Mês atual (${displayDate})`;
+    }
+  } else if (calendarView === 'timeline') {
+    const formattedDate = format(date, "d 'de' MMMM yyyy", { locale: ptBR });
+    
+    // Cronologia segue a mesma lógica da visualização diária
+    if (isToday(date)) {
+      displayDate = `Hoje, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+    } else if (isSameDay(date, addDays(today, -1))) {
+      displayDate = `Ontem, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+    } else if (isSameDay(date, addDays(today, 1))) {
+      displayDate = `Amanhã, ${format(date, "d 'de' MMMM", { locale: ptBR })}`;
+    } else {
+      displayDate = formattedDate;
     }
   }
   
