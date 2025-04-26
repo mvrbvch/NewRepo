@@ -123,6 +123,9 @@ const LandingPage: React.FC = () => {
             <a href="#testimonials" className="text-muted-foreground hover:text-primary transition-colors">
               Depoimentos
             </a>
+            <a href="#welcome-preview" className="text-muted-foreground hover:text-primary transition-colors">
+              Experiência
+            </a>
           </nav>
           <div>
             <Link href="/auth">
@@ -388,16 +391,277 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden">
+      {/* Welcome Experience Preview Section */}
+      <section id="welcome-preview" className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
         
         <div className="container px-4 md:px-6 relative z-10">
           <motion.div 
-            className="max-w-3xl mx-auto text-center space-y-8"
+            className="max-w-4xl mx-auto text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Nossa Nova Experiência de Boas-Vindas</h2>
+            <p className="text-xl text-muted-foreground">
+              Conhecendo a jornada e o significado por trás do Nós Juntos
+            </p>
+          </motion.div>
+          
+          {/* Demonstração visual da experiência de onboarding */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Card 1: Tela de boas-vindas */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-primary/10">
+              {/* Header da tela */}
+              <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <img src={logoPath} alt="Nós Juntos" className="h-6" />
+                  <span className="font-semibold text-sm">Nós Juntos</span>
+                </div>
+                <Button variant="ghost" size="sm" className="text-xs h-7">Pular</Button>
+              </div>
+              
+              {/* Conteúdo da primeira tela */}
+              <motion.div 
+                className="flex flex-col items-center text-center p-6"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <div className="mb-6 bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center">
+                  <Heart className="h-8 w-8 text-primary" />
+                </div>
+                
+                <h3 className="text-xl font-bold mb-3">
+                  Bem-vindo(a) ao <span className="text-primary">Nós Juntos</span>!
+                </h3>
+                
+                <p className="text-muted-foreground text-sm mb-4 max-w-xs">
+                  Olá Usuário, estamos muito felizes por você estar aqui!
+                </p>
+                
+                <p className="text-muted-foreground text-xs mb-6 max-w-xs">
+                  Vamos conhecer um pouco mais sobre a sua jornada como casal e como podemos
+                  ajudar vocês a organizarem a vida juntos.
+                </p>
+                
+                <Button size="sm" className="group">
+                  Começar jornada
+                  <motion.span
+                    className="ml-2 inline-block"
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 0.5 }}
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                  </motion.span>
+                </Button>
+              </motion.div>
+              
+              {/* Indicador de progresso */}
+              <div className="w-full p-3 flex justify-center border-t border-primary/5">
+                <div className="flex space-x-1">
+                  <div className="h-1.5 w-8 rounded-full bg-primary"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-gray-200"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-gray-200"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-gray-200"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Card 2: Tela da jornada */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-primary/10">
+              {/* Header da tela */}
+              <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <img src={logoPath} alt="Nós Juntos" className="h-6" />
+                  <span className="font-semibold text-sm">Nós Juntos</span>
+                </div>
+                <Button variant="ghost" size="sm" className="text-xs h-7">Pular</Button>
+              </div>
+              
+              {/* Conteúdo da tela da jornada */}
+              <motion.div 
+                className="flex flex-col items-center text-center p-6"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <h3 className="text-xl font-bold mb-2">
+                  Sua Jornada Juntos
+                </h3>
+                
+                <p className="text-muted-foreground text-xs mb-4 max-w-xs">
+                  Relembre os momentos especiais que construíram sua história de amor
+                </p>
+                
+                {/* Timeline simplificada */}
+                <div className="relative w-full py-3">
+                  {/* Linha central */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-primary/20 rounded-full"></div>
+                  
+                  {/* Evento 1 */}
+                  <div className="relative mb-4 flex">
+                    <div className="w-1/2 pr-4 text-right">
+                      <div className="p-2 bg-white/80 rounded-lg border border-primary/10 shadow-sm">
+                        <div className="flex items-center justify-end gap-2 mb-1">
+                          <span className="text-xs text-muted-foreground">15 de Maio de 2023</span>
+                          <div className="bg-primary/10 p-1 rounded-full">
+                            <Heart className="h-4 w-4 text-rose-500" />
+                          </div>
+                        </div>
+                        <h4 className="text-sm font-medium">Início do relacionamento</h4>
+                      </div>
+                    </div>
+                    <div className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/4">
+                      <div className="w-3 h-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div className="w-1/2"></div>
+                  </div>
+                  
+                  {/* Evento 2 */}
+                  <div className="relative mb-4 flex">
+                    <div className="w-1/2"></div>
+                    <div className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/4">
+                      <div className="w-3 h-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div className="w-1/2 pl-4">
+                      <div className="p-2 bg-white/80 rounded-lg border border-primary/10 shadow-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="bg-primary/10 p-1 rounded-full">
+                            <Calendar className="h-4 w-4 text-blue-500" />
+                          </div>
+                          <span className="text-xs text-muted-foreground">22 de Maio de 2023</span>
+                        </div>
+                        <h4 className="text-sm font-medium">Primeiro encontro</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button size="sm" className="mt-3 group">
+                  Continuar
+                  <motion.span
+                    className="ml-2 inline-block"
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 0.5 }}
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                  </motion.span>
+                </Button>
+              </motion.div>
+              
+              {/* Indicador de progresso */}
+              <div className="w-full p-3 flex justify-center border-t border-primary/5">
+                <div className="flex space-x-1">
+                  <div className="h-1.5 w-8 rounded-full bg-primary"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-primary"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-gray-200"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-gray-200"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Card 3: Funcionalidades */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-primary/10">
+              {/* Header da tela */}
+              <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <img src={logoPath} alt="Nós Juntos" className="h-6" />
+                  <span className="font-semibold text-sm">Nós Juntos</span>
+                </div>
+                <Button variant="ghost" size="sm" className="text-xs h-7">Pular</Button>
+              </div>
+              
+              {/* Conteúdo da tela de funcionalidades */}
+              <motion.div 
+                className="flex flex-col items-center text-center p-6"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <h3 className="text-xl font-bold mb-2">
+                  Escolha as Funcionalidades
+                </h3>
+                
+                <p className="text-muted-foreground text-xs mb-4 max-w-xs">
+                  Personalize sua experiência selecionando o que mais importa para vocês
+                </p>
+                
+                {/* Lista de funcionalidades */}
+                <div className="w-full space-y-3 mb-4">
+                  <div className="flex items-center p-2 rounded-lg border border-primary/20 bg-primary/5">
+                    <div className="bg-primary/10 p-1.5 rounded-full mr-3">
+                      <Calendar className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h4 className="text-sm font-medium">Calendário Compartilhado</h4>
+                      <p className="text-xs text-muted-foreground">Organize eventos e compromissos juntos</p>
+                    </div>
+                    <div className="bg-primary/80 text-white p-1 rounded-full">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center p-2 rounded-lg border border-primary/20 bg-primary/5">
+                    <div className="bg-primary/10 p-1.5 rounded-full mr-3">
+                      <ListTodo className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h4 className="text-sm font-medium">Tarefas Domésticas</h4>
+                      <p className="text-xs text-muted-foreground">Divida responsabilidades com equilíbrio</p>
+                    </div>
+                    <div className="bg-primary/80 text-white p-1 rounded-full">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center p-2 rounded-lg border border-border bg-background">
+                    <div className="bg-gray-100 p-1.5 rounded-full mr-3">
+                      <BellRing className="h-4 w-4 text-gray-500" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <h4 className="text-sm font-medium">Lembretes Personalizados</h4>
+                      <p className="text-xs text-muted-foreground">Notificações para momentos importantes</p>
+                    </div>
+                    <div className="bg-gray-200 p-1 rounded-full">
+                      <CheckCircle2 className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+                
+                <Button size="sm" className="mt-2 group">
+                  Concluir
+                  <motion.span
+                    className="ml-2 inline-block"
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 0.5 }}
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                  </motion.span>
+                </Button>
+              </motion.div>
+              
+              {/* Indicador de progresso */}
+              <div className="w-full p-3 flex justify-center border-t border-primary/5">
+                <div className="flex space-x-1">
+                  <div className="h-1.5 w-8 rounded-full bg-primary"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-primary"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-primary"></div>
+                  <div className="h-1.5 w-8 rounded-full bg-gray-200"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <motion.div 
+            className="mt-16 max-w-3xl mx-auto text-center space-y-8"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
             viewport={{ once: true }}
           >
             <h2 className="text-4xl md:text-5xl font-bold">Pronto para organizar a vida a dois?</h2>
