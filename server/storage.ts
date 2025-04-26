@@ -1386,7 +1386,7 @@ export class DatabaseStorage implements IStorage {
         console.warn(`ID de tarefa inválido recebido: ${id}`);
         return undefined;
       }
-      
+
       const [task] = await db
         .select()
         .from(householdTasks)
@@ -1633,76 +1633,102 @@ export class DatabaseStorage implements IStorage {
   async verifyTasksExist(taskIds: number[]): Promise<boolean> {
     try {
       if (taskIds.length === 0) return false;
-      
+
       // Filter out any invalid IDs (like NaN)
-      const validIds = taskIds.filter(id => 
-        typeof id === 'number' && !isNaN(id) && Number.isInteger(id) && id > 0
+      const validIds = taskIds.filter(
+        (id) =>
+          typeof id === "number" &&
+          !isNaN(id) &&
+          Number.isInteger(id) &&
+          id > 0,
       );
-      
+
       // If we lost any IDs during filtering, log it
       if (validIds.length !== taskIds.length) {
-        console.warn(`Filtered out ${taskIds.length - validIds.length} invalid IDs from verification`);
+        console.warn(
+          `Filtered out ${taskIds.length - validIds.length} invalid IDs from verification`,
+        );
         console.warn(`Original IDs:`, taskIds);
         console.warn(`Valid IDs:`, validIds);
       }
-      
+
       if (validIds.length === 0) return false;
-      
+
       // Count how many tasks exist with the given IDs using SQL
       const results = await db.execute(
-        sql`SELECT COUNT(*) as count FROM household_tasks WHERE id IN (${sql.join(validIds, sql`, `)})`
+        sql`SELECT COUNT(*) as count FROM household_tasks WHERE id IN (${sql.join(validIds, sql`, `)})`,
       );
-      
+
       // Extract the count from the result
-      const foundCount = parseInt(results.rows[0]?.count as string || '0', 10);
+      const foundCount = parseInt(
+        (results.rows[0]?.count as string) || "0",
+        10,
+      );
       return foundCount === validIds.length;
     } catch (error) {
       console.error("Error verifying tasks exist:", error);
       return false;
     }
   }
-  
+
   /**
    * Verifica se todas as tarefas pertencem ao usuário informado (criadas por ele ou atribuídas a ele)
-   * 
+   *
    * @param userId ID do usuário
    * @param taskIds Array de IDs de tarefas para verificar
    * @returns true se todas as tarefas pertencem ao usuário, false caso contrário
    */
-  async verifyTasksBelongToUser(userId: number, taskIds: number[]): Promise<boolean> {
+  async verifyTasksBelongToUser(
+    userId: number,
+    taskIds: number[],
+  ): Promise<boolean> {
     try {
       if (taskIds.length === 0) return false;
-      
+
       // Filter out any invalid IDs (like NaN)
-      const validIds = taskIds.filter(id => 
-        typeof id === 'number' && !isNaN(id) && Number.isInteger(id) && id > 0
+      const validIds = taskIds.filter(
+        (id) =>
+          typeof id === "number" &&
+          !isNaN(id) &&
+          Number.isInteger(id) &&
+          id > 0,
       );
-      
+
       if (validIds.length === 0) return false;
-      
+
       // Contar quantas tarefas existem com os IDs fornecidos E pertencem ao usuário
       const results = await db.execute(
         sql`SELECT COUNT(*) as count FROM household_tasks 
             WHERE id IN (${sql.join(validIds, sql`, `)}) 
-            AND (created_by = ${userId} OR assigned_to = ${userId})`
+            AND (created_by = ${userId} OR assigned_to = ${userId})`,
       );
-      
+
       // Extrair a contagem do resultado
-      const foundCount = parseInt(results.rows[0]?.count as string || '0', 10);
-      
+      const foundCount = parseInt(
+        (results.rows[0]?.count as string) || "0",
+        10,
+      );
+
       // Verificar se todas as tarefas foram encontradas
       const allTasksBelongToUser = foundCount === validIds.length;
-      
+
       // Log detalhado apenas se nem todas as tarefas pertencerem ao usuário
       if (!allTasksBelongToUser) {
-        console.warn(`Usuário ${userId} tentou reordenar tarefas que não lhe pertencem.`);
-        console.warn(`IDs das tarefas: ${validIds.join(', ')}`);
-        console.warn(`Tarefas pertencentes ao usuário: ${foundCount} de ${validIds.length}`);
+        console.warn(
+          `Usuário ${userId} tentou reordenar tarefas que não lhe pertencem.`,
+        );
+        console.warn(`IDs das tarefas: ${validIds.join(", ")}`);
+        console.warn(
+          `Tarefas pertencentes ao usuário: ${foundCount} de ${validIds.length}`,
+        );
       }
-      
+
       return allTasksBelongToUser;
     } catch (error) {
-      console.error("Erro ao verificar se tarefas pertencem ao usuário:", error);
+      console.error(
+        "Erro ao verificar se tarefas pertencem ao usuário:",
+        error,
+      );
       return false;
     }
   }
@@ -1713,7 +1739,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Log the tasks being updated
       console.log("Updating task positions for:", tasks);
-      
+
       // Validação extra detalhada para depuração
       for (const task of tasks) {
         console.log(`Validando tarefa:`, {
@@ -1724,89 +1750,102 @@ export class DatabaseStorage implements IStorage {
           position: task.position,
           tipo_position: typeof task.position,
           isNaN_position: isNaN(task.position),
-          isInteger_position: Number.isInteger(task.position)
+          isInteger_position: Number.isInteger(task.position),
         });
       }
-      
+
       // First, filter out any tasks with invalid IDs or positions
-      const validTasks = tasks.filter(task => {
+      let validTasks = tasks.filter((task) => {
         // Validação de ID
         if (task.id === undefined || task.id === null) {
           console.warn(`Tarefa com ID undefined/null rejeitada`);
           return false;
         }
-        
+
         if (isNaN(task.id)) {
           console.warn(`Tarefa com ID NaN rejeitada: ${task.id}`);
           return false;
         }
-        
+
         if (!Number.isInteger(task.id) || task.id <= 0) {
-          console.warn(`Tarefa com ID não inteiro ou negativo rejeitada: ${task.id}`);
+          console.warn(
+            `Tarefa com ID não inteiro ou negativo rejeitada: ${task.id}`,
+          );
           return false;
         }
-        
+
         // Validação de posição
         if (task.position === undefined || task.position === null) {
           console.warn(`Tarefa com posição undefined/null rejeitada`);
           return false;
         }
-        
+
         if (isNaN(task.position)) {
           console.warn(`Tarefa com posição NaN rejeitada: ${task.position}`);
           return false;
         }
-        
+
         if (!Number.isInteger(task.position) || task.position < 0) {
-          console.warn(`Tarefa com posição não inteira ou negativa rejeitada: ${task.position}`);
+          console.warn(
+            `Tarefa com posição não inteira ou negativa rejeitada: ${task.position}`,
+          );
           return false;
         }
-        
+
         return true;
       });
-      
+
       // Log any filtered out tasks
       if (validTasks.length !== tasks.length) {
-        console.warn(`Filtered out ${tasks.length - validTasks.length} invalid tasks from position update`);
+        console.warn(
+          `Filtered out ${tasks.length - validTasks.length} invalid tasks from position update`,
+        );
         console.warn("Original tasks:", tasks);
         console.warn("Valid tasks:", validTasks);
       }
-      
+
       if (validTasks.length === 0) {
         console.error("No valid tasks remain after filtering");
         return false;
       }
-      
+
       // Verificar existência de cada tarefa individualmente
-      const taskIds = validTasks.map(t => t.id);
-      
+      const taskIds = validTasks.map((t) => t.id);
+
       try {
         // Verificar cada tarefa diretamente
-        const tasks = await db.select({ id: householdTasks.id })
+        const tasks = await db
+          .select({ id: householdTasks.id })
           .from(householdTasks)
           .where(inArray(householdTasks.id, taskIds));
-        
-        const foundIds = tasks.map(t => t.id);
-        const missingIds = taskIds.filter(id => !foundIds.includes(id));
-        
+
+        const foundIds = tasks.map((t) => t.id);
+        const missingIds = taskIds.filter((id) => !foundIds.includes(id));
+
         if (missingIds.length > 0) {
-          console.warn(`IDs não encontrados no banco: ${missingIds.join(', ')}`);
-          
+          console.warn(
+            `IDs não encontrados no banco: ${missingIds.join(", ")}`,
+          );
+
           // Remover tarefas não encontradas em vez de falhar completamente
-          validTasks = validTasks.filter(task => foundIds.includes(task.id));
-          
+          validTasks = validTasks.filter((task) => foundIds.includes(task.id));
+
           if (validTasks.length === 0) {
-            console.error("Nenhuma tarefa válida após remover IDs inexistentes");
+            console.error(
+              "Nenhuma tarefa válida após remover IDs inexistentes",
+            );
             return false;
           }
-          
-          console.log(`Continuando com ${validTasks.length} tarefas válidas após filtrar IDs inexistentes`);
+
+          console.log(
+            `Continuando com ${validTasks.length} tarefas válidas após filtrar IDs inexistentes`,
+          );
         }
       } catch (error) {
         console.error("Erro ao verificar existência das tarefas:", error);
         return false;
       }
-      
+
       // Proceed with the update
       await db.transaction(async (tx) => {
         for (const task of validTasks) {
@@ -1816,7 +1855,7 @@ export class DatabaseStorage implements IStorage {
             .where(eq(householdTasks.id, task.id));
         }
       });
-      
+
       console.log("Task positions updated successfully");
       return true;
     } catch (error) {
