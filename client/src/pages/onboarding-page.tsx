@@ -1,20 +1,76 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, CalendarDays, Users, Home, Bell } from "lucide-react";
+import { CheckCircle2, CalendarDays, Users, Home, Bell, Heart } from "lucide-react";
 
 export default function OnboardingPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [step, setStep] = useState(1);
   const [partnerEmail, setPartnerEmail] = useState("");
+  const [isFromInvite, setIsFromInvite] = useState(false);
+  const [inviterName, setInviterName] = useState("");
+  
+  // Extrair o token de convite e as informações adicionais da URL, se existir
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteToken = urlParams.get('token');
+  const inviterNameFromURL = urlParams.get('name');
+  
+  // Inicializamos o partnerEmail com o valor que pode vir na URL
+  useEffect(() => {
+    // Se existe um email na URL (de um convite), usamos ele
+    const emailFromURL = urlParams.get('email');
+    if (emailFromURL) {
+      setPartnerEmail(emailFromURL);
+    }
+    
+    // Se existe um nome do invitador na URL, usamos ele
+    if (inviterNameFromURL) {
+      setInviterName(inviterNameFromURL);
+      setIsFromInvite(true);
+    }
+  }, []);
+  
+  // Buscar informações do convite se houver um token
+  const { data: inviteData, isSuccess: inviteFound } = useQuery({
+    queryKey: ['/api/invites', inviteToken],
+    queryFn: async () => {
+      if (!inviteToken) return null;
+      try {
+        const response = await apiRequest('GET', `/api/invites/validate?token=${inviteToken}`);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Erro ao validar convite:", error);
+        return null;
+      }
+    },
+    enabled: !!inviteToken,
+  });
+  
+  // Configurar o estado com base no convite
+  useEffect(() => {
+    if (inviteFound && inviteData) {
+      setIsFromInvite(true);
+      setInviterName(inviteData.inviterName || "seu parceiro");
+      // Se o usuário atual não for o convidado (não deve acontecer nesta página)
+      if (inviteData.inviterEmail === user?.email) {
+        toast({
+          title: "Convite inválido",
+          description: "Você não pode aceitar seu próprio convite.",
+          variant: "destructive"
+        });
+        navigate("/");
+      }
+    }
+  }, [inviteFound, inviteData, user, navigate, toast]);
   
   // Variantes de animação
   const cardVariants = {
@@ -62,17 +118,51 @@ export default function OnboardingPage() {
 
   const completeOnboardingMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/onboarding/complete", {
-        partnerEmail: partnerEmail || undefined
-      });
-      return response.json();
+      // Se o usuário veio de um convite, aceita o convite automaticamente
+      if (isFromInvite && inviteToken) {
+        try {
+          // Primeiro, aceita o convite
+          const acceptResponse = await apiRequest("POST", `/api/invites/accept`, {
+            token: inviteToken
+          });
+          
+          if (!acceptResponse.ok) {
+            throw new Error("Erro ao aceitar convite");
+          }
+          
+          // Em seguida, completa o onboarding
+          const onboardingResponse = await apiRequest("POST", "/api/onboarding/complete", {
+            inviteAccepted: true
+          });
+          
+          return onboardingResponse.json();
+        } catch (error) {
+          console.error("Erro ao processar convite:", error);
+          throw error;
+        }
+      } else {
+        // Fluxo normal - apenas completa o onboarding com email do parceiro (se fornecido)
+        const response = await apiRequest("POST", "/api/onboarding/complete", {
+          partnerEmail: partnerEmail || undefined
+        });
+        return response.json();
+      }
     },
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(["/api/user"], updatedUser);
-      toast({
-        title: "Tudo pronto!",
-        description: "Você já pode começar a usar o Por Nós.",
-      });
+      
+      if (isFromInvite) {
+        toast({
+          title: "Conexão realizada!",
+          description: `Você e ${inviterName} agora estão conectados no Por Nós.`,
+        });
+      } else {
+        toast({
+          title: "Tudo pronto!",
+          description: "Você já pode começar a usar o Por Nós.",
+        });
+      }
+      
       setTimeout(() => {
         navigate("/");
       }, 800);
@@ -80,7 +170,9 @@ export default function OnboardingPage() {
     onError: () => {
       toast({
         title: "Erro",
-        description: "Não foi possível concluir a configuração. Tente novamente.",
+        description: isFromInvite 
+          ? "Não foi possível conectar com seu parceiro. Tente novamente."
+          : "Não foi possível concluir a configuração. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -177,7 +269,11 @@ export default function OnboardingPage() {
                 variants={iconAnimation} 
                 className="bg-gradient-to-br from-primary/20 to-primary/5 inline-flex items-center justify-center w-24 h-24 rounded-full mb-5 shadow-lg shadow-primary/10"
               >
-                <Users className="text-primary h-12 w-12" />
+                {isFromInvite ? (
+                  <Heart className="text-rose-500 h-12 w-12" />
+                ) : (
+                  <Users className="text-primary h-12 w-12" />
+                )}
               </motion.div>
               
               <motion.h2 
@@ -185,7 +281,9 @@ export default function OnboardingPage() {
                 custom={0}
                 className="text-2xl font-bold mb-3"
               >
-                Bem-vindo(a) ao Por Nós!
+                {isFromInvite 
+                  ? `${inviterName} te convidou para o Por Nós!` 
+                  : 'Bem-vindo(a) ao Por Nós!'}
               </motion.h2>
               
               <motion.div 
@@ -193,15 +291,31 @@ export default function OnboardingPage() {
                 custom={1}
                 className="text-muted-foreground mb-8 space-y-3"
               >
-                <p>
-                  Se você está se cadastrando, é porque decidiu dar um upgrade na vida <span className="text-primary">💫</span> — ao lado do amor da sua vida <span className="text-rose-500">❤️</span>!
-                </p>
-                <p>
-                  É hora de construir uma nova rotina, criar hábitos incríveis e organizar o caos com leveza, parceria e muito amor.
-                </p>
-                <p>
-                  Porque juntos, tudo flui melhor, fica mais divertido e tem muito mais sentido! <span className="text-primary">✨</span>
-                </p>
+                {isFromInvite ? (
+                  <>
+                    <p>
+                      Que incrível! Você recebeu um convite especial de <span className="text-rose-500 font-medium">{inviterName}</span> <span className="text-rose-500">💌</span>
+                    </p>
+                    <p>
+                      Isso é um sinal de que vocês estão prontos para organizar a vida a dois com mais conexão, harmonia e propósito!
+                    </p>
+                    <p>
+                      Juntos, vocês poderão compartilhar calendários, dividir tarefas domésticas e se comunicar de forma mais eficiente. <span className="text-primary">✨</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Se você está se cadastrando, é porque decidiu dar um upgrade na vida <span className="text-primary">💫</span> — ao lado do amor da sua vida <span className="text-rose-500">❤️</span>!
+                    </p>
+                    <p>
+                      É hora de construir uma nova rotina, criar hábitos incríveis e organizar o caos com leveza, parceria e muito amor.
+                    </p>
+                    <p>
+                      Porque juntos, tudo flui melhor, fica mais divertido e tem muito mais sentido! <span className="text-primary">✨</span>
+                    </p>
+                  </>
+                )}
               </motion.div>
 
               <motion.div className="grid gap-3 mb-8">
@@ -272,7 +386,11 @@ export default function OnboardingPage() {
                   variants={iconAnimation}
                   className="bg-gradient-to-br from-primary/20 to-primary/5 inline-flex items-center justify-center w-24 h-24 rounded-full mb-5 shadow-lg shadow-primary/10"
                 >
-                  <Users className="text-primary h-12 w-12" />
+                  {isFromInvite ? (
+                    <Heart className="text-rose-500 h-12 w-12" />
+                  ) : (
+                    <Users className="text-primary h-12 w-12" />
+                  )}
                 </motion.div>
                 
                 <motion.h2 
@@ -280,7 +398,7 @@ export default function OnboardingPage() {
                   custom={0}
                   className="text-2xl font-bold mb-3"
                 >
-                  Convide seu parceiro(a)
+                  {isFromInvite ? 'Conexão com seu parceiro' : 'Convide seu parceiro(a)'}
                 </motion.h2>
                 
                 <motion.div 
@@ -288,47 +406,78 @@ export default function OnboardingPage() {
                   custom={1}
                   className="text-muted-foreground mb-8 space-y-3"
                 >
-                  <p>
-                    Compartilhar seus planos e tarefas com seu parceiro vai além da organização!
-                  </p>
-                  <p>
-                    Se você está recebendo um convite, é sinal de que alguém te ama muito <span className="text-rose-500">💌</span> e acredita que vocês merecem viver algo ainda mais especial juntos.
-                  </p>
-                  <p>
-                    Alguém que quer dividir o melhor da vida com você — com mais conexão, equilíbrio e alegria! <span className="text-primary">🌈</span><span className="text-rose-500">💖</span>
-                  </p>
+                  {isFromInvite ? (
+                    <>
+                      <p>
+                        Conecte-se com <span className="text-rose-500 font-medium">{inviterName}</span> para compartilhar calendários, tarefas e mais! <span className="text-rose-500">💞</span>
+                      </p>
+                      <p>
+                        Ao aceitar este convite, vocês estarão unindo suas agendas e seus espaços no aplicativo.
+                      </p>
+                      <p>
+                        Pronto para dar início a essa jornada de organização a dois? <span className="text-primary">✨</span>
+                      </p>
+                      
+                      <motion.div 
+                        variants={cardVariants}
+                        custom={2}
+                        className="mt-4 bg-rose-50 p-4 rounded-lg border border-rose-100"
+                      >
+                        <div className="flex items-center gap-2 text-rose-500 font-medium mb-1">
+                          <Heart className="h-4 w-4" /> Convite de parceria
+                        </div>
+                        <p className="text-sm text-left">
+                          <span className="font-medium">{inviterName}</span> convidou você para se conectar no aplicativo Por Nós. Ao aceitar, vocês terão acesso compartilhado a calendários, tarefas domésticas e notificações como parceiros.
+                        </p>
+                      </motion.div>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        Compartilhar seus planos e tarefas com seu parceiro vai além da organização!
+                      </p>
+                      <p>
+                        Se você está recebendo um convite, é sinal de que alguém te ama muito <span className="text-rose-500">💌</span> e acredita que vocês merecem viver algo ainda mais especial juntos.
+                      </p>
+                      <p>
+                        Alguém que quer dividir o melhor da vida com você — com mais conexão, equilíbrio e alegria! <span className="text-primary">🌈</span><span className="text-rose-500">💖</span>
+                      </p>
+                    </>
+                  )}
                 </motion.div>
               </div>
 
-              <motion.div 
-                variants={cardVariants}
-                custom={2}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Email do parceiro(a)
-                  </label>
-                  <motion.div
-                    whileTap={{ scale: 0.99 }}
-                  >
-                    <input
-                      type="email"
-                      value={partnerEmail}
-                      onChange={(e) => setPartnerEmail(e.target.value)}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-all duration-300 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md"
-                      placeholder="Digite o email do seu parceiro(a)"
-                    />
-                  </motion.div>
-                  <motion.p 
-                    variants={cardVariants}
-                    custom={3}
-                    className="text-xs text-muted-foreground mt-2"
-                  >
-                    Seu parceiro receberá um convite para se juntar a você no app
-                  </motion.p>
-                </div>
-              </motion.div>
+              {!isFromInvite && (
+                <motion.div 
+                  variants={cardVariants}
+                  custom={2}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Email do parceiro(a)
+                    </label>
+                    <motion.div
+                      whileTap={{ scale: 0.99 }}
+                    >
+                      <input
+                        type="email"
+                        value={partnerEmail}
+                        onChange={(e) => setPartnerEmail(e.target.value)}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none transition-all duration-300 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow-md"
+                        placeholder="Digite o email do seu parceiro(a)"
+                      />
+                    </motion.div>
+                    <motion.p 
+                      variants={cardVariants}
+                      custom={3}
+                      className="text-xs text-muted-foreground mt-2"
+                    >
+                      Seu parceiro receberá um convite para se juntar a você no app
+                    </motion.p>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </div>
