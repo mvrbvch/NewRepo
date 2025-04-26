@@ -1,7 +1,7 @@
 import { EventType } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "../../hooks/use-mobile";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
 import { 
   startOfMonth, 
@@ -36,7 +36,7 @@ export default function MonthView({
   onDayChange,
   onMonthChange,
 }: MonthViewProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useMobile();
   // Get all days in month view (including days from previous/next month to fill the grid)
   const monthDays = eachDayOfInterval({
     start: startOfWeek(startOfMonth(date), { locale: ptBR }),

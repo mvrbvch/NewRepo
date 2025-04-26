@@ -12,7 +12,7 @@ import EventDetailsModal from "@/components/calendar/event-details-modal";
 import { EventType } from "@/lib/types";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatDateSafely } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "../hooks/use-mobile";
 import {
   addDays,
   addWeeks,

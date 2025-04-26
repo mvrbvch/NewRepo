@@ -3,7 +3,7 @@ import { RippleButton } from "@/components/ui/ripple-button";
 import { formatDate } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isSameMonth, isToday, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "../../hooks/use-mobile";
 import { motion } from "framer-motion";
 import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -24,7 +24,7 @@ export default function DateNavigation({
   onNext,
   calendarView = 'day',
 }: DateNavigationProps) {
-  const isMobile = useIsMobile();
+  const { isMobile } = useMobile();
   
   let displayDate = '';
   const today = new Date();
