@@ -20,7 +20,7 @@
   /* IE 10 and IE 11 */
   user-select: none;
   touch-action: none;
-  -webkit-touch-action: none;
+  -webkit-touch-callout: none;
 
   /* Standard syntax */
 }
