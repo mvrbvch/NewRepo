@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import WelcomeScreen from "@/components/welcome/welcome-screen";
 
-const WelcomePage: React.FC = () => {
+// Definir o tipo de retorno explicitamente como JSX.Element
+const WelcomePage = (): JSX.Element => {
   const [_, setLocation] = useLocation();
   const { user } = useAuth();
 

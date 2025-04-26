@@ -1,334 +1,209 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/hooks/use-auth";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import {
-  Heart,
-  Calendar,
-  Home,
-  Gift,
-  Star,
-  Coffee,
-  Sparkles,
-  CheckCircle2,
-  ArrowRight
-} from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { ArrowRight, Calendar, Heart, Clock, Home } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-// Constantes para os tipos de eventos na jornada
-export enum JourneyEventType {
-  JOIN = "join",           // Entrada no app
-  PARTNER = "partner",     // Conexão com parceiro
-  TASK = "task",           // Primeira tarefa doméstica
-  EVENT = "event",         // Primeiro evento adicionado
-  MILESTONE = "milestone", // Marco personalizado  
+interface JourneyTimelineProps {
+  onComplete: () => void;
 }
 
-// Interface para eventos da jornada
-interface JourneyEvent {
+// Para mockup, caso não tenha dados reais ainda
+interface TimelineEvent {
   id: string;
-  type: JourneyEventType;
   title: string;
-  description: string;
   date: Date;
   icon: React.ReactNode;
-  color: string;
-  completed: boolean;
+  description: string;
 }
 
-// Componente de visualização da jornada do casal
-const JourneyTimeline: React.FC<{onComplete: () => void}> = ({ onComplete }) => {
-  const { user, partner } = useAuth();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [journeyProgress, setJourneyProgress] = useState(0);
-  const [journeyEvents, setJourneyEvents] = useState<JourneyEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Efeito para inicializar a jornada baseada nos dados do usuário
+const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  
+  // Simulação de carregamento de eventos
   useEffect(() => {
-    // Simulando um pequeno delay para carregar os dados
-    const loadJourneyData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Eventos base da jornada
-        const baseEvents: JourneyEvent[] = [
-          {
-            id: "join",
-            type: JourneyEventType.JOIN,
-            title: "Jornada iniciada",
-            description: `Bem-vindo(a) ao Nós Juntos! Você começou sua jornada ${formatDistanceToNow(new Date(user?.createdAt || new Date()), {
-              locale: ptBR,
-              addSuffix: true,
-            })}`,
-            date: new Date(user?.createdAt || new Date()),
-            icon: <Heart className="h-5 w-5" />,
-            color: "text-rose-500",
-            completed: true,
-          },
-          {
-            id: "partner",
-            type: JourneyEventType.PARTNER,
-            title: partner ? "Parceiro conectado" : "Conecte seu parceiro",
-            description: partner
-              ? `Você e ${partner.name} estão conectados para organizar a vida juntos!`
-              : "Convide seu parceiro para compartilhar essa jornada",
-            date: partner?.createdAt ? new Date(partner.createdAt) : new Date(),
-            icon: <Coffee className="h-5 w-5" />,
-            color: "text-amber-500",
-            completed: !!partner,
-          },
-          {
-            id: "task",
-            type: JourneyEventType.TASK,
-            title: "Organização doméstica",
-            description: "Comece a dividir as tarefas domésticas de forma equilibrada",
-            date: new Date(),
-            icon: <Home className="h-5 w-5" />,
-            color: "text-emerald-500",
-            completed: false, // Deveria ser baseado em dados reais
-          },
-          {
-            id: "event",
-            type: JourneyEventType.EVENT,
-            title: "Planos juntos",
-            description: "Adicionem eventos especiais no calendário compartilhado",
-            date: new Date(),
-            icon: <Calendar className="h-5 w-5" />,
-            color: "text-blue-500",
-            completed: false, // Deveria ser baseado em dados reais
-          },
-          {
-            id: "milestone",
-            type: JourneyEventType.MILESTONE,
-            title: "Marco especial",
-            description: "Celebre momentos únicos da sua relação no app",
-            date: new Date(),
-            icon: <Star className="h-5 w-5" />,
-            color: "text-violet-500",
-            completed: false,
-          },
-        ];
-
-        // Calcular progresso baseado nos eventos completos
-        const completedEvents = baseEvents.filter(event => event.completed).length;
-        const progress = Math.round((completedEvents / baseEvents.length) * 100);
-        
-        setJourneyEvents(baseEvents);
-        setJourneyProgress(progress);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Erro ao carregar dados da jornada:", error);
-        setIsLoading(false);
-      }
-    };
-
-    loadJourneyData();
-  }, [user, partner]);
-
-  // Avançar para o próximo passo da animação
-  const nextStep = () => {
-    if (currentStep < journeyEvents.length) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete();
-    }
-  };
-
-  // Animação automática com avanço de passos
-  useEffect(() => {
-    if (isLoading) return;
-    
+    // Simula atraso de carregamento
     const timer = setTimeout(() => {
-      if (currentStep < journeyEvents.length) {
-        setCurrentStep(currentStep + 1);
-      }
-    }, 1000); // Avança automaticamente a cada 2s
-    
-    return () => clearTimeout(timer);
-  }, [currentStep, journeyEvents.length, isLoading]);
+      // Aqui seriam carregados os eventos reais da API
+      setEvents([
+        {
+          id: "1",
+          title: "Início do relacionamento",
+          date: new Date(2021, 4, 15),
+          icon: <Heart className="h-6 w-6 text-rose-500" />,
+          description: "O início de uma história incrível juntos."
+        },
+        {
+          id: "2",
+          title: "Primeiro encontro",
+          date: new Date(2021, 4, 22),
+          icon: <Calendar className="h-6 w-6 text-blue-500" />,
+          description: "Um jantar inesquecível com muitas risadas e boas conversas."
+        },
+        {
+          id: "3",
+          title: "Aniversário de namoro",
+          date: new Date(2022, 4, 15),
+          icon: <Calendar className="h-6 w-6 text-green-500" />,
+          description: "Um ano cheio de momentos especiais e crescimento juntos."
+        },
+        {
+          id: "4",
+          title: "Mudança para casa nova",
+          date: new Date(2023, 2, 10),
+          icon: <Home className="h-6 w-6 text-amber-500" />,
+          description: "Começando a construir um lar juntos, com planos e sonhos compartilhados."
+        }
+      ]);
+    }, 500);
 
-  // Variantes para animação do framer-motion
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Animações
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { 
-        when: "beforeChildren",
-        staggerChildren: 0.3,
-        delay: 0.3,
-      },
-    },
-    exit: {
-      opacity: 0,
-      transition: { when: "afterChildren" }
+      transition: {
+        delayChildren: 0.3,
+        staggerChildren: 0.1
+      }
     }
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
+    visible: {
+      y: 0,
       opacity: 1,
       transition: {
         type: "spring",
         stiffness: 300,
         damping: 24
       }
-    },
-    exit: {
-      y: -20,
-      opacity: 0
     }
   };
 
-  // Animação do progresso da jornada
-  const progressVariants = {
-    initial: { width: "0%" },
-    animate: { 
-      width: `${journeyProgress}%`,
-      transition: { 
-        duration: 1.5,
-        ease: "easeOut"
-      }
+  // Avançar para o próximo evento
+  const nextEvent = () => {
+    if (activeIndex < events.length - 1) {
+      setActiveIndex(activeIndex + 1);
+    } else {
+      onComplete();
     }
   };
 
-  if (isLoading) {
+  // Formatador de data em português
+  const formatDate = (date: Date) => {
+    return format(date, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
+  };
+
+  // Se não houver eventos, mostre um estado de carregamento
+  if (events.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="flex flex-col items-center">
-          <Sparkles className="h-12 w-12 text-primary animate-pulse" />
-          <p className="mt-4 text-muted-foreground">Carregando sua jornada...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-6"></div>
+        <p className="text-lg text-muted-foreground">Carregando sua jornada...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">
-          Sua Jornada no <span className="text-primary">Nós Juntos</span>
-        </h1>
-        <p className="text-muted-foreground">
-          Veja os momentos importantes da sua história juntos
-        </p>
-      </motion.div>
+    <motion.div
+      className="flex flex-col items-center px-6 py-8 max-w-4xl mx-auto"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.h1 className="text-3xl font-bold mb-3 text-center" variants={itemVariants}>
+        Sua Jornada Juntos
+      </motion.h1>
+      
+      <motion.p className="text-muted-foreground text-center mb-10 max-w-md" variants={itemVariants}>
+        Relembre os momentos especiais que construíram sua história de amor
+      </motion.p>
 
-      <div className="relative mb-8">
-        <div className="h-2 w-full bg-muted rounded-full">
+      {/* Timeline vertical */}
+      <div className="relative w-full max-w-2xl">
+        {/* Linha vertical central */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary/20 rounded-full z-0"></div>
+        
+        {/* Eventos da timeline */}
+        {events.map((event, index) => (
           <motion.div
-            initial="initial"
-            animate="animate"
-            variants={progressVariants}
-            className="h-full bg-primary rounded-full"
-          />
-        </div>
-        <div className="flex justify-between mt-2">
-          <span className="text-xs text-muted-foreground">Início</span>
-          <span className="text-xs font-medium">{journeyProgress}% completo</span>
-        </div>
-      </div>
-
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        className="flex-1 relative"
-      >
-        {/* Linha do tempo vertical */}
-        <div className="absolute left-4 top-0 bottom-0 w-px bg-muted"></div>
-
-        {/* Eventos da jornada */}
-        <div className="space-y-8">
-          <AnimatePresence>
-            {journeyEvents.slice(0, currentStep).map((event, index) => (
-              <motion.div
-                key={event.id}
-                variants={itemVariants}
-                custom={index}
-                className="ml-12 relative"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
+            key={event.id}
+            className={`relative mb-12 flex ${
+              index % 2 === 0 ? "flex-row" : "flex-row-reverse"
+            }`}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ 
+              opacity: index <= activeIndex ? 1 : 0.3,
+              y: 0,
+              transition: { 
+                delay: index * 0.1,
+                duration: 0.5
+              }
+            }}
+          >
+            {/* Conector para a linha central */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/4">
+              <div 
+                className={`w-6 h-6 rounded-full ${
+                  index <= activeIndex ? "bg-primary" : "bg-gray-200"
+                } flex items-center justify-center z-10`}
               >
-                {/* Indicador na linha do tempo */}
-                <div 
-                  className={cn(
-                    "absolute left-[-27px] w-6 h-6 rounded-full flex items-center justify-center",
-                    event.completed ? "bg-primary/20" : "bg-muted"
-                  )}
-                >
-                  <div className={cn(
-                    "absolute w-4 h-4 rounded-full flex items-center justify-center", 
-                    event.completed ? "bg-primary" : "bg-muted"
-                  )}>
-                    {event.completed && (
-                      <CheckCircle2 className="h-3 w-3 text-white" />
-                    )}
+                {index < activeIndex && (
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="w-3 h-3 bg-white rounded-full"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Conteúdo do evento */}
+            <div className={`w-5/12 px-4 ${index % 2 === 0 ? "text-right" : "text-left"}`}>
+              <motion.div
+                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                animate={{ 
+                  opacity: index <= activeIndex ? 1 : 0.5,
+                  x: 0,
+                  transition: { delay: 0.2 + index * 0.1 }
+                }}
+                className={`p-4 bg-white/80 rounded-lg border border-primary/10 shadow-sm 
+                  ${index === activeIndex ? "ring-2 ring-primary/20" : ""}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    {event.icon}
                   </div>
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(event.date)}
+                  </span>
                 </div>
-
-                {/* Card do evento */}
-                <Card className={cn(
-                  "p-4 border",
-                  event.completed ? "border-primary/30" : "border-muted",
-                  "transition-all duration-300 hover:shadow-md"
-                )}>
-                  <div className="flex items-start">
-                    <div className={cn(
-                      "mr-4 p-2 rounded-full",
-                      event.completed ? "bg-primary/10" : "bg-muted/50"
-                    )}>
-                      <div className={event.color}>{event.icon}</div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-lg">{event.title}</h3>
-                      <p className="text-muted-foreground text-sm">{event.description}</p>
-                      
-                      {event.completed && (
-                        <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                          <CheckCircle2 className="h-3 w-3 mr-1 text-primary" />
-                          <span>Concluído {formatDistanceToNow(event.date, { 
-                            locale: ptBR, 
-                            addSuffix: true 
-                          })}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
+                <h3 className="text-lg font-medium mb-1">{event.title}</h3>
+                <p className="text-muted-foreground text-sm">{event.description}</p>
               </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </motion.div>
+            </div>
 
-      {/* Botão de continuar */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ 
-          opacity: currentStep >= journeyEvents.length ? 1 : 0,
-          y: currentStep >= journeyEvents.length ? 0 : 20
-        }}
-        transition={{ duration: 0.5 }}
-        className="mt-8 flex justify-center"
-      >
-        {currentStep >= journeyEvents.length && (
-          <Button onClick={onComplete} size="lg" className="group">
-            Continuar para o app
+            {/* Espaço vazio do outro lado da linha do tempo */}
+            <div className="w-5/12"></div>
+          </motion.div>
+        ))}
+
+        {/* Botão de ação */}
+        <motion.div 
+          className="flex justify-center mt-8"
+          variants={itemVariants}
+        >
+          <Button onClick={nextEvent} size="lg" className="group">
+            {activeIndex < events.length - 1 ? "Próximo momento" : "Continuar"}
             <motion.span
               className="ml-2 inline-block"
               initial={{ x: 0 }}
@@ -338,9 +213,9 @@ const JourneyTimeline: React.FC<{onComplete: () => void}> = ({ onComplete }) => 
               <ArrowRight className="h-4 w-4" />
             </motion.span>
           </Button>
-        )}
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 };
 

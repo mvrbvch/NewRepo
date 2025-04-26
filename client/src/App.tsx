@@ -12,6 +12,7 @@ import PartnerInvitePage from "./pages/partner-invite-page";
 import HouseholdTasksPage from "./pages/household-tasks-page";
 import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import LandingPage from "./pages/landing-page";
+import WelcomePage from "./pages/welcome-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
@@ -25,10 +26,21 @@ import { SplashScreen } from "./components/pwa/splash-screen";
 function Router() {
   return (
     <Switch>
+      {/* Landing page pública */}
       <Route path="/landing" component={LandingPage} />
+      
+      {/* Rota principal protegida */}
       <ProtectedRoute path="/" component={HomePage} />
+      
+      {/* Rotas de autenticação */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+      
+      {/* Experiência de onboarding e boas-vindas */}
       <ProtectedRoute path="/onboarding" component={OnboardingPage} />
+      <ProtectedRoute path="/welcome" component={WelcomePage} />
+      
+      {/* Outras rotas protegidas */}
       <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
       <ProtectedRoute
         path="/notifications"
@@ -39,7 +51,8 @@ function Router() {
         path="/tasks/reorder"
         component={HouseholdTasksPageSimple}
       />
-      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+      
+      {/* Rota de não encontrado */}
       <Route component={NotFound} />
     </Switch>
   );

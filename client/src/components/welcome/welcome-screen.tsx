@@ -26,10 +26,34 @@ interface WelcomeScreenProps {
   onComplete: () => void;
 }
 
+// Adicionar tipo para parceiro se não existir no hook auth
+interface Partner {
+  name: string;
+  createdAt?: string | Date;
+}
+
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
   const [step, setStep] = useState<WelcomeStep>(WelcomeStep.WELCOME);
   const [_, setLocation] = useLocation();
-  const { user, partner } = useAuth();
+  const { user } = useAuth();
+  // Mocking partner para demo - será substituído por informações reais
+  const [partner, setPartner] = useState<Partner | null>(null);
+
+  // Obter informações do parceiro quando estiver disponível
+  useEffect(() => {
+    // Para fins de demonstração - aqui seria uma chamada à API
+    // para obter os dados do parceiro
+    if (user) {
+      // Simulação - remover e substituir com dados reais
+      const hasPartner = Math.random() > 0.5; // apenas para exemplo
+      if (hasPartner) {
+        setPartner({
+          name: "Parceiro(a)",
+          createdAt: new Date()
+        });
+      }
+    }
+  }, [user]);
 
   // Animações compartilhadas
   const containerVariants = {
@@ -166,7 +190,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
               variants={itemVariants}
               whileHover="hover"
               whileTap="tap"
-              variants={buttonVariants}
             >
               <Button onClick={nextStep} size="lg" className="group">
                 Começar jornada
@@ -252,7 +275,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
               variants={itemVariants}
               whileHover="hover"
               whileTap="tap"
-              variants={buttonVariants}
             >
               <Button onClick={nextStep} size="lg" className="group">
                 Continuar
@@ -308,7 +330,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
               variants={itemVariants}
               whileHover="hover"
               whileTap="tap"
-              variants={buttonVariants}
             >
               <Button onClick={onComplete} size="lg" variant="default" className="group">
                 Começar a usar o app
