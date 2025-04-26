@@ -19,6 +19,9 @@
   -ms-user-select: none;
   /* IE 10 and IE 11 */
   user-select: none;
+  touch-action: none;
+  -webkit-touch-action: none;
+
   /* Standard syntax */
 }
 
