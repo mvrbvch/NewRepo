@@ -4,9 +4,12 @@ import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { z } from "zod";
-import { pool } from "./db";
+// Importações e preparações necessárias
+import { sql, eq } from "drizzle-orm";
+import { pool, db } from "./db";
 import {
   Event,
+  householdTasks,
   insertHouseholdTaskSchema,
   insertUserDeviceSchema,
   insertNotificationSchema,
@@ -38,7 +41,7 @@ import { getVapidPublicKey } from "./pushNotifications";
 function expandRecurringEvents(
   events: Event[],
   startDate: Date,
-  endDate: Date
+  endDate: Date,
 ): Event[] {
   const result: Event[] = [];
 
@@ -276,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const expandedEvents = expandRecurringEvents(
         allEvents,
         startDate,
-        endDate
+        endDate,
       );
 
       res.json(expandedEvents);
@@ -358,10 +361,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Send push notification to the partner
           const sentCount = await sendPushToUser(
             req.user.partnerId,
-            pushPayload
+            pushPayload,
           );
           console.log(
-            `Enviadas ${sentCount} notificações push para o parceiro sobre o evento compartilhado`
+            `Enviadas ${sentCount} notificações push para o parceiro sobre o evento compartilhado`,
           );
 
           // Create notification in database
@@ -382,7 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (notificationError) {
           console.error(
             "Erro ao enviar notificação de evento compartilhado:",
-            notificationError
+            notificationError,
           );
           // Continue even if notification fails
         }
@@ -462,7 +465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if event is shared with this user with edit permission
         const shares = await storage.getEventShares(eventId);
         const userShare = shares.find(
-          (share) => share.userId === userId && share.permission === "edit"
+          (share) => share.userId === userId && share.permission === "edit",
         );
 
         if (!userShare) {
@@ -506,7 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Send push notification to the user
             const sentCount = await sendPushToUser(share.userId, pushPayload);
             console.log(
-              `Enviadas ${sentCount} notificações push para o usuário ${share.userId} sobre o evento atualizado`
+              `Enviadas ${sentCount} notificações push para o usuário ${share.userId} sobre o evento atualizado`,
             );
 
             // Create notification in database
@@ -527,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (notificationError) {
           console.error(
             "Erro ao enviar notificações de evento atualizado:",
-            notificationError
+            notificationError,
           );
           // Continue even if notification fails
         }
@@ -652,7 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Send push notification to the user
           const sentCount = await sendPushToUser(userIdToNotify, pushPayload);
           console.log(
-            `Enviadas ${sentCount} notificações push para o usuário ${userIdToNotify} sobre o novo comentário`
+            `Enviadas ${sentCount} notificações push para o usuário ${userIdToNotify} sobre o novo comentário`,
           );
 
           // Create notification in database
@@ -674,7 +677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (notificationError) {
         console.error(
           "Erro ao enviar notificações de novo comentário:",
-          notificationError
+          notificationError,
         );
         // Continue even if notification fails
       }
@@ -722,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { html, text } = generatePartnerInviteEmail(
             email,
             inviter.name,
-            token
+            token,
           );
 
           // No ambiente de teste do Resend, só podemos enviar emails para o endereço autorizado
@@ -736,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           console.log(
-            `Email de convite ${emailSent ? "enviado com sucesso" : "falhou ao enviar"}`
+            `Email de convite ${emailSent ? "enviado com sucesso" : "falhou ao enviar"}`,
           );
         } catch (emailError) {
           console.error("Erro ao enviar email de convite:", emailError);
@@ -1051,10 +1054,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Send push notification to the assigned user
             const sentCount = await sendPushToUser(
               newTask.assignedTo,
-              pushPayload
+              pushPayload,
             );
             console.log(
-              `Enviadas ${sentCount} notificações push para o usuário responsável pela tarefa`
+              `Enviadas ${sentCount} notificações push para o usuário responsável pela tarefa`,
             );
 
             // Create notification in database
@@ -1075,7 +1078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (notificationError) {
           console.error(
             "Erro ao enviar notificação de tarefa:",
-            notificationError
+            notificationError,
           );
           // Continue even if notification fails
         }
@@ -1165,10 +1168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Send push notification to the newly assigned user
             const sentCount = await sendPushToUser(
               updates.assignedTo,
-              pushPayload
+              pushPayload,
             );
             console.log(
-              `Enviadas ${sentCount} notificações push para o novo responsável pela tarefa`
+              `Enviadas ${sentCount} notificações push para o novo responsável pela tarefa`,
             );
 
             // Create notification in database
@@ -1189,7 +1192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (notificationError) {
           console.error(
             "Erro ao enviar notificação de tarefa atualizada:",
-            notificationError
+            notificationError,
           );
           // Continue even if notification fails
         }
@@ -1219,7 +1222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Send push notification to the assigned user
           const sentCount = await sendPushToUser(task.assignedTo, pushPayload);
           console.log(
-            `Enviadas ${sentCount} notificações push para o responsável pela tarefa atualizada`
+            `Enviadas ${sentCount} notificações push para o responsável pela tarefa atualizada`,
           );
 
           // Create notification in database
@@ -1239,7 +1242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (notificationError) {
           console.error(
             "Erro ao enviar notificação de tarefa atualizada:",
-            notificationError
+            notificationError,
           );
           // Continue even if notification fails
         }
@@ -1326,7 +1329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedTask = await storage.markHouseholdTaskAsCompleted(
         taskId,
-        completed
+        completed,
       );
 
       // If the task was completed by someone else, notify the creator
@@ -1353,7 +1356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Send push notification to the task creator
           const sentCount = await sendPushToUser(task.createdBy, pushPayload);
           console.log(
-            `Enviadas ${sentCount} notificações push para o criador da tarefa concluída`
+            `Enviadas ${sentCount} notificações push para o criador da tarefa concluída`,
           );
 
           // Create notification in database
@@ -1374,7 +1377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (notificationError) {
           console.error(
             "Erro ao enviar notificação de tarefa concluída:",
-            notificationError
+            notificationError,
           );
           // Continue even if notification fails
         }
@@ -1443,7 +1446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         task.title,
         task.description,
         message || null,
-        taskId
+        taskId,
       );
 
       // No ambiente de teste do Resend, só podemos enviar emails para o próprio email do usuário registrado
@@ -1470,7 +1473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/tasks/reorder", async (req, res) => {
+  app.put("/api/tasks-reorder", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -1478,7 +1481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tasks } = req.body;
       console.log("Received task reorder request:", JSON.stringify(tasks));
-      
+
       // Obter o ID do usuário atual
       const userId = req.user?.id as number;
       if (!userId) {
@@ -1492,65 +1495,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Expected an array of tasks",
         });
       }
-      
-      // Importações e preparações necessárias
-      const { db } = require('./db');
-      const { sql, eq } = require('drizzle-orm');
-      const { householdTasks } = require('../shared/schema');
-      
+
       // Strict validation and conversion of task IDs and positions
       let validTasks = [];
-      
+
       for (const task of tasks) {
         // Task deve ter um ID e uma posição
         if (!task || task.id === undefined || task.position === undefined) {
-          console.warn(`Task inválida ou incompleta recebida: ${JSON.stringify(task)}`);
+          console.warn(
+            `Task inválida ou incompleta recebida: ${JSON.stringify(task)}`,
+          );
           continue;
         }
-        
+
         // Make sure both values are numeric
         let id, position;
-        
+
         try {
           // Tratar múltiplos tipos de dados para ID
-          if (typeof task.id === 'number') {
+          if (typeof task.id === "number") {
             id = task.id;
-          } else if (typeof task.id === 'string') {
+          } else if (typeof task.id === "string") {
             id = parseInt(task.id, 10);
           } else {
             console.warn(`Tipo de ID não tratável: ${typeof task.id}`);
             continue;
           }
-          
+
           // Tratar múltiplos tipos de dados para posição
-          if (typeof task.position === 'number') {
+          if (typeof task.position === "number") {
             position = task.position;
-          } else if (typeof task.position === 'string') {
+          } else if (typeof task.position === "string") {
             position = parseInt(task.position, 10);
           } else {
-            console.warn(`Tipo de posição não tratável: ${typeof task.position}`);
+            console.warn(
+              `Tipo de posição não tratável: ${typeof task.position}`,
+            );
             continue;
           }
-          
+
           // Validar após conversão
           if (isNaN(id) || !Number.isInteger(id) || id <= 0) {
-            console.warn(`ID de tarefa inválido após conversão: ${task.id} => ${id}`);
+            console.warn(
+              `ID de tarefa inválido após conversão: ${task.id} => ${id}`,
+            );
             continue;
           }
-          
+
           if (isNaN(position) || !Number.isInteger(position) || position < 0) {
-            console.warn(`Posição inválida após conversão: ${task.position} => ${position}`);
+            console.warn(
+              `Posição inválida após conversão: ${task.position} => ${position}`,
+            );
             continue;
           }
-          
+
           // Add to valid tasks
           validTasks.push({ id, position });
         } catch (err) {
-          console.warn(`Erro ao processar tarefa: ${JSON.stringify(task)}`, err);
+          console.warn(
+            `Erro ao processar tarefa: ${JSON.stringify(task)}`,
+            err,
+          );
           continue;
         }
       }
-      
+
       if (validTasks.length === 0) {
         return res.status(400).json({
           status: "error",
@@ -1560,62 +1569,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar se as tarefas pertencem ao usuário
       // Obter IDs de todas as tarefas que queremos reordenar
-      const taskIds = validTasks.map(task => task.id);
-      
+      const taskIds = validTasks.map((task) => task.id);
+
       // Verificar se alguma tarefa está com ID NaN
-      const nanTasks = taskIds.filter(id => isNaN(id));
+      const nanTasks = taskIds.filter((id) => isNaN(id));
       if (nanTasks.length > 0) {
         console.error("ID de tarefa inválido recebido como NaN:", nanTasks);
         return res.status(400).json({
           status: "error",
           message: "Invalid task ID received",
-          details: { invalidIds: nanTasks }
+          details: { invalidIds: nanTasks },
         });
       }
-      
+
       // Verificar diretamente no banco se as tarefas existem e pertencem ao usuário
       try {
         // Log detalhado para depuração
-        console.log("Executando consulta SQL para verificar tarefas. IDs das tarefas:", taskIds);
+        console.log(
+          "Executando consulta SQL para verificar tarefas. IDs das tarefas:",
+          taskIds,
+        );
         console.log("UserID atual:", userId);
-        
+
         const results = await db.execute(
           sql`SELECT id FROM household_tasks 
               WHERE id IN (${sql.join(taskIds, sql`, `)}) 
-              AND (created_by = ${userId} OR assigned_to = ${userId})`
+              AND (created_by = ${userId} OR assigned_to = ${userId})`,
         );
-        
+
         console.log("Resultados da consulta:", results.rows);
-        
-        const foundIds = results.rows.map(row => Number(row.id));
+
+        const foundIds = results.rows.map((row) => Number(row.id));
         console.log("IDs encontrados no banco:", foundIds);
-        
-        const missingIds = taskIds.filter(id => !foundIds.includes(id));
+
+        const missingIds = taskIds.filter((id) => !foundIds.includes(id));
         console.log("IDs de tarefas não encontrados:", missingIds);
-        
+
         if (missingIds.length > 0) {
-          console.warn(`Tarefas não encontradas ou sem permissão: ${missingIds.join(', ')}`);
-          
+          console.warn(
+            `Tarefas não encontradas ou sem permissão: ${missingIds.join(", ")}`,
+          );
+
           // Verificar se qualquer ID existe no banco de dados (independente do dono)
           const taskExistenceCheck = await db.execute(
-            sql`SELECT id FROM household_tasks WHERE id IN (${sql.join(missingIds, sql`, `)})`
+            sql`SELECT id FROM household_tasks WHERE id IN (${sql.join(missingIds, sql`, `)})`,
           );
-          
-          const existingIds = taskExistenceCheck.rows.map(row => Number(row.id));
-          const nonExistentIds = missingIds.filter(id => !existingIds.includes(id));
-          const unauthorizedIds = missingIds.filter(id => existingIds.includes(id));
-          
+
+          const existingIds = taskExistenceCheck.rows.map((row) =>
+            Number(row.id),
+          );
+          const nonExistentIds = missingIds.filter(
+            (id) => !existingIds.includes(id),
+          );
+          const unauthorizedIds = missingIds.filter((id) =>
+            existingIds.includes(id),
+          );
+
           if (nonExistentIds.length > 0) {
             console.error("Tarefas inexistentes:", nonExistentIds);
           }
-          
+
           if (unauthorizedIds.length > 0) {
-            console.error("Tarefas existentes, mas sem permissão:", unauthorizedIds);
+            console.error(
+              "Tarefas existentes, mas sem permissão:",
+              unauthorizedIds,
+            );
           }
-          
+
           // Filtrar apenas tarefas que foram encontradas
-          const filteredTasks = validTasks.filter(task => foundIds.includes(task.id));
-          
+          const filteredTasks = validTasks.filter((task) =>
+            foundIds.includes(task.id),
+          );
+
           if (filteredTasks.length === 0) {
             console.error("Nenhuma tarefa válida encontrada após filtragem");
             return res.status(404).json({
@@ -1624,25 +1649,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
               details: {
                 nonExistentIds,
                 unauthorizedIds,
-                message: "None of the provided tasks belong to you or exist"
-              }
+                message: "None of the provided tasks belong to you or exist",
+              },
             });
           }
-          
+
           // Atualizar a referência
-          console.log(`Continuando com ${filteredTasks.length} tarefas válidas:`, 
-            filteredTasks.map(t => ({ id: t.id, position: t.position })));
-          
+          console.log(
+            `Continuando com ${filteredTasks.length} tarefas válidas:`,
+            filteredTasks.map((t) => ({ id: t.id, position: t.position })),
+          );
+
           // Usar a lista filtrada
           validTasks = filteredTasks;
         }
-        
+
         // Se chegou aqui, temos pelo menos algumas tarefas válidas
         console.log("Tarefas validadas para reordenação:", validTasks);
-        
+
         // Tentar atualizar diretamente no banco com uma transação
         let success = false;
-        
+
         await db.transaction(async (tx) => {
           // Atualizar cada tarefa diretamente
           for (const task of validTasks) {
@@ -1653,12 +1680,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           success = true;
         });
-        
+
         if (success) {
           return res.status(200).json({
             status: "success",
             message: "Tasks reordered successfully",
-            count: validTasks.length
+            count: validTasks.length,
           });
         } else {
           return res.status(500).json({
@@ -1667,11 +1694,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       } catch (error) {
-        console.error("Erro durante verificação ou atualização de tarefas:", error);
+        console.error(
+          "Erro durante verificação ou atualização de tarefas:",
+          error,
+        );
         return res.status(500).json({
           status: "error",
           message: "Error processing tasks",
-          details: error instanceof Error ? error.message : String(error)
+          details: error instanceof Error ? error.message : String(error),
         });
       }
     } catch (error) {
@@ -1739,7 +1769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Esta é uma limitação da API gratuita do Resend
       const testEmail = "matheus.murbach@gmail.com"; // Email do usuário registrado no Resend
       console.log(
-        `Usando endereço autorizado pelo Resend em vez de ${partner.email}: ${testEmail}`
+        `Usando endereço autorizado pelo Resend em vez de ${partner.email}: ${testEmail}`,
       );
 
       // Sobrescrever o email do parceiro para o endereço de teste
@@ -1755,7 +1785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         task.title,
         task.description,
         "Este é um lembrete de teste da funcionalidade de notificação entre parceiros!",
-        taskId
+        taskId,
       );
 
       const emailSent = await sendEmail({
@@ -1840,7 +1870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lastUsed: new Date(),
             pushEnabled: true,
             deviceName: deviceName || existingDevice.deviceName,
-          }
+          },
         );
 
         console.log("Dispositivo atualizado para Web Push:", updatedDevice);
@@ -1935,7 +1965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: error instanceof Error ? error.message : String(error),
         });
       }
-    }
+    },
   );
 
   // Registra um novo dispositivo para receber notificações push (endpoint genérico)
@@ -1965,7 +1995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar se o token já está registrado para este usuário
       const existingDevice = await storage.getUserDeviceByToken(
-        deviceData.deviceToken
+        deviceData.deviceToken,
       );
       if (existingDevice && existingDevice.userId === userId) {
         // Atualizar dispositivo existente
@@ -1974,7 +2004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             ...deviceData,
             lastUsed: new Date(),
-          }
+          },
         );
         return res.json(updatedDevice);
       }
@@ -2233,7 +2263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Enviar push para todos os dispositivos do parceiro
         const sentCount = await sendPushToUser(
           currentUser.partnerId,
-          pushPayload
+          pushPayload,
         );
 
         console.log(`Enviadas ${sentCount} notificações push para o parceiro`);
@@ -2286,7 +2316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       console.log(
-        `Teste de notificação solicitado pelo usuário ${userId} para plataforma: ${platform || "todas"}`
+        `Teste de notificação solicitado pelo usuário ${userId} para plataforma: ${platform || "todas"}`,
       );
 
       // Criar uma notificação de teste no banco de dados
@@ -2333,7 +2363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(
         "[NOTIF TEST] Payload configurado:",
-        JSON.stringify(pushPayload)
+        JSON.stringify(pushPayload),
       );
 
       // Enviar push para dispositivos com base na plataforma solicitada
@@ -2345,7 +2375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const devices = await storage.getUserDevices(userId);
           console.log(userId, devices);
           const filteredDevices = devices.filter(
-            (device) => device.deviceType === platform && device.pushEnabled
+            (device) => device.deviceType === platform && device.pushEnabled,
           );
 
           if (filteredDevices.length === 0) {
@@ -2360,19 +2390,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Enviar para dispositivos específicos da plataforma
           const results = await Promise.all(
             filteredDevices.map((device) =>
-              sendPushToDevice(device, pushPayload)
-            )
+              sendPushToDevice(device, pushPayload),
+            ),
           );
 
           sentCount = results.filter((result: boolean) => result).length;
           console.log(
-            `Enviadas ${sentCount} notificações push de teste para dispositivos ${platform}`
+            `Enviadas ${sentCount} notificações push de teste para dispositivos ${platform}`,
           );
         } else {
           // Enviar para todos os dispositivos
           sentCount = await sendPushToUser(userId, pushPayload);
           console.log(
-            `Enviadas ${sentCount} notificações push de teste para todos os dispositivos`
+            `Enviadas ${sentCount} notificações push de teste para todos os dispositivos`,
           );
         }
 

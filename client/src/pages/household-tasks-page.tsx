@@ -111,7 +111,7 @@ function PullToRefresh({
     currentY.current = e.touches[0].clientY;
     const pullDistance = Math.max(
       0,
-      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
+      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE),
     );
 
     if (pullDistance > 0) {
@@ -188,7 +188,7 @@ export default function HouseholdTasksPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<HouseholdTaskType | null>(null);
   const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
-    null
+    null,
   );
   const [groupByFrequency, setGroupByFrequency] = useState(true);
   const [viewPartner, setViewPartner] = useState(false);
@@ -200,7 +200,7 @@ export default function HouseholdTasksPage() {
       weekly: true,
       monthly: true,
       once: true,
-    }
+    },
   );
 
   // Celebration animation state
@@ -293,11 +293,11 @@ export default function HouseholdTasksPage() {
       });
     },
   });
-  
+
   // Mutation for reordering tasks
   const reorderTasksMutation = useMutation({
     mutationFn: async (tasks: { id: number; position: number }[]) => {
-      const response = await apiRequest("PUT", "/api/tasks/reorder", {
+      const response = await apiRequest("PUT", "/api/tasks-reorder", {
         tasks,
       });
       return await response.json();
@@ -313,7 +313,8 @@ export default function HouseholdTasksPage() {
     onError: (error) => {
       toast({
         title: "Erro ao reordenar tarefas",
-        description: "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
+        description:
+          "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -338,7 +339,7 @@ export default function HouseholdTasksPage() {
 
     if (viewMyTasks) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.assignedTo === user?.id
+        (task) => task.assignedTo === user?.id,
       );
     }
 
@@ -350,7 +351,7 @@ export default function HouseholdTasksPage() {
         const eventDate = new Date(task.dueDate);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
         const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate)
+          new Date(selectedDate),
         )?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
@@ -366,7 +367,12 @@ export default function HouseholdTasksPage() {
       // Pending tasks first
       if (a.completed && !b.completed) return 1;
       if (!a.completed && b.completed) return -1;
+      const positionA = a.position || 0;
+      const positionB = b.position || 0;
 
+      if (positionA !== positionB) {
+        return positionA - positionB;
+      }
       // Sort by priority (high to low)
       const priorityA = a.priority || 0;
       const priorityB = b.priority || 0;
@@ -413,7 +419,7 @@ export default function HouseholdTasksPage() {
         const eventDate = new Date(task.dueDate);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
         const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate)
+          new Date(selectedDate),
         )?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
@@ -429,7 +435,12 @@ export default function HouseholdTasksPage() {
       // Pending tasks first
       if (a.completed && !b.completed) return 1;
       if (!a.completed && b.completed) return -1;
+      const positionA = a.position || 0;
+      const positionB = b.position || 0;
 
+      if (positionA !== positionB) {
+        return positionA - positionB;
+      }
       // Sort by priority (high to low)
       const priorityA = a.priority || 0;
       const priorityB = b.priority || 0;
@@ -520,7 +531,7 @@ export default function HouseholdTasksPage() {
         acc[frequency].push(task);
         return acc;
       },
-      {} as Record<string, HouseholdTaskType[]>
+      {} as Record<string, HouseholdTaskType[]>,
     );
   }, [
     tasks,
@@ -568,7 +579,7 @@ export default function HouseholdTasksPage() {
 
   const handleToggleTaskComplete = (
     task: HouseholdTaskType,
-    isModal: boolean
+    isModal: boolean,
   ) => {
     // Only trigger celebration if marking as completed
     if (!task.completed) {
@@ -611,7 +622,7 @@ export default function HouseholdTasksPage() {
       [group]: !prev[group],
     }));
   };
-  
+
   // Handle drag and drop to reorder tasks
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -623,26 +634,28 @@ export default function HouseholdTasksPage() {
 
     // Get active tasks based on current filter
     let activeTasks: HouseholdTaskType[] = [];
-    
+
     // Determine which tasks are being dragged based on the current view
     if (groupByFrequency) {
       // In grouped view, determine the frequency from the active element's data
       // Look at the active ID to determine which task we're working with
       const activeIdNum = Number(active.id);
-      const activeTask = tasks.find(t => Number(t.id) === activeIdNum);
-      
+      const activeTask = tasks.find((t) => Number(t.id) === activeIdNum);
+
       if (!activeTask) {
         console.error("Could not find active task with ID:", activeIdNum);
         return;
       }
-      
+
       const frequency = activeTask.frequency;
-      activeTasks = tasks.filter(task => task.frequency === frequency && !task.completed);
+      activeTasks = tasks.filter(
+        (task) => task.frequency === frequency && !task.completed,
+      );
     } else {
       // In non-grouped view, use all active tasks
-      activeTasks = tasks.filter(task => !task.completed);
+      activeTasks = tasks.filter((task) => !task.completed);
     }
-    
+
     if (!activeTasks || activeTasks.length === 0) {
       console.error("No active tasks found in the current view");
       return;
@@ -651,18 +664,26 @@ export default function HouseholdTasksPage() {
     // Make sure IDs are numbers
     const activeId = Number(active.id);
     const overId = Number(over.id);
-    
+
     if (isNaN(activeId) || isNaN(overId)) {
       console.error("Invalid task IDs in drag operation", { active, over });
       return;
     }
 
     // Find the indices of the tasks
-    const oldIndex = activeTasks.findIndex((task) => Number(task.id) === activeId);
-    const newIndex = activeTasks.findIndex((task) => Number(task.id) === overId);
+    const oldIndex = activeTasks.findIndex(
+      (task) => Number(task.id) === activeId,
+    );
+    const newIndex = activeTasks.findIndex(
+      (task) => Number(task.id) === overId,
+    );
 
     if (oldIndex < 0 || newIndex < 0) {
-      console.error("Could not find task indices", { oldIndex, newIndex, activeTasks });
+      console.error("Could not find task indices", {
+        oldIndex,
+        newIndex,
+        activeTasks,
+      });
       return;
     }
 
@@ -869,7 +890,9 @@ export default function HouseholdTasksPage() {
               tasks={tasks}
               onDragEnd={handleDragEnd}
               onClick={handleOpenTaskDetails}
-              onToggleComplete={(task: HouseholdTaskType) => handleToggleTaskComplete(task, false)}
+              onToggleComplete={(task: HouseholdTaskType) =>
+                handleToggleTaskComplete(task, false)
+              }
               getFormattedDueDate={getFormattedDueDate}
               user={user}
             />
@@ -1042,7 +1065,9 @@ export default function HouseholdTasksPage() {
           tasks={groupedTasks.ungrouped}
           onDragEnd={handleDragEnd}
           onClick={handleOpenTaskDetails}
-          onToggleComplete={(task: HouseholdTaskType) => handleToggleTaskComplete(task, false)}
+          onToggleComplete={(task: HouseholdTaskType) =>
+            handleToggleTaskComplete(task, false)
+          }
           getFormattedDueDate={getFormattedDueDate}
           user={user}
         />
@@ -1070,8 +1095,8 @@ export default function HouseholdTasksPage() {
         </h2>
         <div className="flex gap-2">
           {renderFiltersDropdown()}
-          
-          <Link href="/tasks/reorder">
+
+          {/* <Link href="/tasks/reorder">
             <Button
               variant="outline"
               size="sm"
@@ -1079,7 +1104,7 @@ export default function HouseholdTasksPage() {
             >
               <GripVertical className="h-4 w-4" /> Reordenar
             </Button>
-          </Link>
+          </Link> */}
 
           <Button
             onClick={handleOpenCreateModal}

@@ -95,7 +95,7 @@ function PullToRefresh({
     currentY.current = e.touches[0].clientY;
     const pullDistance = Math.max(
       0,
-      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
+      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE),
     );
 
     if (pullDistance > 0) {
@@ -170,7 +170,7 @@ export default function HouseholdTasksPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
-    null
+    null,
   );
   const [groupByFrequency, setGroupByFrequency] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
@@ -179,7 +179,7 @@ export default function HouseholdTasksPage() {
       weekly: true,
       monthly: true,
       once: true,
-    }
+    },
   );
 
   // Celebration animation state
@@ -288,35 +288,38 @@ export default function HouseholdTasksPage() {
     mutationFn: async (tasks: { id: number; position: number }[]) => {
       // Garantir que estamos enviando dados válidos para o servidor com conversão explícita para número
       const validatedTasks = tasks
-        .filter(task => !isNaN(Number(task.id)) && Number(task.id) > 0)
-        .map(task => ({
+        .filter((task) => !isNaN(Number(task.id)) && Number(task.id) > 0)
+        .map((task) => ({
           id: Number(task.id),
-          position: Number(task.position)
+          position: Number(task.position),
         }));
-      
+
       console.log("Enviando dados validados para o servidor:", validatedTasks);
-      
+
       if (validatedTasks.length === 0) {
         throw new Error("Nenhuma tarefa válida para reordenar");
       }
-      
+
       // Log para verificar o formato dos dados enviados
-      console.log("Formato da requisição:", JSON.stringify({
-        tasks: validatedTasks,
-      }));
-      
-      const response = await apiRequest("PUT", "/api/tasks/reorder", {
+      console.log(
+        "Formato da requisição:",
+        JSON.stringify({
+          tasks: validatedTasks,
+        }),
+      );
+
+      const response = await apiRequest("PUT", "/api/tasks-reorder", {
         tasks: validatedTasks,
       });
-      
+
       // Log da resposta
       const responseData = await response.json();
       console.log("Resposta do servidor:", responseData);
-      
+
       if (!response.ok) {
         throw new Error(responseData.message || "Erro ao reordenar tarefas");
       }
-      
+
       return responseData;
     },
     onSuccess: () => {
@@ -343,10 +346,9 @@ export default function HouseholdTasksPage() {
     let filteredTasks: HouseholdTaskType[] = [];
 
     // Usar tarefas reordenadas se disponíveis, caso contrário usar as tarefas originais
-    const sourceTasks = hasUnsavedChanges && reorderedTasks.length > 0 
-      ? reorderedTasks 
-      : tasks;
-    
+    const sourceTasks =
+      hasUnsavedChanges && reorderedTasks.length > 0 ? reorderedTasks : tasks;
+
     const sourcePartnerTasks = partnerTasks;
 
     switch (activeTab) {
@@ -363,9 +365,12 @@ export default function HouseholdTasksPage() {
         filteredTasks = [...sourcePartnerTasks];
         break;
     }
-    
+
     // Debug: verificar IDs das tarefas
-    console.log("Filtered tasks IDs:", filteredTasks.map(t => ({id: t.id, type: typeof t.id})));
+    console.log(
+      "Filtered tasks IDs:",
+      filteredTasks.map((t) => ({ id: t.id, type: typeof t.id })),
+    );
 
     // Ordenar tarefas: primeiro por status (pendentes antes das concluídas),
     // em seguida por prioridade (alta para baixa) e finalmente por data
@@ -433,7 +438,7 @@ export default function HouseholdTasksPage() {
         acc[frequency].push(task);
         return acc;
       },
-      {} as Record<string, HouseholdTaskType[]>
+      {} as Record<string, HouseholdTaskType[]>,
     );
   }, [tasks, partnerTasks, activeTab, groupByFrequency]);
 
@@ -542,12 +547,14 @@ export default function HouseholdTasksPage() {
 
   // Estado para controlar se há alterações não salvas na ordenação
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // Estado para armazenar as tarefas reordenadas temporariamente
   const [reorderedTasks, setReorderedTasks] = useState<HouseholdTaskType[]>([]);
-  
+
   // Estado para armazenar as atualizações de posição pendentes
-  const [pendingPositionUpdates, setPendingPositionUpdates] = useState<{ id: number; position: number }[]>([]);
+  const [pendingPositionUpdates, setPendingPositionUpdates] = useState<
+    { id: number; position: number }[]
+  >([]);
 
   // Função para lidar com evento de arrastar e soltar
   const handleDragEnd = (event: DragEndEvent, tasks: HouseholdTaskType[]) => {
@@ -560,13 +567,17 @@ export default function HouseholdTasksPage() {
 
     // Se a ordem não mudou, não faça nada
     if (active.id === over.id) return;
-    
+
     // Certifique-se de que os IDs são números
-    const activeId = typeof active.id === 'number' ? active.id : Number(active.id);
-    const overId = typeof over.id === 'number' ? over.id : Number(over.id);
-    
+    const activeId =
+      typeof active.id === "number" ? active.id : Number(active.id);
+    const overId = typeof over.id === "number" ? over.id : Number(over.id);
+
     if (isNaN(activeId) || isNaN(overId)) {
-      console.error("IDs inválidos no evento de arrastar/soltar:", { activeId, overId });
+      console.error("IDs inválidos no evento de arrastar/soltar:", {
+        activeId,
+        overId,
+      });
       return;
     }
 
@@ -574,29 +585,37 @@ export default function HouseholdTasksPage() {
     const oldIndex = tasks.findIndex((task) => task.id === activeId);
     const newIndex = tasks.findIndex((task) => task.id === overId);
 
-    console.log("Índices encontrados:", { oldIndex, newIndex, taskIds: tasks.map(t => t.id) });
+    console.log("Índices encontrados:", {
+      oldIndex,
+      newIndex,
+      taskIds: tasks.map((t) => t.id),
+    });
 
     if (oldIndex < 0 || newIndex < 0) return;
 
     // Reorganize o array de tarefas
     const updatedTasks = arrayMove(tasks, oldIndex, newIndex);
-    
+
     // Atualize o estado com as tarefas reordenadas
     setReorderedTasks(updatedTasks);
-    
+
     // Prepare os dados para atualizar no banco de dados (quando o usuário clicar em Salvar)
-    const taskUpdates = updatedTasks.map((task, index) => {
-      // Garanta que cada ID é um número
-      const id = typeof task.id === 'number' ? task.id : Number(task.id);
-      if (isNaN(id)) {
-        console.error("ID inválido na task:", task);
-        return null;
-      }
-      return {
-        id,
-        position: index,
-      };
-    }).filter((update): update is { id: number, position: number } => update !== null);
+    const taskUpdates = updatedTasks
+      .map((task, index) => {
+        // Garanta que cada ID é um número
+        const id = typeof task.id === "number" ? task.id : Number(task.id);
+        if (isNaN(id)) {
+          console.error("ID inválido na task:", task);
+          return null;
+        }
+        return {
+          id,
+          position: index,
+        };
+      })
+      .filter(
+        (update): update is { id: number; position: number } => update !== null,
+      );
 
     if (taskUpdates.length === 0) {
       toast({
@@ -609,33 +628,34 @@ export default function HouseholdTasksPage() {
 
     // Armazene as atualizações de posição pendentes
     setPendingPositionUpdates(taskUpdates);
-    
+
     // Marque que há alterações não salvas
     setHasUnsavedChanges(true);
-    
+
     toast({
       title: "Ordem alterada",
-      description: "Clique em 'Salvar' para confirmar a nova ordem das tarefas.",
+      description:
+        "Clique em 'Salvar' para confirmar a nova ordem das tarefas.",
     });
   };
-  
+
   // Função para salvar as alterações de posição
   const savePositionChanges = () => {
     if (!hasUnsavedChanges || pendingPositionUpdates.length === 0) {
       return;
     }
-    
+
     console.log("Salvando atualizações de posição:", pendingPositionUpdates);
-    
+
     // Chame a mutação para salvar a ordem no banco de dados
     reorderTasksMutation.mutate(pendingPositionUpdates, {
       onSuccess: () => {
         setHasUnsavedChanges(false);
         setPendingPositionUpdates([]);
-        
+
         toast({
           title: "Tarefas reordenadas",
-          description: "A ordem das tarefas foi atualizada com sucesso."
+          description: "A ordem das tarefas foi atualizada com sucesso.",
         });
       },
       onError: (error) => {
@@ -643,9 +663,9 @@ export default function HouseholdTasksPage() {
         toast({
           title: "Erro ao reordenar tarefas",
           description: "Não foi possível salvar a nova ordem. Tente novamente.",
-          variant: "destructive"
+          variant: "destructive",
         });
-      }
+      },
     });
   };
 
@@ -769,7 +789,7 @@ export default function HouseholdTasksPage() {
               )}
             </Button>
           )}
-        
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
