@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { EventType } from "@/lib/types";
-import { format, parse, isToday } from "date-fns";
+import { format, parse, isToday, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatDateSafely } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { CalendarClock, MapPin, Clock } from "lucide-react";
@@ -27,27 +28,18 @@ export default function TimelineView({
   onEventClick,
 }: TimelineViewProps) {
   // Filtrar eventos para a data selecionada
-  // Função para normalizar datas removendo a parte da hora
-  const normalizeDateOnly = (inputDate: Date | string): string => {
-    const date = typeof inputDate === "string" ? new Date(inputDate) : inputDate;
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  };
-  
-  // Data de referência (sem a parte da hora)
-  const referenceDate = normalizeDateOnly(date);
-  console.log('Data de referência normalizada:', referenceDate);
-  
+  // Filtrar eventos do dia selecionado usando a mesma lógica do home-page
   const filteredEvents = events.filter((event) => {
-    // Normalizar a data do evento removendo a parte da hora
-    const eventDateNormalized = normalizeDateOnly(event.date);
-    
-    // Log para cada evento
-    console.log(`Evento ${event.id}:`, 
-      'Data normalizada:', eventDateNormalized,
-      'Corresponde?', eventDateNormalized === referenceDate
-    );
-    
-    return eventDateNormalized === referenceDate;
+    const eventDate = new Date(event.date);
+    const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
+    const formattedSelectedDate = formatDateSafely(date)?.split("T")[0];
+
+    if (!formattedEventDate || !formattedSelectedDate) {
+      return false;
+    }
+
+    // Verificar se são o mesmo dia com comparação consistente
+    return formattedEventDate === formattedSelectedDate;
   });
 
   // Ordenar eventos por hora de início
