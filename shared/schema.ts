@@ -23,6 +23,17 @@ export const users = pgTable("users", {
   onboardingComplete: boolean("onboarding_complete").default(false),
 });
 
+export const eventCategories = pgTable("event_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  icon: text("icon"),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  isShared: boolean("is_shared").default(false),
+});
+
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -36,9 +47,12 @@ export const events = pgTable("events", {
   recurrence: text("recurrence").default("never"),
   recurrenceEnd: timestamp("recurrence_end"),
   recurrenceRule: text("recurrence_rule"),
+  categoryId: integer("category_id").references(() => eventCategories.id),
   createdBy: integer("created_by")
     .notNull()
     .references(() => users.id),
+  attachments: jsonb("attachments"), // Armazena URLs e metadados de anexos
+  color: text("color"), // Cor personalizada para o evento
 });
 
 export const eventShares = pgTable("event_shares", {
@@ -150,6 +164,70 @@ export const webAuthnChallenges = pgTable("webauthn_challenges", {
 });
 
 // Tabela para armazenar credenciais biométricas WebAuthn
+// Lembretes personalizados para eventos
+export const eventReminders = pgTable("event_reminders", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id")
+    .notNull()
+    .references(() => events.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  reminderTime: timestamp("reminder_time").notNull(),
+  reminderType: text("reminder_type").notNull(), // push, email, sms, etc.
+  sent: boolean("sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Notas compartilhadas entre parceiros
+export const sharedNotes = pgTable("shared_notes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content"),
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  pinnedOrder: integer("pinned_order"), // Se preenchido, a nota está fixada nesta posição
+  color: text("color"), // Cor da nota
+  attachments: jsonb("attachments"), // Anexos na nota
+});
+
+// Planejamento de projetos
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: text("status").notNull().default("planning"), // planning, in_progress, completed, archived
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id),
+  color: text("color"),
+  icon: text("icon"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Tarefas de projetos
+export const projectTasks = pgTable("project_tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => projects.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("todo"), // todo, in_progress, done
+  dueDate: timestamp("due_date"),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  priority: integer("priority").default(0), // 0=baixa, 1=média, 2=alta
+  position: integer("position").notNull().default(0), // Posição na lista
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
 export const webAuthnCredentials = pgTable("webauthn_credentials", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
@@ -330,6 +408,53 @@ export const insertWebAuthnChallengeSchema = createInsertSchema(
   userId: true,
   challenge: true,
   expiresAt: true,
+});
+
+// Schemas para inserção de novas entidades
+export const insertEventCategorySchema = createInsertSchema(eventCategories).pick({
+  name: true,
+  color: true,
+  icon: true,
+  userId: true,
+  isShared: true,
+});
+
+export const insertEventReminderSchema = createInsertSchema(eventReminders).pick({
+  eventId: true,
+  userId: true,
+  reminderTime: true,
+  reminderType: true,
+});
+
+export const insertSharedNoteSchema = createInsertSchema(sharedNotes).pick({
+  title: true,
+  content: true,
+  createdBy: true,
+  color: true,
+  attachments: true,
+  pinnedOrder: true,
+});
+
+export const insertProjectSchema = createInsertSchema(projects).pick({
+  title: true,
+  description: true,
+  startDate: true,
+  endDate: true,
+  status: true,
+  createdBy: true,
+  color: true,
+  icon: true,
+});
+
+export const insertProjectTaskSchema = createInsertSchema(projectTasks).pick({
+  projectId: true,
+  title: true,
+  description: true,
+  status: true,
+  dueDate: true,
+  assignedTo: true,
+  priority: true,
+  position: true,
 });
 
 export const insertWebAuthnCredentialSchema = createInsertSchema(
