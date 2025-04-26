@@ -47,8 +47,11 @@ export default function HomePage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const { toast } = useToast();
-  const { subscriptionStatus } = usePushNotifications();
+  const { pushStatus } = usePushNotifications();
   const { user } = useAuth();
+  
+  // Converter user null para undefined para compatibilidade de tipos
+  const userForProps = user === null ? undefined : user;
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
     queryKey: ["/api/events"],
@@ -265,7 +268,7 @@ export default function HomePage() {
           >
             <DayView
               date={selectedDate}
-              user={user || undefined}
+              user={userForProps}
               morningEvents={morningEvents}
               afternoonEvents={afternoonEvents}
               nightEvents={nightEvents}

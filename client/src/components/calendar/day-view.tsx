@@ -9,7 +9,7 @@ interface DayViewProps {
   afternoonEvents: EventType[];
   nightEvents: EventType[];
   isLoading: boolean;
-  user: UserType;
+  user?: UserType;
   onEventClick: (event: EventType) => void;
 }
 
@@ -91,7 +91,7 @@ export default function DayView({
                   </div>
                 )}
                 <div className="flex items-center text-xs text-gray-500">
-                  {event.createdBy !== user.id ? (
+                  {user?.id && event.createdBy !== user.id ? (
                     <>
                       <span className="material-icons text-xs text-secondary mr-1">
                         favorite
