@@ -26,7 +26,6 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { EventType } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
-import CategorySelect from "./category-select";
 
 interface EditEventModalProps {
   event: EventType;
@@ -63,9 +62,6 @@ export default function EditEventModal({
   const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
     (event.sharePermission as "view" | "edit") || "view"
   );
-  
-  const [categoryId, setCategoryId] = useState<number | null>(event.categoryId || null);
-  const [color, setColor] = useState<string | null>(event.color || null);
 
   // Set initial form values when modal opens or event changes
   useEffect(() => {
@@ -89,8 +85,6 @@ export default function EditEventModal({
       setEmoji(event.emoji || "");
       setShareWithPartner(event.isShared || false);
       setPartnerPermission(event.sharePermission || "view");
-      setCategoryId(event.categoryId || null);
-      setColor(event.color || null);
     }
   }, [isOpen, event]);
 
@@ -170,8 +164,6 @@ export default function EditEventModal({
       recurrence,
       description,
       emoji: emoji || null,
-      categoryId: categoryId || null,
-      color: !categoryId ? color || null : null, // Usar cor personalizada apenas se não tiver categoria
     };
 
     // Send update request
@@ -298,16 +290,6 @@ export default function EditEventModal({
                 <SelectItem value="monthly">Mensalmente</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          <div>
-            <Label>Categoria</Label>
-            <CategorySelect 
-              selectedCategoryId={categoryId}
-              onCategoryChange={setCategoryId}
-              color={color}
-              onColorChange={setColor}
-            />
           </div>
 
           {/* Partner sharing section */}

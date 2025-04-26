@@ -117,7 +117,7 @@ export default function CreateEventModal({
       recurrence,
       description,
       shareWithPartner,
-      partnerPermission
+      partnerPermission,
     });
   };
 
@@ -132,8 +132,6 @@ export default function CreateEventModal({
     setEmoji("");
     setShareWithPartner(false);
     setPartnerPermission("view");
-    setCategoryId(null);
-    setColor(null);
   };
 
   const handlePeriodChange = (value: string) => {
@@ -277,16 +275,6 @@ export default function CreateEventModal({
                 <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          <div>
-            <Label>Categoria</Label>
-            <CategorySelect 
-              selectedCategoryId={categoryId}
-              onCategoryChange={setCategoryId}
-              color={color}
-              onColorChange={setColor}
-            />
           </div>
 
           {/* Show partner sharing option only if user has a partner */}
