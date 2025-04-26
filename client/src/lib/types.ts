@@ -31,10 +31,6 @@ export interface EventType {
   isShared?: boolean;
   description?: string;
   sharePermission?: "view" | "edit";
-  categoryId?: number;
-  category?: EventCategory;
-  color?: string;
-  attachments?: EventAttachment[];
 }
 
 export interface EventShareType {

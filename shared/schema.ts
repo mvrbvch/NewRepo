@@ -47,12 +47,10 @@ export const events = pgTable("events", {
   recurrence: text("recurrence").default("never"),
   recurrenceEnd: timestamp("recurrence_end"),
   recurrenceRule: text("recurrence_rule"),
-  categoryId: integer("category_id").references(() => eventCategories.id),
+  isShared: boolean("is_shared").default(false),
   createdBy: integer("created_by")
     .notNull()
     .references(() => users.id),
-  attachments: jsonb("attachments"), // Armazena URLs e metadados de anexos
-  color: text("color"), // Cor personalizada para o evento
 });
 
 export const eventShares = pgTable("event_shares", {
@@ -266,6 +264,7 @@ export const insertEventSchema = createInsertSchema(events).pick({
   recurrenceEnd: true,
   recurrenceRule: true,
   createdBy: true,
+  isShared: true,
 });
 
 export const insertEventShareSchema = createInsertSchema(eventShares).pick({
@@ -281,7 +280,7 @@ export const insertEventCommentSchema = createInsertSchema(eventComments).pick({
 });
 
 export const insertCalendarConnectionSchema = createInsertSchema(
-  calendarConnections
+  calendarConnections,
 ).pick({
   userId: true,
   provider: true,
@@ -292,7 +291,7 @@ export const insertCalendarConnectionSchema = createInsertSchema(
 });
 
 export const insertPartnerInviteSchema = createInsertSchema(
-  partnerInvites
+  partnerInvites,
 ).pick({
   inviterId: true,
   email: true,
@@ -301,7 +300,7 @@ export const insertPartnerInviteSchema = createInsertSchema(
 });
 
 export const insertHouseholdTaskSchema = createInsertSchema(
-  householdTasks
+  householdTasks,
 ).pick({
   title: true,
   description: true,
@@ -403,7 +402,7 @@ export type Notification = Omit<
 
 // WebAuthn schemas
 export const insertWebAuthnChallengeSchema = createInsertSchema(
-  webAuthnChallenges
+  webAuthnChallenges,
 ).pick({
   userId: true,
   challenge: true,
@@ -411,7 +410,9 @@ export const insertWebAuthnChallengeSchema = createInsertSchema(
 });
 
 // Schemas para inserção de novas entidades
-export const insertEventCategorySchema = createInsertSchema(eventCategories).pick({
+export const insertEventCategorySchema = createInsertSchema(
+  eventCategories,
+).pick({
   name: true,
   color: true,
   icon: true,
@@ -419,7 +420,9 @@ export const insertEventCategorySchema = createInsertSchema(eventCategories).pic
   isShared: true,
 });
 
-export const insertEventReminderSchema = createInsertSchema(eventReminders).pick({
+export const insertEventReminderSchema = createInsertSchema(
+  eventReminders,
+).pick({
   eventId: true,
   userId: true,
   reminderTime: true,
@@ -458,7 +461,7 @@ export const insertProjectTaskSchema = createInsertSchema(projectTasks).pick({
 });
 
 export const insertWebAuthnCredentialSchema = createInsertSchema(
-  webAuthnCredentials
+  webAuthnCredentials,
 ).pick({
   userId: true,
   credentialId: true,

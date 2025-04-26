@@ -30,8 +30,7 @@ export default function ViewToggle({
             onClick={() => onChange("day")}
             title="Visualização diária"
           >
-            <Calendar className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Dia</span>
+            <span className="sm:inline">Dia</span>
           </button>
         </TactileFeedback>
 
@@ -45,8 +44,7 @@ export default function ViewToggle({
             onClick={() => onChange("week")}
             title="Visualização semanal"
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Semana</span>
+            <span className="sm:inline">Semana</span>
           </button>
         </TactileFeedback>
 
@@ -60,8 +58,7 @@ export default function ViewToggle({
             onClick={() => onChange("month")}
             title="Visualização mensal"
           >
-            <CalendarDays className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Mês</span>
+            <span className="sm:inline">Mês</span>
           </button>
         </TactileFeedback>
 
@@ -76,7 +73,7 @@ export default function ViewToggle({
             title="Visualização em linha do tempo"
           >
             <List className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Timeline</span>
+            <span className="sm:inline">Timeline</span>
           </button>
         </TactileFeedback>
       </div>

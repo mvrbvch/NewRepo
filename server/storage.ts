@@ -848,6 +848,7 @@ export class DatabaseStorage implements IStorage {
       recurrence: insertEvent.recurrence || "never",
       recurrenceEnd: recurrenceEndDate,
       recurrenceRule: recurrenceRule,
+      isShared: insertEvent.isShared || false,
     };
 
     console.log("Creating event with data:", eventData);
@@ -909,6 +910,7 @@ export class DatabaseStorage implements IStorage {
         recurrenceEnd: events.recurrenceEnd,
         recurrenceRule: events.recurrenceRule,
         createdBy: events.createdBy,
+        isShared: events.isShared,
       })
       .from(events)
       .where(eq(events.id, id));
@@ -1065,6 +1067,7 @@ export class DatabaseStorage implements IStorage {
         recurrenceEnd: events.recurrenceEnd,
         recurrenceRule: events.recurrenceRule,
         createdBy: events.createdBy,
+        isShared: events.isShared,
       })
       .from(events)
       .where(eq(events.createdBy, userId));
@@ -1164,6 +1167,7 @@ export class DatabaseStorage implements IStorage {
           recurrenceEnd: events.recurrenceEnd,
           recurrenceRule: events.recurrenceRule,
           createdBy: events.createdBy,
+          isShared: events.isShared,
         })
         .from(events)
         .where(eq(events.id, share.eventId));

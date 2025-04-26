@@ -118,6 +118,7 @@ export default function CreateEventModal({
       description,
       shareWithPartner,
       partnerPermission,
+      isShared: shareWithPartner,
     });
   };
 

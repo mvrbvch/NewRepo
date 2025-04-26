@@ -91,7 +91,7 @@ export default function DayView({
                   </div>
                 )}
                 <div className="flex items-center text-xs text-gray-500">
-                  {user?.id && event.createdBy !== user.id ? (
+                  {event.isShared ? (
                     <>
                       <span className="material-icons text-xs text-secondary mr-1">
                         favorite

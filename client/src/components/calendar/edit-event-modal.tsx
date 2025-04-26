@@ -57,10 +57,10 @@ export default function EditEventModal({
   const [changeEmoji, setChangeEmoji] = useState(false);
 
   const [shareWithPartner, setShareWithPartner] = useState(
-    event.isShared || false
+    event.isShared || false,
   );
   const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
-    (event.sharePermission as "view" | "edit") || "view"
+    (event.sharePermission as "view" | "edit") || "view",
   );
 
   // Set initial form values when modal opens or event changes
@@ -164,6 +164,7 @@ export default function EditEventModal({
       recurrence,
       description,
       emoji: emoji || null,
+      isShared: shareWithPartner,
     };
 
     // Send update request
