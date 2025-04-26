@@ -27,10 +27,21 @@ export default function TimelineView({
   onEventClick,
 }: TimelineViewProps) {
   // Filtrar eventos para a data selecionada
+  // Log para debuggar
+  console.log('Data atual:', date.toDateString());
+  console.log('Eventos recebidos:', events.length);
+  
   const filteredEvents = events.filter((event) => {
     const eventDate = typeof event.date === "string" 
       ? new Date(event.date) 
       : event.date;
+    
+    // Log para cada evento
+    console.log(`Evento ${event.id}:`, 
+      'Data do evento:', typeof event.date === "string" ? event.date : event.date.toISOString(),
+      'Data convertida:', eventDate.toDateString(),
+      'Corresponde?', eventDate.toDateString() === date.toDateString()
+    );
     
     return eventDate.toDateString() === date.toDateString();
   });
