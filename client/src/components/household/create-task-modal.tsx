@@ -7,14 +7,38 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { HouseholdTaskType } from "@/lib/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -36,7 +60,10 @@ const taskFormSchema = z.object({
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
 
-export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
+export default function CreateTaskModal({
+  isOpen,
+  onClose,
+}: CreateTaskModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -61,7 +88,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
       return response.json() as Promise<HouseholdTaskType>;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Tarefa criada",
         description: "A tarefa foi criada com sucesso!",
@@ -72,7 +99,8 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
     onError: (error: any) => {
       toast({
         title: "Erro ao criar tarefa",
-        description: error?.message || "Não foi possível criar a tarefa. Tente novamente.",
+        description:
+          error?.message || "Não foi possível criar a tarefa. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -84,9 +112,11 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
-          <DialogTitle className="text-title title-gradient">Criar Nova Tarefa</DialogTitle>
+          <DialogTitle className="text-title title-gradient">
+            Criar Nova Tarefa
+          </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -98,7 +128,11 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                 <FormItem>
                   <FormLabel className="text-subtitle">Título</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Lavar louça" {...field} className="shadow-input" />
+                    <Input
+                      placeholder="Ex: Lavar louça"
+                      {...field}
+                      className="shadow-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,7 +144,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-subtitle">Descrição (opcional)</FormLabel>
+                  <FormLabel className="text-subtitle">
+                    Descrição (opcional)
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Descreva a tarefa em detalhes..."
@@ -163,7 +199,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                     <FormLabel className="text-subtitle">Atribuir a</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
-                      defaultValue={field.value?.toString() || user.id.toString()}
+                      defaultValue={
+                        field.value?.toString() || user.id.toString()
+                      }
                     >
                       <FormControl>
                         <SelectTrigger className="shadow-input">
@@ -172,7 +210,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                       </FormControl>
                       <SelectContent>
                         <SelectItem value={user.id.toString()}>Eu</SelectItem>
-                        <SelectItem value={user.partnerId?.toString() || ""}>Meu Parceiro</SelectItem>
+                        <SelectItem value={user.partnerId?.toString() || ""}>
+                          Meu Parceiro
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -186,8 +226,13 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
               name="dueDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-subtitle">Data de Vencimento (opcional)</FormLabel>
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <FormLabel className="text-subtitle">
+                    Data de Vencimento (opcional)
+                  </FormLabel>
+                  <Popover
+                    open={isDatePickerOpen}
+                    onOpenChange={setIsDatePickerOpen}
+                  >
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -205,7 +250,10 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 modal-card" align="start">
+                    <PopoverContent
+                      className="w-auto p-0 modal-card"
+                      align="start"
+                    >
                       <Calendar
                         mode="single"
                         selected={field.value || undefined}
@@ -213,7 +261,9 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                           field.onChange(date);
                           setIsDatePickerOpen(false);
                         }}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
                         locale={ptBR}
                         initialFocus
                       />
@@ -226,7 +276,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="priority"

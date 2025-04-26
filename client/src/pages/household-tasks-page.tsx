@@ -533,7 +533,10 @@ export default function HouseholdTasksPage() {
     setTaskToEdit(null);
   };
 
-  const handleToggleTaskComplete = (task: HouseholdTaskType) => {
+  const handleToggleTaskComplete = (
+    task: HouseholdTaskType,
+    isModal: boolean
+  ) => {
     // Only trigger celebration if marking as completed
     if (!task.completed) {
       setCompletedTaskTitle(task.title);
@@ -553,7 +556,6 @@ export default function HouseholdTasksPage() {
       setShowCelebration(true);
       setTimeout(() => {
         setShowCelebration(false);
-        refetchTasks();
       }, 3000);
     }
 
@@ -561,7 +563,9 @@ export default function HouseholdTasksPage() {
       id: task.id,
       completed: !task.completed,
     });
-    setSelectedTask({ ...task, completed: !task.completed });
+    if (isModal) {
+      setSelectedTask({ ...task, completed: !task.completed });
+    }
   };
 
   const handleDeleteTask = (id: number) => {
@@ -578,7 +582,7 @@ export default function HouseholdTasksPage() {
   // UI Components
   const renderTaskCard = (task: HouseholdTaskType) => {
     return (
-      <TactileFeedback scale={0.98} onClick={() => handleOpenTaskDetails(task)}>
+      <TactileFeedback scale={0.98}>
         <Card
           className={`p-4 relative ${
             task.completed
@@ -591,7 +595,7 @@ export default function HouseholdTasksPage() {
               className="mt-1 flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
-                handleToggleTaskComplete(task);
+                handleToggleTaskComplete(task, false);
               }}
               whileTap={{ scale: 0.8 }}
             >
@@ -604,7 +608,10 @@ export default function HouseholdTasksPage() {
                 }`}
               />
             </motion.div>
-            <div className="flex-1 min-w-0">
+            <div
+              className="flex-1 min-w-0"
+              onClick={() => handleOpenTaskDetails(task)}
+            >
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3
                   className={`font-semibold text-lg break-words ${
@@ -1008,7 +1015,7 @@ export default function HouseholdTasksPage() {
           isOpen={!!selectedTask}
           onClose={handleCloseTaskDetails}
           onDelete={handleDeleteTask}
-          onToggleComplete={handleToggleTaskComplete}
+          onToggleComplete={() => handleToggleTaskComplete(selectedTask, true)}
           openEditModal={handleOpenEditModal}
         />
       )}

@@ -154,8 +154,8 @@ export default function EditTaskModal({
   };
 
   return (
-    <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={() => onClose(task)}>
+      <DialogContent className="sm:max-w-[425px] p-6">
         <DialogHeader>
           <DialogTitle>Editar Tarefa</DialogTitle>
         </DialogHeader>

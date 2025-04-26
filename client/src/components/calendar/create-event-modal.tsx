@@ -152,7 +152,7 @@ export default function CreateEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle className="text-title title-gradient">
             Criar Novo Evento

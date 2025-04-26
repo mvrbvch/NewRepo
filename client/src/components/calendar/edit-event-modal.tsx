@@ -57,10 +57,10 @@ export default function EditEventModal({
   const [changeEmoji, setChangeEmoji] = useState(false);
 
   const [shareWithPartner, setShareWithPartner] = useState(
-    event.isShared || false,
+    event.isShared || false
   );
   const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
-    (event.sharePermission as "view" | "edit") || "view",
+    (event.sharePermission as "view" | "edit") || "view"
   );
 
   // Set initial form values when modal opens or event changes
@@ -172,7 +172,7 @@ export default function EditEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[425px] modal-card max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle className="text-title title-gradient">
             Editar evento

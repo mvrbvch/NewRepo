@@ -38,6 +38,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { TransitionComponent } from "@/components/ui/transition-component";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function HomePage() {
   const [view, setView] = useState<"day" | "week" | "month">("day");
@@ -46,7 +47,7 @@ export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const { toast } = useToast();
   const { subscriptionStatus } = usePushNotifications();
-
+  const { user } = useAuth();
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
     queryKey: ["/api/events"],
@@ -263,6 +264,7 @@ export default function HomePage() {
           >
             <DayView
               date={selectedDate}
+              user={user}
               morningEvents={morningEvents}
               afternoonEvents={afternoonEvents}
               nightEvents={nightEvents}

@@ -1,4 +1,4 @@
-import { EventType } from "@/lib/types";
+import { EventType, UserType } from "@/lib/types";
 import { formatTime, periodLabels } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
@@ -9,6 +9,7 @@ interface DayViewProps {
   afternoonEvents: EventType[];
   nightEvents: EventType[];
   isLoading: boolean;
+  user: UserType;
   onEventClick: (event: EventType) => void;
 }
 
@@ -19,6 +20,7 @@ export default function DayView({
   nightEvents = [],
   isLoading,
   onEventClick,
+  user,
 }: DayViewProps) {
   if (isLoading) {
     return (
@@ -89,7 +91,7 @@ export default function DayView({
                   </div>
                 )}
                 <div className="flex items-center text-xs text-gray-500">
-                  {event.isShared ? (
+                  {event.createdBy !== user.id ? (
                     <>
                       <span className="material-icons text-xs text-secondary mr-1">
                         favorite
