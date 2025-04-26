@@ -265,13 +265,21 @@ export default function OnboardingPage() {
                   Convide seu parceiro(a)
                 </motion.h2>
                 
-                <motion.p 
+                <motion.div 
                   variants={cardVariants}
                   custom={1}
-                  className="text-muted-foreground mb-8"
+                  className="text-muted-foreground mb-8 space-y-3"
                 >
-                  Compartilhe seus planos, eventos e tarefas para uma organização mais eficiente juntos.
-                </motion.p>
+                  <p>
+                    Compartilhar seus planos e tarefas com seu parceiro vai além da organização!
+                  </p>
+                  <p>
+                    Se você está recebendo um convite, é sinal de que alguém te ama muito <span className="text-rose-500">💌</span> e acredita que vocês merecem viver algo ainda mais especial juntos.
+                  </p>
+                  <p>
+                    Alguém que quer dividir o melhor da vida com você — com mais conexão, equilíbrio e alegria! <span className="text-primary">🌈</span><span className="text-rose-500">💖</span>
+                  </p>
+                </motion.div>
               </div>
 
               <motion.div 
