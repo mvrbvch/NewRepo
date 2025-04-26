@@ -1,5 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { DragEndEvent } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 import { HouseholdTaskType } from "@/lib/types";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +74,7 @@ import {
 } from "@/components/ui/popover";
 import EditTaskModal from "@/components/household/edit-task-modal";
 import { formatDateSafely } from "@/lib/utils";
+import { SortableTaskList } from "@/components/household/draggable-task-list";
 
 // Pull to Refresh Component
 function PullToRefresh({
@@ -281,6 +284,31 @@ export default function HouseholdTasksPage() {
       toast({
         title: "Erro ao excluir tarefa",
         description: "Não foi possível excluir a tarefa. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for reordering tasks
+  const reorderTasksMutation = useMutation({
+    mutationFn: async (tasks: { id: number; position: number }[]) => {
+      const response = await apiRequest("PUT", "/api/tasks/reorder", {
+        tasks,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks/partner"] });
+      toast({
+        title: "Tarefas reordenadas",
+        description: "A ordem das tarefas foi atualizada com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao reordenar tarefas",
+        description: "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -577,6 +605,34 @@ export default function HouseholdTasksPage() {
       ...prev,
       [group]: !prev[group],
     }));
+  };
+  
+  // Handle drag and drop to reorder tasks
+  const handleDragEnd = (event: DragEndEvent, tasks: HouseholdTaskType[]) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    // If order hasn't changed, do nothing
+    if (active.id === over.id) return;
+
+    // Find the indices of the tasks
+    const oldIndex = tasks.findIndex((task) => task.id === active.id);
+    const newIndex = tasks.findIndex((task) => task.id === over.id);
+
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    // Reorganize the task array
+    const updatedTasks = arrayMove(tasks, oldIndex, newIndex);
+
+    // Prepare data to update in the database
+    const taskUpdates = updatedTasks.map((task, index) => ({
+      id: task.id,
+      position: index,
+    }));
+
+    // Call the mutation to save the order to the database
+    reorderTasksMutation.mutate(taskUpdates);
   };
 
   // UI Components
