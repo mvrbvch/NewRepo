@@ -33,20 +33,24 @@ type RegisterData = z.infer<typeof registerSchema>;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
+// Simplificação do AuthProvider para evitar problemas com hooks
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
   // Verificar autenticação ao carregar o componente
   useEffect(() => {
+    let isMounted = true;
+    
     async function checkAuth() {
       try {
         console.log("Verificando autenticação do usuário...");
         const res = await fetch("/api/user", {
           credentials: "include",
         });
+        
+        if (!isMounted) return;
         
         if (res.status === 401) {
           console.log("Usuário não autenticado");
@@ -62,24 +66,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const userData = await res.json();
         console.log("Usuário autenticado:", userData.username);
-        setUser(userData);
+        if (isMounted) {
+          setUser(userData);
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error("Erro ao verificar autenticação:", error);
-        setError(error instanceof Error ? error : new Error(String(error)));
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setError(error instanceof Error ? error : new Error(String(error)));
+          setUser(null);
+          setIsLoading(false);
+        }
       }
     }
     
     checkAuth();
     
-    // Configurar um intervalo para verificar a autenticação periodicamente
-    const authCheckInterval = setInterval(checkAuth, 60000); // a cada minuto
-    
-    return () => clearInterval(authCheckInterval);
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  // Simplificando as mutações para evitar problemas com hooks
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -88,18 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (userData: UserType) => {
       setUser(userData);
       queryClient.setQueryData(["/api/user"], userData);
-      toast({
-        title: "Login bem sucedido",
-        description: `Bem-vindo(a), ${userData.name}!`,
-      });
     },
     onError: (err: Error) => {
       setError(err);
-      toast({
-        title: "Erro ao entrar",
-        description: err.message,
-        variant: "destructive",
-      });
     },
   });
 
@@ -111,18 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (userData: UserType) => {
       setUser(userData);
       queryClient.setQueryData(["/api/user"], userData);
-      toast({
-        title: "Cadastro bem sucedido",
-        description: `Bem-vindo(a), ${userData.name}!`,
-      });
     },
     onError: (err: Error) => {
       setError(err);
-      toast({
-        title: "Erro ao cadastrar",
-        description: err.message,
-        variant: "destructive",
-      });
     },
   });
 
@@ -133,18 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       setUser(null);
       queryClient.setQueryData(["/api/user"], null);
-      toast({
-        title: "Logout bem sucedido",
-        description: "Você saiu da sua conta.",
-      });
     },
     onError: (err: Error) => {
       setError(err);
-      toast({
-        title: "Erro ao sair",
-        description: err.message,
-        variant: "destructive",
-      });
     },
   });
 

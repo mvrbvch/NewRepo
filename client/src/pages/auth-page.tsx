@@ -36,6 +36,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { loginMutation, registerMutation, user } = useAuth();
   const [, navigate] = useLocation();
+  
+  // Extrair parâmetros da URL para redirecionamento após autenticação
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectTo = urlParams.get('redirect');
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -58,7 +62,12 @@ export default function AuthPage() {
 
   // Redirect if already logged in - moved after all hooks are called
   if (user) {
-    navigate("/");
+    // Se existe um parâmetro de redirecionamento na URL, usá-lo
+    if (redirectTo === 'welcome') {
+      navigate("/welcome");
+    } else {
+      navigate("/");
+    }
     // Don't return null here, it causes the hooks error
   }
 

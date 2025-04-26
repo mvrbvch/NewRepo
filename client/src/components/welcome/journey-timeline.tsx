@@ -19,46 +19,49 @@ interface TimelineEvent {
   description: string;
 }
 
+// Eventos estáticos predefinidos
+const DEFAULT_EVENTS: TimelineEvent[] = [
+  {
+    id: "1",
+    title: "Início do relacionamento",
+    date: new Date(2023, 4, 15),
+    icon: <Heart className="h-6 w-6 text-rose-500" />,
+    description: "O início de uma história incrível juntos."
+  },
+  {
+    id: "2",
+    title: "Primeiro encontro",
+    date: new Date(2023, 4, 22),
+    icon: <Calendar className="h-6 w-6 text-blue-500" />,
+    description: "Um jantar inesquecível com muitas risadas e boas conversas."
+  },
+  {
+    id: "3",
+    title: "Aniversário de namoro",
+    date: new Date(2024, 4, 15),
+    icon: <Calendar className="h-6 w-6 text-green-500" />,
+    description: "Um ano cheio de momentos especiais e crescimento juntos."
+  },
+  {
+    id: "4",
+    title: "Mudança para casa nova",
+    date: new Date(2025, 2, 10),
+    icon: <Home className="h-6 w-6 text-amber-500" />,
+    description: "Começando a construir um lar juntos, com planos e sonhos compartilhados."
+  }
+];
+
 const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Simulação de carregamento de eventos
+  // Carregamento simulado de eventos
   useEffect(() => {
-    // Simula atraso de carregamento
     const timer = setTimeout(() => {
-      // Aqui seriam carregados os eventos reais da API
-      setEvents([
-        {
-          id: "1",
-          title: "Início do relacionamento",
-          date: new Date(2021, 4, 15),
-          icon: <Heart className="h-6 w-6 text-rose-500" />,
-          description: "O início de uma história incrível juntos."
-        },
-        {
-          id: "2",
-          title: "Primeiro encontro",
-          date: new Date(2021, 4, 22),
-          icon: <Calendar className="h-6 w-6 text-blue-500" />,
-          description: "Um jantar inesquecível com muitas risadas e boas conversas."
-        },
-        {
-          id: "3",
-          title: "Aniversário de namoro",
-          date: new Date(2022, 4, 15),
-          icon: <Calendar className="h-6 w-6 text-green-500" />,
-          description: "Um ano cheio de momentos especiais e crescimento juntos."
-        },
-        {
-          id: "4",
-          title: "Mudança para casa nova",
-          date: new Date(2023, 2, 10),
-          icon: <Home className="h-6 w-6 text-amber-500" />,
-          description: "Começando a construir um lar juntos, com planos e sonhos compartilhados."
-        }
-      ]);
-    }, 500);
+      setEvents(DEFAULT_EVENTS);
+      setLoading(false);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, []);
@@ -102,8 +105,8 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
     return format(date, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
   };
 
-  // Se não houver eventos, mostre um estado de carregamento
-  if (events.length === 0) {
+  // Se ainda estiver carregando, mostre um estado de carregamento
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
         <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-6"></div>

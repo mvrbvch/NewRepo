@@ -2,13 +2,12 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 import JourneyTimeline from "./journey-timeline";
 import { Button } from "@/components/ui/button";
 import { 
   Heart, 
   ArrowRight, 
-  Sparkles,
+  Star,
   Calendar,
   CheckCircle2,
   Home,
@@ -36,25 +35,29 @@ interface Partner {
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
   const [step, setStep] = useState<WelcomeStep>(WelcomeStep.WELCOME);
   const [_, setLocation] = useLocation();
-  const { user } = useAuth();
-  // Mocking partner para demo - será substituído por informações reais
+  // Mocking usuário e parceiro para demonstração
+  const [user, setUser] = useState({ name: "Usuário" });
   const [partner, setPartner] = useState<Partner | null>(null);
 
-  // Obter informações do parceiro quando estiver disponível
+  // Para demonstração - simulação de carregamento de dados do usuário e parceiro
   useEffect(() => {
-    // Para fins de demonstração - aqui seria uma chamada à API
-    // para obter os dados do parceiro
-    if (user) {
-      // Simulação - remover e substituir com dados reais
-      const hasPartner = Math.random() > 0.5; // apenas para exemplo
+    // Simulação de chamada à API para obter dados do usuário
+    const timer = setTimeout(() => {
+      // Em um cenário real, esses dados viriam da API
+      setUser({ name: "Teste" });
+      
+      // Simular presença ou ausência de parceiro para demonstração
+      const hasPartner = false; // Para demonstrar o botão de convite
       if (hasPartner) {
         setPartner({
           name: "Parceiro(a)",
           createdAt: new Date()
         });
       }
-    }
-  }, [user]);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Animações compartilhadas
   const containerVariants = {
@@ -251,7 +254,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onComplete }) => {
                   delay: 1
                 },
                 {
-                  icon: <Sparkles className="h-8 w-8 text-primary" />,
+                  icon: <Star className="h-8 w-8 text-primary" />,
                   title: "Momentos Especiais",
                   description: "Registrem e celebrem momentos importantes da relação com marcos personalizados.",
                   delay: 2

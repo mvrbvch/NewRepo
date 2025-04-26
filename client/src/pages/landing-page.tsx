@@ -155,7 +155,7 @@ const LandingPage: React.FC = () => {
                 Calendário compartilhado, divisão de tarefas, notificações e muito mais para fortalecer sua relação e organizar a rotina juntos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/auth">
+                <Link href="/auth?redirect=welcome">
                   <Button size="lg" className="group">
                     Começar agora
                     <motion.span
@@ -334,7 +334,7 @@ const LandingPage: React.FC = () => {
                     <p className="text-muted-foreground">
                       O Nós Juntos nasceu da ideia de que relacionamentos saudáveis são baseados em comunicação, equilíbrio e organização. Nossa missão é simplificar a vida a dois, deixando mais espaço para o que realmente importa: o amor entre vocês.
                     </p>
-                    <Link href="/auth">
+                    <Link href="/auth?redirect=welcome">
                       <Button className="mt-4">
                         Experimentar Agora
                       </Button>
@@ -405,7 +405,7 @@ const LandingPage: React.FC = () => {
               Comece agora mesmo e transforme a maneira como vocês gerenciam a rotina e fortalecem a parceria.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Link href="/auth">
+              <Link href="/auth?redirect=welcome">
                 <Button size="lg" className="w-full sm:w-auto">
                   Começar Gratuitamente <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -447,7 +447,7 @@ const LandingPage: React.FC = () => {
                   </a>
                 </li>
                 <li>
-                  <Link href="/auth" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/auth?redirect=welcome" className="text-muted-foreground hover:text-primary transition-colors">
                     Entrar
                   </Link>
                 </li>

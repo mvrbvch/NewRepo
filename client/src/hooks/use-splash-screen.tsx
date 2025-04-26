@@ -49,7 +49,7 @@ export function SplashScreenProvider({
 export function useSplashScreen() {
   const context = useContext(SplashScreenContext);
   
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useSplashScreen must be used within a SplashScreenProvider");
   }
   
