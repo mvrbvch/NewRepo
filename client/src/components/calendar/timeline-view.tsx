@@ -27,23 +27,27 @@ export default function TimelineView({
   onEventClick,
 }: TimelineViewProps) {
   // Filtrar eventos para a data selecionada
-  // Log para debuggar
-  console.log('Data atual:', date.toDateString());
-  console.log('Eventos recebidos:', events.length);
+  // Função para normalizar datas removendo a parte da hora
+  const normalizeDateOnly = (inputDate: Date | string): string => {
+    const date = typeof inputDate === "string" ? new Date(inputDate) : inputDate;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  
+  // Data de referência (sem a parte da hora)
+  const referenceDate = normalizeDateOnly(date);
+  console.log('Data de referência normalizada:', referenceDate);
   
   const filteredEvents = events.filter((event) => {
-    const eventDate = typeof event.date === "string" 
-      ? new Date(event.date) 
-      : event.date;
+    // Normalizar a data do evento removendo a parte da hora
+    const eventDateNormalized = normalizeDateOnly(event.date);
     
     // Log para cada evento
     console.log(`Evento ${event.id}:`, 
-      'Data do evento:', typeof event.date === "string" ? event.date : event.date.toISOString(),
-      'Data convertida:', eventDate.toDateString(),
-      'Corresponde?', eventDate.toDateString() === date.toDateString()
+      'Data normalizada:', eventDateNormalized,
+      'Corresponde?', eventDateNormalized === referenceDate
     );
     
-    return eventDate.toDateString() === date.toDateString();
+    return eventDateNormalized === referenceDate;
   });
 
   // Ordenar eventos por hora de início
