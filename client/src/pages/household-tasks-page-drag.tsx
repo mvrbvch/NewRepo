@@ -39,6 +39,7 @@ import {
   ChevronDown,
   ChevronUp,
   Star,
+  Save,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -285,10 +286,38 @@ export default function HouseholdTasksPage() {
   // Mutação para atualizar a ordem das tarefas
   const reorderTasksMutation = useMutation({
     mutationFn: async (tasks: { id: number; position: number }[]) => {
+      // Garantir que estamos enviando dados válidos para o servidor com conversão explícita para número
+      const validatedTasks = tasks
+        .filter(task => !isNaN(Number(task.id)) && Number(task.id) > 0)
+        .map(task => ({
+          id: Number(task.id),
+          position: Number(task.position)
+        }));
+      
+      console.log("Enviando dados validados para o servidor:", validatedTasks);
+      
+      if (validatedTasks.length === 0) {
+        throw new Error("Nenhuma tarefa válida para reordenar");
+      }
+      
+      // Log para verificar o formato dos dados enviados
+      console.log("Formato da requisição:", JSON.stringify({
+        tasks: validatedTasks,
+      }));
+      
       const response = await apiRequest("PUT", "/api/tasks/reorder", {
-        tasks,
+        tasks: validatedTasks,
       });
-      return await response.json();
+      
+      // Log da resposta
+      const responseData = await response.json();
+      console.log("Resposta do servidor:", responseData);
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || "Erro ao reordenar tarefas");
+      }
+      
+      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
@@ -299,6 +328,7 @@ export default function HouseholdTasksPage() {
       });
     },
     onError: (error) => {
+      console.error("Erro ao reordenar tarefas:", error);
       toast({
         title: "Erro ao reordenar tarefas",
         description:
@@ -312,20 +342,30 @@ export default function HouseholdTasksPage() {
   const getFilteredTasks = () => {
     let filteredTasks: HouseholdTaskType[] = [];
 
+    // Usar tarefas reordenadas se disponíveis, caso contrário usar as tarefas originais
+    const sourceTasks = hasUnsavedChanges && reorderedTasks.length > 0 
+      ? reorderedTasks 
+      : tasks;
+    
+    const sourcePartnerTasks = partnerTasks;
+
     switch (activeTab) {
       case "all":
-        filteredTasks = [...tasks];
+        filteredTasks = [...sourceTasks];
         break;
       case "pending":
-        filteredTasks = tasks.filter((task) => !task.completed);
+        filteredTasks = sourceTasks.filter((task) => !task.completed);
         break;
       case "completed":
-        filteredTasks = tasks.filter((task) => task.completed);
+        filteredTasks = sourceTasks.filter((task) => task.completed);
         break;
       case "partner":
-        filteredTasks = [...partnerTasks];
+        filteredTasks = [...sourcePartnerTasks];
         break;
     }
+    
+    // Debug: verificar IDs das tarefas
+    console.log("Filtered tasks IDs:", filteredTasks.map(t => ({id: t.id, type: typeof t.id})));
 
     // Ordenar tarefas: primeiro por status (pendentes antes das concluídas),
     // em seguida por prioridade (alta para baixa) e finalmente por data
@@ -500,32 +540,113 @@ export default function HouseholdTasksPage() {
     }));
   };
 
+  // Estado para controlar se há alterações não salvas na ordenação
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Estado para armazenar as tarefas reordenadas temporariamente
+  const [reorderedTasks, setReorderedTasks] = useState<HouseholdTaskType[]>([]);
+  
+  // Estado para armazenar as atualizações de posição pendentes
+  const [pendingPositionUpdates, setPendingPositionUpdates] = useState<{ id: number; position: number }[]>([]);
+
   // Função para lidar com evento de arrastar e soltar
   const handleDragEnd = (event: DragEndEvent, tasks: HouseholdTaskType[]) => {
     const { active, over } = event;
 
     if (!over) return;
 
+    // Log para debug
+    console.log("Drag end event:", { active, over });
+
     // Se a ordem não mudou, não faça nada
     if (active.id === over.id) return;
+    
+    // Certifique-se de que os IDs são números
+    const activeId = typeof active.id === 'number' ? active.id : Number(active.id);
+    const overId = typeof over.id === 'number' ? over.id : Number(over.id);
+    
+    if (isNaN(activeId) || isNaN(overId)) {
+      console.error("IDs inválidos no evento de arrastar/soltar:", { activeId, overId });
+      return;
+    }
 
     // Encontre o índice das tarefas
-    const oldIndex = tasks.findIndex((task) => task.id === active.id);
-    const newIndex = tasks.findIndex((task) => task.id === over.id);
+    const oldIndex = tasks.findIndex((task) => task.id === activeId);
+    const newIndex = tasks.findIndex((task) => task.id === overId);
+
+    console.log("Índices encontrados:", { oldIndex, newIndex, taskIds: tasks.map(t => t.id) });
 
     if (oldIndex < 0 || newIndex < 0) return;
 
     // Reorganize o array de tarefas
     const updatedTasks = arrayMove(tasks, oldIndex, newIndex);
+    
+    // Atualize o estado com as tarefas reordenadas
+    setReorderedTasks(updatedTasks);
+    
+    // Prepare os dados para atualizar no banco de dados (quando o usuário clicar em Salvar)
+    const taskUpdates = updatedTasks.map((task, index) => {
+      // Garanta que cada ID é um número
+      const id = typeof task.id === 'number' ? task.id : Number(task.id);
+      if (isNaN(id)) {
+        console.error("ID inválido na task:", task);
+        return null;
+      }
+      return {
+        id,
+        position: index,
+      };
+    }).filter((update): update is { id: number, position: number } => update !== null);
 
-    // Prepare os dados para atualizar no banco de dados
-    const taskUpdates = updatedTasks.map((task, index) => ({
-      id: task.id,
-      position: index,
-    }));
+    if (taskUpdates.length === 0) {
+      toast({
+        title: "Erro ao reordenar",
+        description: "Não foi possível processar a reordenação das tarefas",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    // Armazene as atualizações de posição pendentes
+    setPendingPositionUpdates(taskUpdates);
+    
+    // Marque que há alterações não salvas
+    setHasUnsavedChanges(true);
+    
+    toast({
+      title: "Ordem alterada",
+      description: "Clique em 'Salvar' para confirmar a nova ordem das tarefas.",
+    });
+  };
+  
+  // Função para salvar as alterações de posição
+  const savePositionChanges = () => {
+    if (!hasUnsavedChanges || pendingPositionUpdates.length === 0) {
+      return;
+    }
+    
+    console.log("Salvando atualizações de posição:", pendingPositionUpdates);
+    
     // Chame a mutação para salvar a ordem no banco de dados
-    reorderTasksMutation.mutate(taskUpdates);
+    reorderTasksMutation.mutate(pendingPositionUpdates, {
+      onSuccess: () => {
+        setHasUnsavedChanges(false);
+        setPendingPositionUpdates([]);
+        
+        toast({
+          title: "Tarefas reordenadas",
+          description: "A ordem das tarefas foi atualizada com sucesso."
+        });
+      },
+      onError: (error) => {
+        console.error("Erro ao reordenar tarefas:", error);
+        toast({
+          title: "Erro ao reordenar tarefas",
+          description: "Não foi possível salvar a nova ordem. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    });
   };
 
   // Renderiza um card de tarefa regular (sem arrastar e soltar)
@@ -626,6 +747,29 @@ export default function HouseholdTasksPage() {
           Minhas Tarefas
         </h2>
         <div className="flex gap-2">
+          {/* Botão Salvar - aparece apenas quando há alterações não salvas */}
+          {hasUnsavedChanges && (
+            <Button
+              onClick={savePositionChanges}
+              variant="default"
+              size="sm"
+              className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white transition-colors"
+              disabled={reorderTasksMutation.isPending}
+            >
+              {reorderTasksMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-1" />
+                  Salvar Ordem
+                </>
+              )}
+            </Button>
+          )}
+        
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -724,7 +868,7 @@ export default function HouseholdTasksPage() {
           </TabsTrigger>
         </TabsList>
 
-        <div onRefresh={handleRefresh}>
+        <PullToRefresh onRefresh={handleRefresh}>
           <div className="mt-4 pb-16 px-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-48">
@@ -799,7 +943,7 @@ export default function HouseholdTasksPage() {
               </>
             )}
           </div>
-        </div>
+        </PullToRefresh>
       </Tabs>
 
       <BottomNavigation onCreateEvent={handleOpenCreateModal} />
@@ -816,6 +960,7 @@ export default function HouseholdTasksPage() {
           onClose={handleCloseTaskDetails}
           onDelete={handleDeleteTask}
           onToggleComplete={handleToggleTaskComplete}
+          openEditModal={() => {}} // Adicionando função vazia para cumprir o contrato da interface
         />
       )}
 

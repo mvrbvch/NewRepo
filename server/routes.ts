@@ -1478,6 +1478,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tasks } = req.body;
       console.log("Received task reorder request:", tasks);
+      
+      // Obter o ID do usuário atual
+      const userId = req.user?.id as number;
+      if (!userId) {
+        return res.status(401).json({ message: "User ID not found" });
+      }
 
       // Validate input
       if (!Array.isArray(tasks)) {
@@ -1521,6 +1527,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({
           status: "error",
           message: "No valid tasks provided for reordering",
+        });
+      }
+
+      // Verificar se as tarefas pertencem ao usuário
+      // Obter IDs de todas as tarefas que queremos reordenar
+      const taskIds = validTasks.map(task => task.id);
+      
+      // Verificar se todas as tarefas pertencem ao usuário
+      const tasksExistForUser = await storage.verifyTasksBelongToUser(userId, taskIds);
+      
+      if (!tasksExistForUser) {
+        return res.status(403).json({
+          status: "error",
+          message: "You don't have permission to reorder one or more of these tasks",
         });
       }
 

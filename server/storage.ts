@@ -1380,10 +1380,17 @@ export class DatabaseStorage implements IStorage {
 
   async getHouseholdTask(id: number): Promise<HouseholdTask | undefined> {
     try {
+      // Validar o ID para garantir que seja um número inteiro válido
+      const validId = Number(id);
+      if (isNaN(validId) || !Number.isInteger(validId) || validId <= 0) {
+        console.warn(`ID de tarefa inválido recebido: ${id}`);
+        return undefined;
+      }
+      
       const [task] = await db
         .select()
         .from(householdTasks)
-        .where(eq(householdTasks.id, id));
+        .where(eq(householdTasks.id, validId));
       if (!task) return undefined;
 
       // Formatar datas de forma segura usando a função utilitária
@@ -1651,6 +1658,51 @@ export class DatabaseStorage implements IStorage {
       return foundCount === validIds.length;
     } catch (error) {
       console.error("Error verifying tasks exist:", error);
+      return false;
+    }
+  }
+  
+  /**
+   * Verifica se todas as tarefas pertencem ao usuário informado (criadas por ele ou atribuídas a ele)
+   * 
+   * @param userId ID do usuário
+   * @param taskIds Array de IDs de tarefas para verificar
+   * @returns true se todas as tarefas pertencem ao usuário, false caso contrário
+   */
+  async verifyTasksBelongToUser(userId: number, taskIds: number[]): Promise<boolean> {
+    try {
+      if (taskIds.length === 0) return false;
+      
+      // Filter out any invalid IDs (like NaN)
+      const validIds = taskIds.filter(id => 
+        typeof id === 'number' && !isNaN(id) && Number.isInteger(id) && id > 0
+      );
+      
+      if (validIds.length === 0) return false;
+      
+      // Contar quantas tarefas existem com os IDs fornecidos E pertencem ao usuário
+      const results = await db.execute(
+        sql`SELECT COUNT(*) as count FROM household_tasks 
+            WHERE id IN (${sql.join(validIds, sql`, `)}) 
+            AND (created_by = ${userId} OR assigned_to = ${userId})`
+      );
+      
+      // Extrair a contagem do resultado
+      const foundCount = parseInt(results.rows[0]?.count as string || '0', 10);
+      
+      // Verificar se todas as tarefas foram encontradas
+      const allTasksBelongToUser = foundCount === validIds.length;
+      
+      // Log detalhado apenas se nem todas as tarefas pertencerem ao usuário
+      if (!allTasksBelongToUser) {
+        console.warn(`Usuário ${userId} tentou reordenar tarefas que não lhe pertencem.`);
+        console.warn(`IDs das tarefas: ${validIds.join(', ')}`);
+        console.warn(`Tarefas pertencentes ao usuário: ${foundCount} de ${validIds.length}`);
+      }
+      
+      return allTasksBelongToUser;
+    } catch (error) {
+      console.error("Erro ao verificar se tarefas pertencem ao usuário:", error);
       return false;
     }
   }

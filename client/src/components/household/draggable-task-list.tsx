@@ -21,6 +21,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 import {
   Calendar as CalendarIcon,
   Check,
@@ -31,7 +32,7 @@ import {
 import { isBefore } from 'date-fns';
 
 interface SortableTaskCardProps {
-  task: HouseholdTaskType;
+  task: HouseholdTaskType & { id: number }; // Garante que id é um número
   onClick: () => void;
   onToggleComplete: (task: HouseholdTaskType) => void;
   getFormattedDueDate: (date: string | Date) => string;
@@ -50,6 +51,14 @@ export function SortableTaskCard({
   getFrequencyText,
   user
 }: SortableTaskCardProps) {
+  // Garantir que id é um número
+  const taskId = typeof task.id === 'string' ? parseInt(task.id, 10) : task.id;
+  
+  // Log para ajudar a identificar problemas
+  if (isNaN(taskId)) {
+    console.error("ID de tarefa inválido:", task);
+  }
+  
   const {
     attributes,
     listeners,
@@ -57,7 +66,9 @@ export function SortableTaskCard({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: task.id });
+  } = useSortable({ 
+    id: taskId 
+  });
   
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -211,6 +222,11 @@ export function SortableTaskList({
   getFrequencyText,
   user
 }: SortableTaskListProps) {
+  const { toast } = useToast();
+  
+  // Log para debug
+  console.log("SortableTaskList recebeu tarefas:", tasks.map(t => ({ id: t.id, tipo: typeof t.id })));
+  
   // Configure o sensor para detectar arrasto
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -220,14 +236,69 @@ export function SortableTaskList({
     })
   );
   
+  // Preparar os IDs das tarefas para o SortableContext
+  const taskIds = tasks.map(task => {
+    // Fazer uma validação mais rigorosa dos IDs de tarefas
+    if (task.id === undefined || task.id === null) {
+      console.error("Tarefa sem ID encontrada:", task);
+      return -1;
+    }
+    
+    // Garantir que todos os IDs são números
+    const id = typeof task.id === 'string' ? parseInt(task.id, 10) : Number(task.id);
+    
+    if (isNaN(id) || id <= 0) {
+      console.error("ID inválido encontrado:", { taskId: task.id, taskType: typeof task.id, taskValue: task.id, convertedId: id });
+      return -1; // Valor de fallback para evitar NaN
+    }
+    
+    return id;
+  }).filter(id => id > 0); // Remover IDs inválidos
+  
+  // Verificação adicional de segurança
+  if (taskIds.length === 0 && tasks.length > 0) {
+    console.error("Nenhum ID válido encontrado nas tarefas. Verifique o formato dos dados:", tasks);
+  }
+  
+  console.log("Task IDs processados para SortableContext:", taskIds);
+  
+  // Wrapper personalizado para onDragEnd
+  const handleDragEnd = (event: DragEndEvent) => {
+    console.log("DragEnd raw event:", event);
+    
+    // Verifique se os IDs são válidos antes de chamar o callback
+    const { active, over } = event;
+    if (!active || !over) {
+      console.error("Evento de arrasto inválido - active ou over ausentes");
+      return;
+    }
+    
+    // Validar IDs antes de processar o evento
+    const activeId = typeof active.id === 'string' ? Number(active.id) : Number(active.id);
+    const overId = typeof over.id === 'string' ? Number(over.id) : Number(over.id);
+    
+    if (isNaN(activeId) || isNaN(overId) || activeId <= 0 || overId <= 0) {
+      console.error("ID de tarefa inválido no evento de arrasto:", { activeId, overId });
+      toast({
+        title: "Erro ao reordenar",
+        description: "Identificadores de tarefas inválidos",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Continuar com o processamento normal
+    onDragEnd(event, tasks);
+  };
+  
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragEnd={(event) => onDragEnd(event, tasks)}
+      onDragEnd={handleDragEnd}
     >
       <SortableContext 
-        items={tasks.map(task => task.id)} 
+        items={taskIds}
         strategy={verticalListSortingStrategy}
       >
         <AnimatedList

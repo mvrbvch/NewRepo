@@ -92,9 +92,43 @@ export default function HouseholdTasksPageSimple() {
   });
 
   React.useEffect(() => {
-    const myTasks = allTasks.filter((task) => task.assignedTo === user?.id);
-    setTasks(myTasks);
-  }, [allTasks]);
+    if (allTasks && allTasks.length > 0 && user?.id) {
+      try {
+        // Processar os IDs e garantir que todos são números
+        const processedTasks = ensureNumericIds(allTasks);
+        
+        // Filtrar tarefas do usuário atual
+        const myTasks = processedTasks.filter((task) => {
+          const isUserTask = task.assignedTo === user?.id || task.createdBy === user?.id;
+          if (!isUserTask) {
+            console.log(`Tarefa ${task.id} não pertence ao usuário ${user?.id}, assignedTo: ${task.assignedTo}, createdBy: ${task.createdBy}`);
+          }
+          return isUserTask;
+        });
+        
+        // Ordenar tarefas por posição
+        const sortedTasks = [...myTasks].sort((a, b) => {
+          // Garantir que a posição é um número válido
+          const posA = typeof a.position === 'number' ? a.position : 999999;
+          const posB = typeof b.position === 'number' ? b.position : 999999;
+          return posA - posB;
+        });
+        
+        console.log("Tarefas processadas para reordenação:", 
+          sortedTasks.map(t => ({ id: t.id, position: t.position, tipo: typeof t.id }))
+        );
+        
+        setTasks(sortedTasks);
+      } catch (error) {
+        console.error("Erro ao processar tarefas:", error);
+        toast({
+          title: "Erro ao carregar tarefas",
+          description: "Ocorreu um erro ao processar as tarefas para reordenação.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [allTasks, user?.id, toast]);
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -110,10 +144,17 @@ export default function HouseholdTasksPageSimple() {
 
   // Ensure all tasks have numeric IDs for the sortable context
   const ensureNumericIds = (taskList: HouseholdTaskType[]) => {
-    return taskList.map(task => ({
-      ...task,
-      id: Number(task.id)
-    }));
+    return taskList.map(task => {
+      const numericId = typeof task.id === 'string' ? parseInt(task.id, 10) : Number(task.id);
+      if (isNaN(numericId)) {
+        console.error("ID inválido encontrado:", { taskId: task.id, taskType: typeof task.id });
+        return null;
+      }
+      return {
+        ...task,
+        id: numericId
+      };
+    }).filter(task => task !== null) as HouseholdTaskType[];
   };
 
   // Mutation for reordering tasks
@@ -121,17 +162,38 @@ export default function HouseholdTasksPageSimple() {
     mutationFn: async (taskUpdates: { id: number; position: number }[]) => {
       // Ensure we're sending valid data to the server with explicit number casting
       const validatedTasks = taskUpdates
-        .filter(task => !isNaN(Number(task.id)))
+        .filter(task => {
+          const numericId = Number(task.id);
+          const validId = !isNaN(numericId) && Number.isInteger(numericId) && numericId > 0;
+          
+          if (!validId) {
+            console.error(`ID de tarefa inválido filtrado: ${task.id}, tipo: ${typeof task.id}`);
+          }
+          
+          return validId;
+        })
         .map(task => ({
           id: Number(task.id),
           position: Number(task.position)
         }));
       
-      console.log("Sending validated task updates to server:", validatedTasks);
+      console.log("Enviando atualizações de posições para o servidor:", validatedTasks);
+      
+      if (validatedTasks.length === 0) {
+        throw new Error("Nenhuma tarefa válida para reordenar");
+      }
       
       const response = await apiRequest("PUT", "/api/tasks/reorder", {
         tasks: validatedTasks,
       });
+      
+      // Verificar se a resposta teve sucesso
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro retornado pelo servidor:", errorData);
+        throw new Error(errorData.message || "Erro ao reordenar tarefas");
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
