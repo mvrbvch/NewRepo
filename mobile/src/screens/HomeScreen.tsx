@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Platform
-} from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
-import { api } from '../api/api';
+  Platform,
+} from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../hooks/useAuth";
+import { api } from "../api/api";
+import { Card, Button, Text } from "../components/ui";
+import { COLORS, FONTS, SIZES, SHADOWS } from "../constants/theme";
 
 const HomeScreen = () => {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ const HomeScreen = () => {
     error: tasksError,
     refetch: refetchTasks,
   } = useQuery({
-    queryKey: ["api/tasks"],
+    queryKey: ["tasks"],
     queryFn: () => api.tasks.getAll(),
   });
 
@@ -111,36 +112,40 @@ const HomeScreen = () => {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.greeting}>Hello, {user?.name || 'there'}!</Text>
-          <Text style={styles.date}>
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric'
+          <Text variant="h2" color={COLORS.white}>
+            Hello, {user?.name || "there"}!
+          </Text>
+          <Text variant="body" color={COLORS.white} style={{ opacity: 0.8 }}>
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
             })}
           </Text>
         </View>
 
         {/* Today's Schedule Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Schedule</Text>
-          
+        <Card style={styles.section} variant="elevated">
+          <Text variant="h4" color={COLORS.text} style={styles.sectionPadding}>
+            Today's Schedule
+          </Text>
+
           {eventsLoading ? (
             <ActivityIndicator style={styles.loader} color={COLORS.primary} />
           ) : eventsError ? (
-            <Text 
-              variant="body" 
-              color={COL  ORS.error} 
-              align="center" 
+            <Text
+              variant="body"
+              color={COLORS.error}
+              align="center"
               style={styles.messagePadding}
             >
               Failed to load events
             </Text>
           ) : todayEvents.length === 0 ? (
-            <Text 
-              variant="body" 
-              color={COLORS.textSecondary} 
-              align="center" 
+            <Text
+              variant="body"
+              color={COLORS.textSecondary}
+              align="center"
               style={styles.messagePadding}
             >
               No events scheduled for today
@@ -149,14 +154,24 @@ const HomeScreen = () => {
             todayEvents.map((event) => (
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.eventTimeContainer}>
-                  <Text variant="body-sm" color={COLORS.textSecondary}>{event.startTime}</Text>
-                  <Text variant="caption" color={COLORS.textLight}>-</Text>
-                  <Text variant="body-sm" color={COLORS.textSecondary}>{event.endTime}</Text>
+                  <Text variant="body-sm" color={COLORS.textSecondary}>
+                    {event.startTime}
+                  </Text>
+                  <Text variant="caption" color={COLORS.textLight}>
+                    -
+                  </Text>
+                  <Text variant="body-sm" color={COLORS.textSecondary}>
+                    {event.endTime}
+                  </Text>
                 </View>
                 <View style={styles.eventDetails}>
-                  <Text variant="body" weight="semibold" color={COLORS.text}>{event.title}</Text>
+                  <Text variant="body" weight="semibold" color={COLORS.text}>
+                    {event.title}
+                  </Text>
                   {event.location && (
-                    <Text variant="body-sm" color={COLORS.textSecondary}>{event.location}</Text>
+                    <Text variant="body-sm" color={COLORS.textSecondary}>
+                      {event.location}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -165,25 +180,27 @@ const HomeScreen = () => {
         </Card>
 
         {/* Tasks Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Tasks</Text>
-          
+        <Card style={styles.section} variant="elevated">
+          <Text variant="h4" color={COLORS.text} style={styles.sectionPadding}>
+            Today's Tasks
+          </Text>
+
           {tasksLoading ? (
             <ActivityIndicator style={styles.loader} color={COLORS.primary} />
           ) : tasksError ? (
-            <Text 
-              variant="body" 
-              color={COLORS.error} 
-              align="center" 
+            <Text
+              variant="body"
+              color={COLORS.error}
+              align="center"
               style={styles.messagePadding}
             >
               Failed to load tasks
             </Text>
           ) : todayTasks.length === 0 ? (
-            <Text 
-              variant="body" 
-              color={COLORS.textSecondary} 
-              align="center" 
+            <Text
+              variant="body"
+              color={COLORS.textSecondary}
+              align="center"
               style={styles.messagePadding}
             >
               No tasks due today
@@ -198,16 +215,24 @@ const HomeScreen = () => {
                   ]}
                 />
                 <View style={styles.taskDetails}>
-                  <Text 
-                    style={[
-                      styles.taskTitle, 
-                      task.completed ? styles.taskCompletedText : {}
-                    ]}
+                  <Text
+                    variant="body"
+                    weight="semibold"
+                    color={task.completed ? COLORS.textLight : COLORS.text}
+                    style={task.completed ? styles.textStrikethrough : {}}
                   >
                     {task.title}
                   </Text>
                   {task.description && (
-                    <Text style={styles.taskDescription}>{task.description}</Text>
+                    <Text
+                      variant="body-sm"
+                      color={
+                        task.completed ? COLORS.textLight : COLORS.textSecondary
+                      }
+                      style={task.completed ? styles.textStrikethrough : {}}
+                    >
+                      {task.description}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -217,21 +242,17 @@ const HomeScreen = () => {
 
         {/* Quick Actions Section */}
         <Card style={styles.section} variant="elevated">
-          <Text 
-            variant="h4" 
-            color={COLORS.text} 
-            style={styles.sectionPadding}
-          >
+          <Text variant="h4" color={COLORS.text} style={styles.sectionPadding}>
             Quick Actions
           </Text>
           <View style={styles.actionButtons}>
-            <Button 
-              title="Add Event" 
+            <Button
+              title="Add Event"
               variant="primary"
               style={styles.actionButton}
             />
-            <Button 
-              title="Add Task" 
+            <Button
+              title="Add Task"
               variant="outline"
               style={styles.actionButton}
             />
@@ -245,81 +266,84 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.background,
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    padding: 20,
-    backgroundColor: '#4F46E5',
+    padding: SIZES.spacing.md,
+    backgroundColor: COLORS.primary,
   },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+  sectionPadding: {
+    paddingHorizontal: SIZES.spacing.md,
+    paddingTop: SIZES.spacing.md,
+    marginBottom: SIZES.spacing.md,
   },
-  date: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.8,
+  messagePadding: {
+    paddingHorizontal: SIZES.spacing.md,
+    paddingBottom: SIZES.spacing.md,
+    marginVertical: SIZES.spacing.md,
   },
   section: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    marginBottom: 10,
+    marginTop: SIZES.spacing.md,
+    padding: 0,
+    backgroundColor: COLORS.white,
+    borderRadius: SIZES.radius.md,
+    marginHorizontal: SIZES.spacing.md,
+    marginBottom: SIZES.spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
+    fontSize: SIZES.lg,
+    ...FONTS.semiBold,
+    marginBottom: SIZES.spacing.md,
+    paddingHorizontal: SIZES.spacing.md,
+    paddingTop: SIZES.spacing.md,
+    color: COLORS.text,
   },
   loader: {
     marginVertical: SIZES.spacing.md,
   },
   errorText: {
-    color: '#E53E3E',
-    textAlign: 'center',
-    marginVertical: 15,
+    color: COLORS.error,
+    textAlign: "center",
+    marginVertical: SIZES.spacing.md,
+    ...FONTS.medium,
+    paddingHorizontal: SIZES.spacing.md,
   },
   emptyText: {
-    color: '#666',
-    textAlign: 'center',
-    marginVertical: 15,
-    fontStyle: 'italic',
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    marginVertical: SIZES.spacing.md,
+    fontStyle: "italic",
+    ...FONTS.regular,
+    paddingHorizontal: SIZES.spacing.md,
+    paddingBottom: SIZES.spacing.md,
   },
   eventCard: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f8f9ff',
-    marginBottom: 10,
+    flexDirection: "row",
+    padding: SIZES.spacing.md,
+    borderRadius: SIZES.radius.sm,
+    backgroundColor: COLORS.gray50,
+    marginHorizontal: SIZES.spacing.md,
+    marginBottom: SIZES.spacing.sm,
     borderLeftWidth: 4,
-    borderLeftColor: '#4F46E5',
+    borderLeftColor: COLORS.primary,
   },
   eventTimeContainer: {
-    marginRight: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginRight: SIZES.spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 60,
   },
   eventTime: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.medium,
   },
   eventTimeDivider: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: SIZES.xs,
+    color: COLORS.textLight,
     marginVertical: 2,
   },
   eventDetails: {
@@ -327,70 +351,68 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   eventTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.text,
     marginBottom: 4,
   },
   eventLocation: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.regular,
   },
   taskCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f8f9ff',
-    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: SIZES.spacing.md,
+    borderRadius: SIZES.radius.sm,
+    backgroundColor: COLORS.gray50,
+    marginHorizontal: SIZES.spacing.md,
+    marginBottom: SIZES.spacing.sm,
   },
   taskStatus: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#4F46E5',
-    marginRight: 15,
-    backgroundColor: 'transparent',
+    borderColor: COLORS.primary,
+    marginRight: SIZES.spacing.md,
+    backgroundColor: "transparent",
   },
   taskCompleted: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   taskDetails: {
     flex: 1,
   },
   taskTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: SIZES.md,
+    ...FONTS.semiBold,
+    color: COLORS.text,
     marginBottom: 4,
   },
   taskCompletedText: {
-    textDecorationLine: 'line-through',
-    color: '#888',
+    textDecorationLine: "line-through",
+    color: COLORS.textLight,
   },
   taskDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SIZES.sm,
+    color: COLORS.textSecondary,
+    ...FONTS.regular,
   },
   actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: SIZES.spacing.md,
+    paddingHorizontal: SIZES.spacing.md,
+    paddingBottom: SIZES.spacing.md,
   },
   actionButton: {
-    backgroundColor: '#4F46E5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    width: '45%',
-    alignItems: 'center',
+    width: "48%",
   },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: '500',
-    fontSize: 16,
+  textStrikethrough: {
+    textDecorationLine: "line-through",
   },
 });
 

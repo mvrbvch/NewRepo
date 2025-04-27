@@ -6,12 +6,12 @@ const determineApiUrl = () => {
     if (Platform.OS === "android") {
       return "http://192.168.68.108:5000"; // Android emulator
     } else {
-      return "http://localhost:5000"; // iOS simulator
+      return "http://192.168.68.108:5000"; // iOS simulator
     }
   }
 
   // Production URL
-  return "http://localhost:5000";
+  return "http://192.168.68.108:5000";
 };
 
 export const API_URL = determineApiUrl();

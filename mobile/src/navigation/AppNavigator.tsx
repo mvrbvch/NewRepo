@@ -1,21 +1,22 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import React from "react";
+import { View, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
 // Ícones
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 // Telas
-import HomeScreen from '../screens/HomeScreen';
-import CalendarScreen from '../screens/CalendarScreen';
-import TasksScreen from '../screens/TasksScreen';
-import LoginScreen from '../screens/LoginScreen';
+import HomeScreen from "../screens/HomeScreen";
+import CalendarScreen from "../screens/CalendarScreen";
+import TasksScreen from "../screens/TasksScreen";
+import LoginScreen from "../screens/LoginScreen";
 
 // Tema
-import { COLORS, SIZES } from '../constants/theme';
-import { Text } from '../components/ui';
+import { COLORS, SIZES } from "../constants/theme";
+import { Text } from "../components/ui";
+import { AuthProvider } from "@hooks/useAuth";
 
 // Tipos para navegação
 type BottomTabParamList = {
@@ -60,7 +61,7 @@ const TabNavigator = () => {
         tabBarInactiveTintColor: COLORS.gray600,
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '500',
+          fontWeight: "500",
         },
         tabBarStyle: {
           height: 60,
@@ -71,58 +72,58 @@ const TabNavigator = () => {
         headerShown: false,
       }}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
         options={{
-          tabBarLabel: 'Início',
+          tabBarLabel: "Início",
           tabBarIcon: ({ color, size }) => (
             <Icon name="home-outline" size={size} color={color} />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Calendar" 
-        component={CalendarScreen} 
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarScreen}
         options={{
-          tabBarLabel: 'Agenda',
+          tabBarLabel: "Agenda",
           tabBarIcon: ({ color, size }) => (
             <Icon name="calendar" size={size} color={color} />
           ),
         }}
       />
       {/* Tab placeholder para o botão de adicionar */}
-      <Tab.Screen 
-        name="AddAction" 
-        component={View} 
+      <Tab.Screen
+        name="AddAction"
+        component={View}
         options={{
-          tabBarLabel: '',
+          tabBarLabel: "",
           tabBarButton: () => (
-            <AddButton onPress={() => console.log('Adicionar novo item')} />
+            <AddButton onPress={() => console.log("Adicionar novo item")} />
           ),
         }}
         listeners={{
-          tabPress: e => {
+          tabPress: (e) => {
             // Previne a navegação padrão
             e.preventDefault();
           },
         }}
       />
-      <Tab.Screen 
-        name="Tasks" 
-        component={TasksScreen} 
+      <Tab.Screen
+        name="Tasks"
+        component={TasksScreen}
         options={{
-          tabBarLabel: 'Tarefas',
+          tabBarLabel: "Tarefas",
           tabBarIcon: ({ color, size }) => (
             <Icon name="checkbox-marked-outline" size={size} color={color} />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={View} // Placeholder para uma futura tela de perfil
         options={{
-          tabBarLabel: 'Perfil',
+          tabBarLabel: "Perfil",
           tabBarIcon: ({ color, size }) => (
             <Icon name="account-outline" size={size} color={color} />
           ),
@@ -135,14 +136,16 @@ const TabNavigator = () => {
 // Configuração da navegação de autenticação
 const AuthNavigator = () => {
   return (
-    <AuthStack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <AuthStack.Screen name="Login" component={LoginScreen} />
-      {/* Outras telas de autenticação podem ser adicionadas aqui */}
-    </AuthStack.Navigator>
+    <AuthProvider>
+      <AuthStack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <AuthStack.Screen name="Login" component={LoginScreen} />
+        {/* Outras telas de autenticação podem ser adicionadas aqui */}
+      </AuthStack.Navigator>
+    </AuthProvider>
   );
 };
 
@@ -170,9 +173,9 @@ const AppNavigator = () => {
 // Estilos
 const styles = StyleSheet.create({
   fabContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
     top: -30,
     ...Platform.select({
       ios: {
@@ -191,8 +194,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

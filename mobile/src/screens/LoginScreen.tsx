@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  Image, 
-  KeyboardAvoidingView, 
-  Platform, 
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ScrollView
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { 
-  Button, 
-  TextInput, 
-  Text, 
-  Title, 
-  Headline, 
-  useTheme 
-} from 'react-native-paper';
+  ScrollView,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import {
+  Button,
+  TextInput,
+  Text,
+  Title,
+  Headline,
+  useTheme,
+} from "react-native-paper";
 
 // Hooks
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from "../hooks/useAuth";
 
 // Constantes
-import { COLORS } from '../constants/theme';
+import { COLORS } from "../constants/theme";
 
 const LoginScreen = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const navigation = useNavigation();
@@ -45,7 +45,7 @@ const LoginScreen = () => {
       await login(email, password);
       // A navegação será tratada pelo hook useAuth
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
+      console.error("Erro ao fazer login:", error);
       // TODO: Mostrar mensagem de erro
     } finally {
       setLoading(false);
@@ -54,18 +54,18 @@ const LoginScreen = () => {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/logo.png')} 
-              style={styles.logo} 
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logo}
               resizeMode="contain"
             />
             <Title style={styles.title}>NÓS JUNTOS</Title>
@@ -76,9 +76,10 @@ const LoginScreen = () => {
 
           <View style={styles.formContainer}>
             <Text style={styles.message}>
-              Faça login para acessar sua conta e continuar sua jornada com seu parceiro.
+              Faça login para acessar sua conta e continuar sua jornada com seu
+              parceiro.
             </Text>
-            
+
             <TextInput
               label="E-mail"
               value={email}
@@ -91,7 +92,7 @@ const LoginScreen = () => {
               outlineStyle={{ borderRadius: 8 }}
               theme={{ colors: { primary: theme.colors.primary } }}
             />
-            
+
             <TextInput
               label="Senha"
               value={password}
@@ -101,16 +102,16 @@ const LoginScreen = () => {
               style={styles.input}
               left={<TextInput.Icon icon="lock" />}
               right={
-                <TextInput.Icon 
-                  icon={secureTextEntry ? "eye" : "eye-off"} 
-                  onPress={() => setSecureTextEntry(!secureTextEntry)} 
+                <TextInput.Icon
+                  icon={secureTextEntry ? "eye" : "eye-off"}
+                  onPress={() => setSecureTextEntry(!secureTextEntry)}
                 />
               }
               outlineStyle={{ borderRadius: 8 }}
               theme={{ colors: { primary: theme.colors.primary } }}
             />
-            
-            <Button 
+
+            <Button
               mode="contained"
               onPress={handleLogin}
               loading={loading}
@@ -119,23 +120,27 @@ const LoginScreen = () => {
             >
               ENTRAR
             </Button>
-            
-            <Button 
+
+            <Button
               mode="text"
-              onPress={() => {/* Navegação para tela de senha esquecida */}}
+              onPress={() => {
+                /* Navegação para tela de senha esquecida */
+              }}
               style={styles.forgotPasswordButton}
               labelStyle={{ color: theme.colors.primary }}
             >
               Esqueci minha senha
             </Button>
-            
+
             <View style={styles.registerContainer}>
               <Text style={{ color: COLORS.textSecondary }}>
                 Não tem uma conta?
               </Text>
-              <Button 
+              <Button
                 mode="text"
-                onPress={() => {/* Navegação para tela de registro */}}
+                onPress={() => {
+                  /* Navegação para tela de registro */
+                }}
                 style={{ marginLeft: -8 }}
                 labelStyle={{ color: theme.colors.primary }}
               >
@@ -161,7 +166,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   logo: {
@@ -170,7 +175,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 24,
     color: COLORS.primary,
     marginBottom: 8,
@@ -178,14 +183,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 18,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   formContainer: {
     marginTop: 20,
   },
   message: {
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: "center",
     color: COLORS.textSecondary,
     lineHeight: 22,
   },
@@ -200,16 +205,16 @@ const styles = StyleSheet.create({
   },
   buttonLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 1,
   },
   forgotPasswordButton: {
     marginTop: 8,
   },
   registerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 16,
   },
 });
