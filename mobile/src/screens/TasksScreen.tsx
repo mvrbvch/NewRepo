@@ -1,324 +1,329 @@
-import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  StyleSheet, 
+  ScrollView, 
   TouchableOpacity,
-  SafeAreaView,
-  Platform
+  FlatList 
 } from 'react-native';
-import { Text, Card } from '../components/ui';
-import { COLORS, SIZES } from '../constants/theme';
+import { 
+  Card, 
+  Checkbox, 
+  Chip, 
+  Divider, 
+  FAB, 
+  Text,
+  Badge,
+  useTheme,
+  IconButton,
+  List,
+  SegmentedButtons
+} from 'react-native-paper';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// Ícones
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+// Constantes
+import { COLORS } from '../constants/theme';
 
-// Tipos para as tarefas
+// Tipos
 interface Task {
-  id: number;
+  id: string;
   title: string;
-  description?: string;
-  dueDate?: string;
-  priority: 'alta' | 'média' | 'baixa';
+  description: string;
+  category: string;
+  deadline: string;
   completed: boolean;
-  isDaily?: boolean;
+  priority: 'alta' | 'média' | 'baixa';
+  assignedTo?: string;
 }
 
-// Componente para o cabeçalho de tarefas com botões de ação
-const TasksHeader = ({ onFilter, onAddTask }: any) => {
-  return (
-    <View style={styles.headerContainer}>
-      <Text variant="h3" color={COLORS.white}>
-        Minhas tarefas
-      </Text>
-      <View style={styles.headerActions}>
-        <TouchableOpacity 
-          style={styles.filterButton} 
-          onPress={onFilter}
-        >
-          <Icon name="filter-variant" size={18} color={COLORS.white} />
-          <Text variant="body-sm" color={COLORS.white} style={styles.filterText}>
-            Filtros
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={onAddTask}
-        >
-          <Icon name="plus" size={18} color={COLORS.white} />
-          <Text variant="body-sm" color={COLORS.white}>
-            Nova
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+// Dados mock para demonstração
+const mockTasks: Task[] = [
+  {
+    id: '1',
+    title: 'Lavar a louça',
+    description: 'Lavar os pratos e copos do jantar',
+    category: 'Casa',
+    deadline: '2025-04-28',
+    completed: false,
+    priority: 'média'
+  },
+  {
+    id: '2',
+    title: 'Pagar conta de água',
+    description: 'Efetuar o pagamento da conta até o vencimento',
+    category: 'Finanças',
+    deadline: '2025-04-30',
+    completed: false,
+    priority: 'alta'
+  },
+  {
+    id: '3',
+    title: 'Comprar mantimentos',
+    description: 'Fazer compras semanais no supermercado',
+    category: 'Compras',
+    deadline: '2025-04-29',
+    completed: true,
+    priority: 'média'
+  },
+  {
+    id: '4',
+    title: 'Agendar jantar romântico',
+    description: 'Reservar mesa para aniversário de namoro',
+    category: 'Relacionamento',
+    deadline: '2025-05-05',
+    completed: false,
+    priority: 'alta',
+    assignedTo: 'parceiro'
+  },
+  {
+    id: '5',
+    title: 'Cortar a grama',
+    description: 'Limpar o jardim e cortar a grama',
+    category: 'Casa',
+    deadline: '2025-04-28',
+    completed: false,
+    priority: 'baixa'
+  }
+];
+
+// Cores para categorias
+const categoryColors = {
+  'Casa': '#8E44AD', // Roxo
+  'Finanças': '#2980B9', // Azul
+  'Compras': '#27AE60', // Verde
+  'Relacionamento': '#E74C3C', // Vermelho
+  'Outros': '#F39C12' // Laranja
 };
 
-// Componente para abas de filtragem de tarefas
-const TasksTabs = ({ activeTab, onTabChange }: any) => {
-  const tabs = [
-    { id: 'pending', label: 'Pendentes' },
-    { id: 'completed', label: 'Concluídas' },
-    { id: 'all', label: 'Todas' }
-  ];
-
-  return (
-    <View style={styles.tabsContainer}>
-      {tabs.map(tab => (
-        <TouchableOpacity
-          key={tab.id}
-          style={[
-            styles.tabButton,
-            activeTab === tab.id && styles.activeTabButton
-          ]}
-          onPress={() => onTabChange(tab.id)}
-        >
-          <Text
-            variant="body"
-            color={activeTab === tab.id ? COLORS.primary : COLORS.gray600}
-            style={[
-              styles.tabText,
-              activeTab === tab.id && styles.activeTabText
-            ]}
-          >
-            {tab.label}
-          </Text>
-          {activeTab === tab.id && <View style={styles.activeTabIndicator} />}
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-};
-
-// Componente para uma categoria de tarefas
-const TaskCategory = ({ title, count, expanded, onToggle, tasks }: any) => {
-  return (
-    <View style={styles.categoryContainer}>
-      <TouchableOpacity 
-        style={styles.categoryHeader}
-        onPress={onToggle}
-      >
-        <View style={styles.categoryTitleContainer}>
-          <Icon 
-            name={title === 'Tarefas Diárias' ? 'refresh' : 'format-list-bulleted'} 
-            size={20} 
-            color={COLORS.primary} 
-          />
-          <Text variant="body" weight="semibold" color={COLORS.text} style={styles.categoryTitle}>
-            {title}
-          </Text>
-        </View>
-        <View style={styles.categoryCountContainer}>
-          <Text variant="body-sm" color={COLORS.gray600} style={styles.categoryCount}>
-            {count}
-          </Text>
-          <Icon 
-            name={expanded ? 'chevron-up' : 'chevron-down'} 
-            size={20} 
-            color={COLORS.gray600} 
-          />
-        </View>
-      </TouchableOpacity>
-
-      {expanded && tasks && tasks.map((task: Task) => (
-        <TaskItem key={task.id} task={task} />
-      ))}
-    </View>
-  );
-};
-
-// Componente para um item de tarefa
-const TaskItem = ({ task }: { task: Task }) => {
-  // Determinar a cor com base na prioridade
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'alta':
-        return COLORS.error;
-      case 'média':
-        return COLORS.warning;
-      case 'baixa':
-        return COLORS.primary;
-      default:
-        return COLORS.primary;
-    }
-  };
-
-  // Obtém o ícone baseado na prioridade
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'alta':
-        return 'arrow-up';
-      case 'média':
-        return 'minus';
-      case 'baixa':
-        return 'arrow-down';
-      default:
-        return 'minus';
-    }
-  };
-
-  const [isChecked, setIsChecked] = useState(task.completed);
-  
-  const toggleCheck = () => {
-    setIsChecked(!isChecked);
-    // Aqui você faria a chamada à API para atualizar o estado da tarefa
-  };
-
-  return (
-    <Card style={styles.taskCard} variant="outlined">
-      <View style={styles.taskContainer}>
-        <TouchableOpacity 
-          style={[styles.checkbox, isChecked && styles.checkboxChecked]} 
-          onPress={toggleCheck}
-        >
-          {isChecked && <Icon name="check" size={16} color={COLORS.white} />}
-        </TouchableOpacity>
-        
-        <View style={styles.taskContent}>
-          <Text 
-            variant="body" 
-            weight="semibold" 
-            color={COLORS.text}
-            style={isChecked ? styles.taskTitleCompleted : undefined}
-          >
-            {task.title}
-          </Text>
-          
-          {task.description && (
-            <Text 
-              variant="body-sm" 
-              color={COLORS.textSecondary}
-              style={isChecked ? styles.taskTitleCompleted : undefined}
-            >
-              {task.description}
-            </Text>
-          )}
-          
-          <View style={styles.taskInfo}>
-            {task.dueDate && (
-              <View style={styles.dueDateContainer}>
-                <Icon name="calendar" size={14} color={COLORS.gray500} />
-                <Text variant="caption" color={COLORS.gray500} style={styles.dueDate}>
-                  {task.dueDate}
-                </Text>
-              </View>
-            )}
-            
-            <View style={styles.priorityContainer}>
-              <Icon 
-                name={getPriorityIcon(task.priority)} 
-                size={14} 
-                color={getPriorityColor(task.priority)} 
-              />
-              <Text 
-                variant="caption" 
-                color={getPriorityColor(task.priority)} 
-                style={styles.priority}
-              >
-                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-              </Text>
-            </View>
-          </View>
-        </View>
-        
-        <TouchableOpacity style={styles.taskMenuButton}>
-          <Icon name="dots-vertical" size={20} color={COLORS.gray600} />
-        </TouchableOpacity>
-      </View>
-    </Card>
-  );
+// Ícones para categorias
+const categoryIcons = {
+  'Casa': 'home',
+  'Finanças': 'cash',
+  'Compras': 'cart',
+  'Relacionamento': 'heart',
+  'Outros': 'tag'
 };
 
 const TasksScreen = () => {
-  const [activeTab, setActiveTab] = useState('pending');
-  const [expandedCategories, setExpandedCategories] = useState({
-    daily: true,
-    personal: false,
-    work: false
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [filter, setFilter] = useState('todas');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const theme = useTheme();
+
+  // Filtrar tarefas com base no filtro e categoria selecionada
+  const filteredTasks = tasks.filter(task => {
+    // Filtro de status (todas, pendentes, concluídas)
+    if (filter === 'pendentes' && task.completed) return false;
+    if (filter === 'concluídas' && !task.completed) return false;
+    
+    // Filtro de categoria
+    if (selectedCategory && task.category !== selectedCategory) return false;
+    
+    return true;
   });
 
-  // Simulação de dados de tarefas
-  const dailyTasks: Task[] = [
-    {
-      id: 1,
-      title: 'Tirar os lixos',
-      description: 'Tarefa diária: Tirar os lixos',
-      priority: 'baixa',
-      completed: false,
-      isDaily: true,
-      dueDate: 'Amanhã'
-    },
-    {
-      id: 2,
-      title: 'Limpar o robô aspirador',
-      description: 'Tarefa diária: Limpar o robô aspirador',
-      priority: 'baixa',
-      completed: false,
-      isDaily: true
-    },
-    {
-      id: 3,
-      title: 'Lavar louça',
-      description: '',
-      priority: 'alta',
-      completed: false,
-      isDaily: true
-    }
-  ];
-
-  // Funções para expandir/recolher categorias
-  const toggleCategory = (category: string) => {
-    setExpandedCategories({
-      ...expandedCategories,
-      [category]: !expandedCategories[category as keyof typeof expandedCategories]
-    });
+  // Marcar/desmarcar tarefa como concluída
+  const toggleTaskStatus = (id: string) => {
+    setTasks(tasks.map(task => 
+      task.id === id ? { ...task, completed: !task.completed } : task
+    ));
   };
 
-  // Filtragem de tarefas com base na aba ativa
-  const getFilteredTasks = (tasks: Task[]) => {
-    switch (activeTab) {
-      case 'pending':
-        return tasks.filter(task => !task.completed);
-      case 'completed':
-        return tasks.filter(task => task.completed);
-      default:
-        return tasks;
+  // Obter cores para prioridade
+  const getPriorityColor = (priority: string) => {
+    switch(priority) {
+      case 'alta': return theme.colors.error;
+      case 'média': return theme.colors.warning;
+      case 'baixa': return theme.colors.secondary;
+      default: return theme.colors.secondary;
     }
   };
 
-  const filteredDailyTasks = getFilteredTasks(dailyTasks);
+  // Renderizar cada tarefa
+  const renderTaskItem = ({ item }: { item: Task }) => {
+    const formattedDate = new Date(item.deadline).toLocaleDateString('pt-BR');
+    const categoryColor = categoryColors[item.category as keyof typeof categoryColors] || categoryColors.Outros;
+    const categoryIcon = categoryIcons[item.category as keyof typeof categoryIcons] || 'tag';
+    
+    return (
+      <Card style={styles.taskCard} mode="outlined">
+        <View style={styles.taskHeader}>
+          <View style={styles.taskTitleRow}>
+            <Checkbox
+              status={item.completed ? 'checked' : 'unchecked'}
+              onPress={() => toggleTaskStatus(item.id)}
+              color={theme.colors.primary}
+            />
+            <Text
+              variant="titleMedium"
+              style={[
+                styles.taskTitle,
+                item.completed && styles.completedTaskTitle
+              ]}
+            >
+              {item.title}
+            </Text>
+          </View>
+          
+          <Badge 
+            size={24} 
+            style={{ backgroundColor: getPriorityColor(item.priority) }}
+          >
+            {item.priority === 'alta' ? '!' : ''}
+          </Badge>
+        </View>
+        
+        <Divider style={{ marginVertical: 8 }} />
+        
+        <List.Item
+          title={item.description}
+          titleStyle={[
+            styles.taskDescription,
+            item.completed && styles.completedTaskText
+          ]}
+          titleNumberOfLines={2}
+          left={() => (
+            <List.Icon icon="information-outline" color={theme.colors.primary} />
+          )}
+        />
+        
+        <View style={styles.taskFooter}>
+          <Chip 
+            icon={categoryIcon}
+            style={{ backgroundColor: categoryColor + '20' }}
+            textStyle={{ color: categoryColor }}
+          >
+            {item.category}
+          </Chip>
+          
+          <View style={styles.taskMetadata}>
+            <View style={styles.taskMetadataItem}>
+              <MaterialCommunityIcons 
+                name="calendar" 
+                size={16} 
+                color={COLORS.textSecondary}
+                style={{ marginRight: 4 }}
+              />
+              <Text variant="bodySmall" style={styles.taskMetadataText}>
+                {formattedDate}
+              </Text>
+            </View>
+            
+            {item.assignedTo && (
+              <View style={styles.taskMetadataItem}>
+                <MaterialCommunityIcons 
+                  name="account" 
+                  size={16} 
+                  color={COLORS.textSecondary}
+                  style={{ marginRight: 4 }}
+                />
+                <Text variant="bodySmall" style={styles.taskMetadataText}>
+                  {item.assignedTo}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Card>
+    );
+  };
+
+  // Lista de categorias únicas
+  const categories = Array.from(new Set(tasks.map(task => task.category)));
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.container}>
-        <TasksHeader 
-          onFilter={() => console.log('Filtrar tarefas')} 
-          onAddTask={() => console.log('Adicionar nova tarefa')} 
-        />
-
-        <TasksTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <ScrollView style={styles.scrollView}>
-          <TaskCategory 
-            title="Tarefas Diárias" 
-            count={filteredDailyTasks.length} 
-            expanded={expandedCategories.daily}
-            onToggle={() => toggleCategory('daily')}
-            tasks={filteredDailyTasks}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.headerTitle}>
+          Tarefas
+        </Text>
+        
+        <View style={styles.filterContainer}>
+          <SegmentedButtons
+            value={filter}
+            onValueChange={setFilter}
+            buttons={[
+              { value: 'todas', label: 'Todas' },
+              { value: 'pendentes', label: 'Pendentes' },
+              { value: 'concluídas', label: 'Concluídas' }
+            ]}
+            style={styles.filterButtons}
           />
-          
-          {/* Outras categorias podem ser adicionadas aqui */}
-        </ScrollView>
-
-        {/* Botão flutuante para adicionar tarefa */}
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab}>
-            <Icon name="plus" size={24} color={COLORS.white} />
-          </TouchableOpacity>
         </View>
+        
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+        >
+          <Chip
+            mode={selectedCategory === null ? 'flat' : 'outlined'}
+            selected={selectedCategory === null}
+            onPress={() => setSelectedCategory(null)}
+            style={styles.categoryChip}
+            showSelectedCheck={false}
+          >
+            Todas
+          </Chip>
+          
+          {categories.map(category => (
+            <Chip
+              key={category}
+              mode={selectedCategory === category ? 'flat' : 'outlined'}
+              selected={selectedCategory === category}
+              onPress={() => setSelectedCategory(category === selectedCategory ? null : category)}
+              style={[
+                styles.categoryChip,
+                {
+                  backgroundColor: selectedCategory === category 
+                    ? (categoryColors[category as keyof typeof categoryColors] + '20') 
+                    : 'transparent'
+                }
+              ]}
+              icon={categoryIcons[category as keyof typeof categoryIcons] || 'tag'}
+              showSelectedCheck={false}
+            >
+              {category}
+            </Chip>
+          ))}
+        </ScrollView>
       </View>
-    </SafeAreaView>
+      
+      <View style={styles.contentContainer}>
+        {filteredTasks.length > 0 ? (
+          <FlatList
+            data={filteredTasks}
+            renderItem={renderTaskItem}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.tasksList}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons
+              name="check-all"
+              size={64}
+              color={theme.colors.primary}
+            />
+            <Text 
+              variant="titleMedium" 
+              style={{ color: COLORS.textSecondary, marginTop: 16, textAlign: 'center' }}
+            >
+              {filter === 'concluídas' 
+                ? 'Nenhuma tarefa concluída ainda' 
+                : 'Nenhuma tarefa pendente'}
+            </Text>
+          </View>
+        )}
+      </View>
+      
+      <FAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        onPress={() => console.log('Adicionar nova tarefa')}
+        color={theme.colors.onPrimary}
+      />
+    </View>
   );
 };
 
@@ -327,164 +332,100 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerContainer: {
-    backgroundColor: COLORS.primary,
-    padding: SIZES.spacing.md,
-    paddingTop: Platform.OS === 'android' ? SIZES.spacing.xl : SIZES.spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SIZES.spacing.md,
-    paddingVertical: SIZES.spacing.xs,
-    borderRadius: SIZES.radius.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    marginRight: SIZES.spacing.sm,
-  },
-  filterText: {
-    marginLeft: SIZES.spacing.xs,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SIZES.spacing.md,
-    paddingVertical: SIZES.spacing.xs,
-    borderRadius: SIZES.radius.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
+  header: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray200,
   },
-  tabButton: {
+  headerTitle: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  filterContainer: {
+    marginBottom: 16,
+  },
+  filterButtons: {
+    width: '100%',
+  },
+  categoriesContainer: {
+    paddingBottom: 16,
+    paddingRight: 8,
+  },
+  categoryChip: {
+    marginRight: 8,
+  },
+  contentContainer: {
     flex: 1,
-    paddingVertical: SIZES.spacing.md,
-    alignItems: 'center',
-    position: 'relative',
   },
-  activeTabButton: {},
-  tabText: {
-    textAlign: 'center',
+  tasksList: {
+    padding: 16,
+    paddingBottom: 80, // Espaço para o FAB
   },
-  activeTabText: {
-    fontWeight: '600',
+  taskCard: {
+    marginBottom: 16,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
   },
-  activeTabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: '25%',
-    right: '25%',
-    height: 2,
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.radius.sm,
-  },
-  categoryContainer: {
-    marginTop: SIZES.spacing.md,
-    marginHorizontal: SIZES.spacing.md,
-    marginBottom: SIZES.spacing.sm,
-  },
-  categoryHeader: {
+  taskHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SIZES.spacing.sm,
+    paddingHorizontal: 8,
+    paddingTop: 8,
   },
-  categoryTitleContainer: {
+  taskTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  categoryTitle: {
-    marginLeft: SIZES.spacing.sm,
-  },
-  categoryCountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  categoryCount: {
-    marginRight: SIZES.spacing.xs,
-  },
-  taskCard: {
-    marginVertical: SIZES.spacing.xs,
-    borderColor: COLORS.gray200,
-  },
-  taskContainer: {
-    flexDirection: 'row',
-    padding: SIZES.spacing.md,
-    alignItems: 'center',
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SIZES.spacing.md,
-  },
-  checkboxChecked: {
-    backgroundColor: COLORS.primary,
-  },
-  taskContent: {
     flex: 1,
   },
-  taskTitleCompleted: {
+  taskTitle: {
+    fontWeight: 'bold',
+    marginLeft: 8,
+    flex: 1,
+  },
+  completedTaskTitle: {
     textDecorationLine: 'line-through',
-    color: COLORS.gray400,
+    color: COLORS.textSecondary,
   },
-  taskInfo: {
+  taskDescription: {
+    fontSize: 14,
+  },
+  completedTaskText: {
+    color: COLORS.textSecondary,
+  },
+  taskFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  taskMetadata: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SIZES.spacing.xs,
   },
-  dueDateContainer: {
+  taskMetadataItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: SIZES.spacing.md,
+    marginLeft: 12,
   },
-  dueDate: {
-    marginLeft: SIZES.spacing.xs,
-  },
-  priorityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priority: {
-    marginLeft: SIZES.spacing.xs,
-  },
-  taskMenuButton: {
-    padding: SIZES.spacing.xs,
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: SIZES.spacing.xl,
-    right: 0,
-    left: 0,
-    alignItems: 'center',
+  taskMetadataText: {
+    color: COLORS.textSecondary,
   },
   fab: {
-    backgroundColor: COLORS.primary,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+  },
+  emptyContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    padding: 24,
   },
 });
 

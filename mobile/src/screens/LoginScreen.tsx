@@ -5,158 +5,212 @@ import {
   Image, 
   KeyboardAvoidingView, 
   Platform, 
-  TouchableWithoutFeedback, 
+  TouchableWithoutFeedback,
   Keyboard,
-  SafeAreaView,
-  TouchableOpacity
+  ScrollView
 } from 'react-native';
-import { Text, Input, Button } from '../components/ui';
-import { COLORS, SIZES } from '../constants/theme';
+import { useNavigation } from '@react-navigation/native';
+import { 
+  Button, 
+  TextInput, 
+  Text, 
+  Title, 
+  Headline, 
+  useTheme 
+} from 'react-native-paper';
 
-const LoginScreen = ({ navigation }: any) => {
+// Hooks
+import { useAuth } from '../hooks/useAuth';
+
+// Constantes
+import { COLORS } from '../constants/theme';
+
+const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const navigation = useNavigation();
+  const { login } = useAuth();
+  const theme = useTheme();
 
   const handleLogin = async () => {
-    // Implementação do login
-    setIsLoading(true);
+    if (!email || !password) {
+      // TODO: Mostrar mensagem de erro
+      return;
+    }
+
+    setLoading(true);
     try {
-      // Aqui chamaria o serviço de autenticação
-      setTimeout(() => {
-        setIsLoading(false);
-        // Navegar para a tela principal após login
-        // navigation.navigate('Home');
-      }, 1500);
+      await login(email, password);
+      // A navegação será tratada pelo hook useAuth
     } catch (error) {
-      setIsLoading(false);
       console.error('Erro ao fazer login:', error);
+      // TODO: Mostrar mensagem de erro
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRegister = () => {
-    // Navegar para a tela de cadastro
-    // navigation.navigate('Register');
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.inner}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require('../../assets/logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <Text variant="h1" color={COLORS.primary} style={styles.logoText}>
-                NÓS
-              </Text>
-              <Text variant="h3" color={COLORS.gray700} style={styles.subLogoText}>
-                JUNTOS
-              </Text>
-            </View>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/logo.png')} 
+              style={styles.logo} 
+              resizeMode="contain"
+            />
+            <Title style={styles.title}>NÓS JUNTOS</Title>
+            <Headline style={styles.subtitle}>
+              Bem-vindo ao aplicativo para casais!
+            </Headline>
+          </View>
 
-            <Text
-              variant="body"
-              color={COLORS.textSecondary}
-              align="center"
-              style={styles.description}
-            >
-              Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas pequenas tarefas do cotidiano. Vamos juntos transformar a rotina em uma jornada de crescimento e amor.
+          <View style={styles.formContainer}>
+            <Text style={styles.message}>
+              Faça login para acessar sua conta e continuar sua jornada com seu parceiro.
             </Text>
-
-            <View style={styles.formContainer}>
-              <Input
-                placeholder="Email ou Nome de Usuário"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-
-              <Input
-                placeholder="Senha"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                style={styles.passwordInput}
-              />
-
-              <Button
-                title="Entrar"
-                variant="primary"
-                loading={isLoading}
-                onPress={handleLogin}
-                style={styles.loginButton}
-              />
-
-              <View style={styles.registerContainer}>
-                <TouchableOpacity onPress={handleRegister}>
-                  <Text
-                    variant="body"
-                    color={COLORS.gray600}
-                    align="center"
-                  >
-                    Cadastrar
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            
+            <TextInput
+              label="E-mail"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.input}
+              left={<TextInput.Icon icon="email" />}
+              outlineStyle={{ borderRadius: 8 }}
+              theme={{ colors: { primary: theme.colors.primary } }}
+            />
+            
+            <TextInput
+              label="Senha"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              secureTextEntry={secureTextEntry}
+              style={styles.input}
+              left={<TextInput.Icon icon="lock" />}
+              right={
+                <TextInput.Icon 
+                  icon={secureTextEntry ? "eye" : "eye-off"} 
+                  onPress={() => setSecureTextEntry(!secureTextEntry)} 
+                />
+              }
+              outlineStyle={{ borderRadius: 8 }}
+              theme={{ colors: { primary: theme.colors.primary } }}
+            />
+            
+            <Button 
+              mode="contained"
+              onPress={handleLogin}
+              loading={loading}
+              style={styles.loginButton}
+              labelStyle={styles.buttonLabel}
+            >
+              ENTRAR
+            </Button>
+            
+            <Button 
+              mode="text"
+              onPress={() => {/* Navegação para tela de senha esquecida */}}
+              style={styles.forgotPasswordButton}
+              labelStyle={{ color: theme.colors.primary }}
+            >
+              Esqueci minha senha
+            </Button>
+            
+            <View style={styles.registerContainer}>
+              <Text style={{ color: COLORS.textSecondary }}>
+                Não tem uma conta?
+              </Text>
+              <Button 
+                mode="text"
+                onPress={() => {/* Navegação para tela de registro */}}
+                style={{ marginLeft: -8 }}
+                labelStyle={{ color: theme.colors.primary }}
+              >
+                Cadastre-se
+              </Button>
             </View>
           </View>
-        </TouchableWithoutFeedback>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
   },
-  inner: {
-    flex: 1,
-    padding: SIZES.spacing.md,
-    justifyContent: 'center',
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: SIZES.spacing.xl,
+    marginBottom: 32,
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: SIZES.spacing.xs,
+    width: 120,
+    height: 120,
+    marginBottom: 16,
   },
-  logoText: {
-    marginTop: SIZES.spacing.xs,
+  title: {
+    fontWeight: 'bold',
+    fontSize: 24,
+    color: COLORS.primary,
+    marginBottom: 8,
   },
-  subLogoText: {
-    marginTop: -5,
-  },
-  description: {
-    marginBottom: SIZES.spacing.xl,
-    paddingHorizontal: SIZES.spacing.md,
+  subtitle: {
+    fontSize: 18,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   formContainer: {
-    marginTop: SIZES.spacing.md,
+    marginTop: 20,
   },
-  passwordInput: {
-    marginTop: SIZES.spacing.md,
+  message: {
+    marginBottom: 24,
+    textAlign: 'center',
+    color: COLORS.textSecondary,
+    lineHeight: 22,
+  },
+  input: {
+    marginBottom: 16,
+    backgroundColor: COLORS.white,
   },
   loginButton: {
-    marginTop: SIZES.spacing.lg,
-    height: SIZES.buttonHeight,
+    marginTop: 8,
+    padding: 6,
+    borderRadius: 8,
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  forgotPasswordButton: {
+    marginTop: 8,
   },
   registerContainer: {
-    marginTop: SIZES.spacing.lg,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 16,
   },
 });
 

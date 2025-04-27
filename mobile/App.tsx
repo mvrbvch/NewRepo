@@ -3,12 +3,14 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
 
 // Navegação
 import AppNavigator from './src/navigation/AppNavigator';
 
-// Tema
+// Temas
 import { COLORS } from './src/constants/theme';
+import paperTheme from './src/theme/paperTheme';
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -48,10 +50,12 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
-      <AppNavigator />
-    </SafeAreaProvider>
+    <PaperProvider theme={paperTheme}>
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <AppNavigator />
+      </SafeAreaProvider>
+    </PaperProvider>
   );
 }
 

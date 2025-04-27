@@ -1,243 +1,280 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  Platform
+import { 
+  View, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity 
 } from 'react-native';
-import { Text, Card } from '../components/ui';
-import { COLORS, SIZES } from '../constants/theme';
+import { 
+  Appbar, 
+  Card, 
+  Divider, 
+  FAB, 
+  Text, 
+  useTheme, 
+  IconButton,
+  Surface,
+  SegmentedButtons,
+  Chip,
+  Button
+} from 'react-native-paper';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// Ícones
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+// Constantes
+import { COLORS } from '../constants/theme';
 
-// Tipos de período do dia
-enum DayPeriod {
-  MORNING = 'Manhã',
-  AFTERNOON = 'Tarde',
-  NIGHT = 'Noite'
-}
-
-// Tipos para os eventos
+// Tipos
 interface Event {
-  id: number;
+  id: string;
   title: string;
   startTime: string;
   endTime: string;
   location?: string;
+  note?: string;
+  category: 'pessoal' | 'casal' | 'trabalho' | 'família';
 }
 
-// Componente para o cabeçalho do calendário com controles de navegação
-const CalendarHeader = ({ date, onPrevDay, onNextDay }: any) => {
-  // Formatar a data em português
-  const formatDate = (date: Date) => {
-    return `${date.getDate()} de ${getMonthName(date.getMonth())}`;
-  };
+// Dados mock para demonstração
+const MOCK_EVENTS: Event[] = [
+  {
+    id: '1',
+    title: 'Café da manhã juntos',
+    startTime: '07:30',
+    endTime: '08:30',
+    location: 'Casa',
+    category: 'casal'
+  },
+  {
+    id: '2',
+    title: 'Reunião de trabalho',
+    startTime: '09:00',
+    endTime: '10:30',
+    location: 'Escritório',
+    category: 'trabalho'
+  },
+  {
+    id: '3',
+    title: 'Almoço com parceiro',
+    startTime: '12:00',
+    endTime: '13:30',
+    location: 'Restaurante Favorito',
+    note: 'Aniversário de namoro',
+    category: 'casal'
+  },
+  {
+    id: '4',
+    title: 'Academia',
+    startTime: '18:00',
+    endTime: '19:30',
+    location: 'Academia Central',
+    category: 'pessoal'
+  },
+  {
+    id: '5',
+    title: 'Jantar em família',
+    startTime: '20:00',
+    endTime: '22:00',
+    location: 'Casa dos pais',
+    category: 'família'
+  }
+];
 
-  // Obter nome do mês em português
-  const getMonthName = (month: number) => {
-    const months = [
-      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-    ];
-    return months[month];
-  };
-
-  // Calcular a quantidade de eventos (fictício para este exemplo)
-  const eventCount = 0;
-
-  return (
-    <View style={styles.headerContainer}>
-      <View style={styles.dateContainer}>
-        <Text variant="h3" color={COLORS.white}>
-          Hoje, {formatDate(date)}
-        </Text>
-        <Text variant="body" color={COLORS.white} style={{ opacity: 0.8 }}>
-          {eventCount} eventos
-        </Text>
-      </View>
-      <View style={styles.navigationContainer}>
-        <TouchableOpacity onPress={onPrevDay} style={styles.navigationButton}>
-          <Icon name="chevron-left" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onNextDay} style={styles.navigationButton}>
-          <Icon name="chevron-right" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
-
-// Componente para os filtros de visualização do calendário
-const CalendarFilters = ({ activeFilter, onFilterChange }: any) => {
-  const filters = [
-    { id: 'day', label: 'Dia' },
-    { id: 'week', label: 'Semana' },
-    { id: 'month', label: 'Mês' },
-    { id: 'timeline', label: 'Timeline' }
-  ];
-
-  return (
-    <View style={styles.filtersContainer}>
-      {filters.map((filter) => (
-        <TouchableOpacity
-          key={filter.id}
-          style={[
-            styles.filterButton,
-            activeFilter === filter.id && styles.activeFilterButton
-          ]}
-          onPress={() => onFilterChange(filter.id)}
-        >
-          <Text
-            variant="body"
-            color={activeFilter === filter.id ? COLORS.primary : COLORS.gray600}
-          >
-            {filter.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-      <TouchableOpacity style={styles.todayButton}>
-        <Text variant="body" color={COLORS.primary}>
-          Hoje
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-// Componente para um período do dia com seus eventos
-const DayPeriodSection = ({ period, timeRange, events }: any) => {
-  // Ícones para cada período do dia
-  const getPeriodIcon = () => {
-    switch (period) {
-      case DayPeriod.MORNING:
-        return <Icon name="weather-sunny" size={20} color={COLORS.warning} />;
-      case DayPeriod.AFTERNOON:
-        return <Icon name="weather-partly-cloudy" size={20} color={COLORS.primary} />;
-      case DayPeriod.NIGHT:
-        return <Icon name="weather-night" size={20} color={COLORS.secondary} />;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <View style={styles.periodSection}>
-      <View style={styles.periodHeader}>
-        {getPeriodIcon()}
-        <Text variant="body" color={COLORS.gray700} style={styles.periodTitle}>
-          {period}
-        </Text>
-        <Text variant="body-sm" color={COLORS.gray500} style={styles.periodTime}>
-          {timeRange}
-        </Text>
-      </View>
-
-      {events && events.length > 0 ? (
-        events.map((event: Event) => (
-          <Card key={event.id} style={styles.eventCard} variant="outlined">
-            <View style={styles.eventContent}>
-              <View style={styles.eventTimeContainer}>
-                <Text variant="body-sm" color={COLORS.gray600}>
-                  {event.startTime}
-                </Text>
-                <Text variant="caption" color={COLORS.gray400}>
-                  -
-                </Text>
-                <Text variant="body-sm" color={COLORS.gray600}>
-                  {event.endTime}
-                </Text>
-              </View>
-              <View style={styles.eventDetails}>
-                <Text variant="body" weight="semibold" color={COLORS.text}>
-                  {event.title}
-                </Text>
-                {event.location && (
-                  <Text variant="body-sm" color={COLORS.textSecondary}>
-                    {event.location}
-                  </Text>
-                )}
-              </View>
-            </View>
-          </Card>
-        ))
-      ) : (
-        <Text
-          variant="body"
-          color={COLORS.textSecondary}
-          style={styles.noEventsText}
-        >
-          Nenhum evento neste período
-        </Text>
-      )}
-    </View>
-  );
+// Cores para categorias
+const CATEGORY_COLORS = {
+  'pessoal': '#9C27B0', // Roxo
+  'casal': '#E91E63',   // Rosa
+  'trabalho': '#2196F3', // Azul
+  'família': '#4CAF50'  // Verde
 };
 
 const CalendarScreen = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeFilter, setActiveFilter] = useState('day');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const theme = useTheme();
 
-  // Funções para navegação entre dias
-  const goToPreviousDay = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() - 1);
-    setCurrentDate(newDate);
+  // Formatação de datas
+  const formattedDate = selectedDate.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  // Divisão de eventos por período do dia
+  const eventsByPeriod = {
+    morning: MOCK_EVENTS.filter(e => {
+      const hour = parseInt(e.startTime.split(':')[0]);
+      return hour >= 5 && hour < 12;
+    }),
+    afternoon: MOCK_EVENTS.filter(e => {
+      const hour = parseInt(e.startTime.split(':')[0]);
+      return hour >= 12 && hour < 18;
+    }),
+    evening: MOCK_EVENTS.filter(e => {
+      const hour = parseInt(e.startTime.split(':')[0]);
+      return hour >= 18 || hour < 5;
+    })
   };
 
-  const goToNextDay = () => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() + 1);
-    setCurrentDate(newDate);
-  };
+  // Renderiza um período do dia com seus eventos
+  const renderPeriod = (title: string, icon: string, events: Event[]) => {
+    if (selectedPeriod !== 'all' && selectedPeriod !== title.toLowerCase()) {
+      return null;
+    }
 
-  // Dados fictícios para demonstração - normalmente viriam de uma API
-  const morningEvents: Event[] = [];
-  const afternoonEvents: Event[] = [];
-  const nightEvents: Event[] = [];
+    return (
+      <View style={styles.periodContainer}>
+        <Surface style={styles.periodHeader}>
+          <View style={styles.periodTitleContainer}>
+            <MaterialCommunityIcons 
+              name={icon} 
+              size={24} 
+              color={theme.colors.primary} 
+            />
+            <Text variant="titleMedium" style={styles.periodTitle}>
+              {title}
+            </Text>
+          </View>
+          <Chip icon="calendar-clock">
+            {events.length} eventos
+          </Chip>
+        </Surface>
+        
+        {events.length > 0 ? (
+          events.map(event => (
+            <Card key={event.id} style={styles.eventCard} mode="outlined">
+              <View style={styles.eventTimeContainer}>
+                <Text variant="titleMedium" style={styles.eventTime}>
+                  {event.startTime}
+                </Text>
+                <Text variant="bodySmall" style={styles.eventTimeSeparator}>
+                  até
+                </Text>
+                <Text variant="titleMedium" style={styles.eventTime}>
+                  {event.endTime}
+                </Text>
+              </View>
+              
+              <Card.Content>
+                <View style={styles.eventHeader}>
+                  <View style={styles.eventTitleContainer}>
+                    <View
+                      style={[
+                        styles.categoryIndicator,
+                        { backgroundColor: CATEGORY_COLORS[event.category] }
+                      ]}
+                    />
+                    <Text variant="titleMedium" style={styles.eventTitle}>
+                      {event.title}
+                    </Text>
+                  </View>
+                </View>
+                
+                {event.location && (
+                  <View style={styles.eventDetailRow}>
+                    <MaterialCommunityIcons 
+                      name="map-marker" 
+                      size={16} 
+                      color={COLORS.textSecondary}
+                      style={styles.eventDetailIcon}
+                    />
+                    <Text variant="bodyMedium" style={styles.eventDetailText}>
+                      {event.location}
+                    </Text>
+                  </View>
+                )}
+                
+                {event.note && (
+                  <View style={styles.eventDetailRow}>
+                    <MaterialCommunityIcons 
+                      name="text" 
+                      size={16} 
+                      color={COLORS.textSecondary}
+                      style={styles.eventDetailIcon}
+                    />
+                    <Text variant="bodyMedium" style={styles.eventDetailText}>
+                      {event.note}
+                    </Text>
+                  </View>
+                )}
+              </Card.Content>
+              
+              <Card.Actions>
+                <Button mode="text" icon="pencil">Editar</Button>
+                <Button mode="text" icon="delete" textColor={theme.colors.error}>
+                  Excluir
+                </Button>
+              </Card.Actions>
+            </Card>
+          ))
+        ) : (
+          <Card style={styles.emptyCard}>
+            <Card.Content style={styles.emptyCardContent}>
+              <MaterialCommunityIcons 
+                name="calendar-blank" 
+                size={40} 
+                color={COLORS.textSecondary}
+              />
+              <Text variant="bodyLarge" style={styles.emptyText}>
+                Nenhum evento neste período
+              </Text>
+              <Button 
+                mode="outlined" 
+                icon="plus" 
+                onPress={() => console.log('Adicionar evento')}
+                style={styles.addEventButton}
+              >
+                Adicionar evento
+              </Button>
+            </Card.Content>
+          </Card>
+        )}
+      </View>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.container}>
-        <CalendarHeader
-          date={currentDate}
-          onPrevDay={goToPreviousDay}
-          onNextDay={goToNextDay}
+    <View style={styles.container}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.Content 
+          title="Calendário" 
+          titleStyle={styles.headerTitle}
+          subtitle={formattedDate}
+          subtitleStyle={styles.headerSubtitle} 
         />
-
-        <CalendarFilters
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+        <Appbar.Action icon="calendar-month" onPress={() => console.log('Abrir seletor de data')} />
+        <Appbar.Action icon="dots-vertical" onPress={() => console.log('Abrir menu')} />
+      </Appbar.Header>
+      
+      <View style={styles.filterContainer}>
+        <SegmentedButtons
+          value={selectedPeriod}
+          onValueChange={setSelectedPeriod}
+          buttons={[
+            { value: 'all', label: 'Tudo' },
+            { value: 'morning', label: 'Manhã' },
+            { value: 'afternoon', label: 'Tarde' },
+            { value: 'evening', label: 'Noite' },
+          ]}
         />
-
-        <ScrollView style={styles.scrollView}>
-          <DayPeriodSection
-            period={DayPeriod.MORNING}
-            timeRange="6h - 12h"
-            events={morningEvents}
-          />
-          <DayPeriodSection
-            period={DayPeriod.AFTERNOON}
-            timeRange="12h - 18h"
-            events={afternoonEvents}
-          />
-          <DayPeriodSection
-            period={DayPeriod.NIGHT}
-            timeRange="18h - 00h"
-            events={nightEvents}
-          />
-        </ScrollView>
-
-        {/* Botão de adicionar evento */}
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab}>
-            <Icon name="plus" size={24} color={COLORS.white} />
-          </TouchableOpacity>
-        </View>
       </View>
-    </SafeAreaView>
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderPeriod('Manhã', 'weather-sunny', eventsByPeriod.morning)}
+        {renderPeriod('Tarde', 'weather-partly-cloudy', eventsByPeriod.afternoon)}
+        {renderPeriod('Noite', 'weather-night', eventsByPeriod.evening)}
+      </ScrollView>
+      
+      <FAB
+        icon="plus"
+        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        onPress={() => console.log('Adicionar novo evento')}
+        color={theme.colors.onPrimary}
+      />
+    </View>
   );
 };
 
@@ -246,105 +283,125 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerContainer: {
-    backgroundColor: COLORS.primary,
-    padding: SIZES.spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? SIZES.spacing.xl : SIZES.spacing.md,
+  header: {
+    backgroundColor: COLORS.white,
+    elevation: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
   },
-  dateContainer: {
-    flex: 1,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.primary,
   },
-  navigationContainer: {
-    flexDirection: 'row',
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    textTransform: 'capitalize',
   },
-  navigationButton: {
-    padding: SIZES.spacing.xs,
-    marginLeft: SIZES.spacing.sm,
-  },
-  filtersContainer: {
-    flexDirection: 'row',
-    padding: SIZES.spacing.sm,
+  filterContainer: {
+    padding: 16,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray200,
   },
-  filterButton: {
-    paddingVertical: SIZES.spacing.xs,
-    paddingHorizontal: SIZES.spacing.md,
-    marginRight: SIZES.spacing.xs,
-    borderRadius: SIZES.radius.sm,
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 80, // Espaço para o FAB
   },
-  activeFilterButton: {
-    backgroundColor: COLORS.gray100,
-  },
-  todayButton: {
-    marginLeft: 'auto',
-    paddingVertical: SIZES.spacing.xs,
-    paddingHorizontal: SIZES.spacing.md,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  periodSection: {
-    marginTop: SIZES.spacing.md,
-    marginHorizontal: SIZES.spacing.md,
-    marginBottom: SIZES.spacing.md,
+  periodContainer: {
+    marginBottom: 24,
   },
   periodHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SIZES.spacing.sm,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    elevation: 1,
+  },
+  periodTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   periodTitle: {
-    marginLeft: SIZES.spacing.xs,
-  },
-  periodTime: {
-    marginLeft: SIZES.spacing.sm,
+    marginLeft: 8,
+    fontWeight: 'bold',
   },
   eventCard: {
-    marginBottom: SIZES.spacing.sm,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
-  },
-  eventContent: {
-    flexDirection: 'row',
-    padding: SIZES.spacing.md,
+    marginBottom: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   eventTimeContainer: {
-    marginRight: SIZES.spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 45,
+    padding: 12,
+    paddingVertical: 8,
+    backgroundColor: COLORS.primaryLight,
   },
-  eventDetails: {
+  eventTime: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
+  eventTimeSeparator: {
+    color: COLORS.primaryLight,
+    marginHorizontal: 8,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  eventTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  noEventsText: {
-    fontStyle: 'italic',
-    marginVertical: SIZES.spacing.md,
-    textAlign: 'center',
+  categoryIndicator: {
+    width: 4,
+    height: 24,
+    borderRadius: 4,
+    marginRight: 8,
   },
-  fabContainer: {
-    position: 'absolute',
-    bottom: SIZES.spacing.xl,
-    right: 0,
-    left: 0,
+  eventTitle: {
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 6,
+  },
+  eventDetailIcon: {
+    marginRight: 8,
+  },
+  eventDetailText: {
+    color: COLORS.textSecondary,
+  },
+  emptyCard: {
+    backgroundColor: COLORS.gray100,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: COLORS.gray300,
+  },
+  emptyCardContent: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    marginVertical: 12,
+  },
+  addEventButton: {
+    marginTop: 8,
   },
   fab: {
-    backgroundColor: COLORS.primary,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
   },
 });
 
