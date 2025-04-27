@@ -1,10 +1,10 @@
 // Tema consistente com o PWA
 export const COLORS = {
-  primary: '#4F46E5', // Cor principal - indigo
-  primaryDark: '#4338CA',
-  primaryLight: '#6366F1',
+  primary: '#F15B5B', // Cor principal - coral vermelho
+  primaryDark: '#D84646',
+  primaryLight: '#F77878',
   
-  secondary: '#8B5CF6', // Violeta
+  secondary: '#6B7280', // Cinza
   
   success: '#10B981', // Verde
   warning: '#F59E0B', // Amarelo

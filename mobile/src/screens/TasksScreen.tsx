@@ -1,442 +1,490 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
+import {
+  View,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
-  Alert,
+  SafeAreaView,
   Platform
 } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../api/api';
-import { useAuth } from '../hooks/useAuth';
+import { Text, Card } from '../components/ui';
+import { COLORS, SIZES } from '../constants/theme';
+
+// Ícones
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+// Tipos para as tarefas
+interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  priority: 'alta' | 'média' | 'baixa';
+  completed: boolean;
+  isDaily?: boolean;
+}
+
+// Componente para o cabeçalho de tarefas com botões de ação
+const TasksHeader = ({ onFilter, onAddTask }: any) => {
+  return (
+    <View style={styles.headerContainer}>
+      <Text variant="h3" color={COLORS.white}>
+        Minhas tarefas
+      </Text>
+      <View style={styles.headerActions}>
+        <TouchableOpacity 
+          style={styles.filterButton} 
+          onPress={onFilter}
+        >
+          <Icon name="filter-variant" size={18} color={COLORS.white} />
+          <Text variant="body-sm" color={COLORS.white} style={styles.filterText}>
+            Filtros
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={onAddTask}
+        >
+          <Icon name="plus" size={18} color={COLORS.white} />
+          <Text variant="body-sm" color={COLORS.white}>
+            Nova
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+// Componente para abas de filtragem de tarefas
+const TasksTabs = ({ activeTab, onTabChange }: any) => {
+  const tabs = [
+    { id: 'pending', label: 'Pendentes' },
+    { id: 'completed', label: 'Concluídas' },
+    { id: 'all', label: 'Todas' }
+  ];
+
+  return (
+    <View style={styles.tabsContainer}>
+      {tabs.map(tab => (
+        <TouchableOpacity
+          key={tab.id}
+          style={[
+            styles.tabButton,
+            activeTab === tab.id && styles.activeTabButton
+          ]}
+          onPress={() => onTabChange(tab.id)}
+        >
+          <Text
+            variant="body"
+            color={activeTab === tab.id ? COLORS.primary : COLORS.gray600}
+            style={[
+              styles.tabText,
+              activeTab === tab.id && styles.activeTabText
+            ]}
+          >
+            {tab.label}
+          </Text>
+          {activeTab === tab.id && <View style={styles.activeTabIndicator} />}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+// Componente para uma categoria de tarefas
+const TaskCategory = ({ title, count, expanded, onToggle, tasks }: any) => {
+  return (
+    <View style={styles.categoryContainer}>
+      <TouchableOpacity 
+        style={styles.categoryHeader}
+        onPress={onToggle}
+      >
+        <View style={styles.categoryTitleContainer}>
+          <Icon 
+            name={title === 'Tarefas Diárias' ? 'refresh' : 'format-list-bulleted'} 
+            size={20} 
+            color={COLORS.primary} 
+          />
+          <Text variant="body" weight="semibold" color={COLORS.text} style={styles.categoryTitle}>
+            {title}
+          </Text>
+        </View>
+        <View style={styles.categoryCountContainer}>
+          <Text variant="body-sm" color={COLORS.gray600} style={styles.categoryCount}>
+            {count}
+          </Text>
+          <Icon 
+            name={expanded ? 'chevron-up' : 'chevron-down'} 
+            size={20} 
+            color={COLORS.gray600} 
+          />
+        </View>
+      </TouchableOpacity>
+
+      {expanded && tasks && tasks.map((task: Task) => (
+        <TaskItem key={task.id} task={task} />
+      ))}
+    </View>
+  );
+};
+
+// Componente para um item de tarefa
+const TaskItem = ({ task }: { task: Task }) => {
+  // Determinar a cor com base na prioridade
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'alta':
+        return COLORS.error;
+      case 'média':
+        return COLORS.warning;
+      case 'baixa':
+        return COLORS.primary;
+      default:
+        return COLORS.primary;
+    }
+  };
+
+  // Obtém o ícone baseado na prioridade
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'alta':
+        return 'arrow-up';
+      case 'média':
+        return 'minus';
+      case 'baixa':
+        return 'arrow-down';
+      default:
+        return 'minus';
+    }
+  };
+
+  const [isChecked, setIsChecked] = useState(task.completed);
+  
+  const toggleCheck = () => {
+    setIsChecked(!isChecked);
+    // Aqui você faria a chamada à API para atualizar o estado da tarefa
+  };
+
+  return (
+    <Card style={styles.taskCard} variant="outlined">
+      <View style={styles.taskContainer}>
+        <TouchableOpacity 
+          style={[styles.checkbox, isChecked && styles.checkboxChecked]} 
+          onPress={toggleCheck}
+        >
+          {isChecked && <Icon name="check" size={16} color={COLORS.white} />}
+        </TouchableOpacity>
+        
+        <View style={styles.taskContent}>
+          <Text 
+            variant="body" 
+            weight="semibold" 
+            color={COLORS.text}
+            style={isChecked ? styles.taskTitleCompleted : undefined}
+          >
+            {task.title}
+          </Text>
+          
+          {task.description && (
+            <Text 
+              variant="body-sm" 
+              color={COLORS.textSecondary}
+              style={isChecked ? styles.taskTitleCompleted : undefined}
+            >
+              {task.description}
+            </Text>
+          )}
+          
+          <View style={styles.taskInfo}>
+            {task.dueDate && (
+              <View style={styles.dueDateContainer}>
+                <Icon name="calendar" size={14} color={COLORS.gray500} />
+                <Text variant="caption" color={COLORS.gray500} style={styles.dueDate}>
+                  {task.dueDate}
+                </Text>
+              </View>
+            )}
+            
+            <View style={styles.priorityContainer}>
+              <Icon 
+                name={getPriorityIcon(task.priority)} 
+                size={14} 
+                color={getPriorityColor(task.priority)} 
+              />
+              <Text 
+                variant="caption" 
+                color={getPriorityColor(task.priority)} 
+                style={styles.priority}
+              >
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+              </Text>
+            </View>
+          </View>
+        </View>
+        
+        <TouchableOpacity style={styles.taskMenuButton}>
+          <Icon name="dots-vertical" size={20} color={COLORS.gray600} />
+        </TouchableOpacity>
+      </View>
+    </Card>
+  );
+};
 
 const TasksScreen = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'today', 'completed'
-
-  // Fetch household tasks
-  const { 
-    data: tasks, 
-    isLoading, 
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => api.tasks.getAll()
+  const [activeTab, setActiveTab] = useState('pending');
+  const [expandedCategories, setExpandedCategories] = useState({
+    daily: true,
+    personal: false,
+    work: false
   });
 
-  // Mutation for completing tasks
-  const toggleTaskMutation = useMutation({
-    mutationFn: ({ id, completed }: { id: number, completed: boolean }) => 
-      api.tasks.complete(id, completed),
-    onSuccess: () => {
-      // Refetch tasks to update the list
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  // Simulação de dados de tarefas
+  const dailyTasks: Task[] = [
+    {
+      id: 1,
+      title: 'Tirar os lixos',
+      description: 'Tarefa diária: Tirar os lixos',
+      priority: 'baixa',
+      completed: false,
+      isDaily: true,
+      dueDate: 'Amanhã'
     },
-    onError: (error) => {
-      console.error('Error toggling task completion:', error);
-      Alert.alert('Error', 'Failed to update task status');
-    }
-  });
-
-  // Mutation for deleting tasks
-  const deleteTaskMutation = useMutation({
-    mutationFn: (id: number) => api.tasks.delete(id),
-    onSuccess: () => {
-      // Refetch tasks to update the list
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    {
+      id: 2,
+      title: 'Limpar o robô aspirador',
+      description: 'Tarefa diária: Limpar o robô aspirador',
+      priority: 'baixa',
+      completed: false,
+      isDaily: true
     },
-    onError: (error) => {
-      console.error('Error deleting task:', error);
-      Alert.alert('Error', 'Failed to delete task');
+    {
+      id: 3,
+      title: 'Lavar louça',
+      description: '',
+      priority: 'alta',
+      completed: false,
+      isDaily: true
     }
-  });
+  ];
 
-  // Handle task completion toggle
-  const handleToggleComplete = (id: number, currentState: boolean) => {
-    toggleTaskMutation.mutate({ id, completed: !currentState });
-  };
-
-  // Handle task deletion
-  const handleDeleteTask = (id: number) => {
-    Alert.alert(
-      'Delete Task',
-      'Are you sure you want to delete this task?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteTaskMutation.mutate(id),
-        },
-      ]
-    );
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'No due date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+  // Funções para expandir/recolher categorias
+  const toggleCategory = (category: string) => {
+    setExpandedCategories({
+      ...expandedCategories,
+      [category]: !expandedCategories[category as keyof typeof expandedCategories]
     });
   };
 
-  // Check if a task is due today
-  const isTaskDueToday = (dueDate: string | null) => {
-    if (!dueDate) return false;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const taskDate = new Date(dueDate);
-    taskDate.setHours(0, 0, 0, 0);
-    
-    return today.getTime() === taskDate.getTime();
-  };
-
-  // Filter tasks based on selected filter
-  const filteredTasks = () => {
-    if (!tasks) return [];
-    
-    switch (selectedFilter) {
-      case 'today':
-        return tasks.filter(task => isTaskDueToday(task.dueDate));
+  // Filtragem de tarefas com base na aba ativa
+  const getFilteredTasks = (tasks: Task[]) => {
+    switch (activeTab) {
+      case 'pending':
+        return tasks.filter(task => !task.completed);
       case 'completed':
         return tasks.filter(task => task.completed);
-      case 'all':
       default:
         return tasks;
     }
   };
 
-  // Get priority color
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
-      case 2: return '#E53E3E'; // High priority - red
-      case 1: return '#DD6B20'; // Medium priority - orange
-      default: return '#38A169'; // Low priority - green
-    }
-  };
-
-  // Get priority label
-  const getPriorityLabel = (priority: number) => {
-    switch (priority) {
-      case 2: return 'High';
-      case 1: return 'Medium';
-      default: return 'Low';
-    }
-  };
+  const filteredDailyTasks = getFilteredTasks(dailyTasks);
 
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 50 : 30 }]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Household Tasks</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <TasksHeader 
+          onFilter={() => console.log('Filtrar tarefas')} 
+          onAddTask={() => console.log('Adicionar nova tarefa')} 
+        />
 
-      {/* Filters */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, selectedFilter === 'all' && styles.filterButtonActive]}
-          onPress={() => setSelectedFilter('all')}
-        >
-          <Text style={[styles.filterText, selectedFilter === 'all' && styles.filterTextActive]}>All</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.filterButton, selectedFilter === 'today' && styles.filterButtonActive]}
-          onPress={() => setSelectedFilter('today')}
-        >
-          <Text style={[styles.filterText, selectedFilter === 'today' && styles.filterTextActive]}>Today</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.filterButton, selectedFilter === 'completed' && styles.filterButtonActive]}
-          onPress={() => setSelectedFilter('completed')}
-        >
-          <Text style={[styles.filterText, selectedFilter === 'completed' && styles.filterTextActive]}>Completed</Text>
-        </TouchableOpacity>
-      </View>
+        <TasksTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Task List */}
-      {isLoading ? (
-        <ActivityIndicator style={styles.loader} color="#4F46E5" />
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load tasks</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+        <ScrollView style={styles.scrollView}>
+          <TaskCategory 
+            title="Tarefas Diárias" 
+            count={filteredDailyTasks.length} 
+            expanded={expandedCategories.daily}
+            onToggle={() => toggleCategory('daily')}
+            tasks={filteredDailyTasks}
+          />
+          
+          {/* Outras categorias podem ser adicionadas aqui */}
+        </ScrollView>
+
+        {/* Botão flutuante para adicionar tarefa */}
+        <View style={styles.fabContainer}>
+          <TouchableOpacity style={styles.fab}>
+            <Icon name="plus" size={24} color={COLORS.white} />
           </TouchableOpacity>
         </View>
-      ) : filteredTasks().length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {selectedFilter === 'today' 
-              ? 'No tasks due today' 
-              : selectedFilter === 'completed' 
-                ? 'No completed tasks' 
-                : 'No tasks found'}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredTasks()}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.taskCard}>
-              <TouchableOpacity
-                style={[styles.taskStatus, item.completed && styles.taskCompleted]}
-                onPress={() => handleToggleComplete(item.id, item.completed)}
-              />
-              
-              <View style={styles.taskContent}>
-                <View style={styles.taskHeader}>
-                  <Text 
-                    style={[
-                      styles.taskTitle, 
-                      item.completed && styles.taskCompletedText
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {item.title}
-                  </Text>
-                  
-                  <View 
-                    style={[
-                      styles.priorityBadge, 
-                      { backgroundColor: getPriorityColor(item.priority) }
-                    ]}
-                  >
-                    <Text style={styles.priorityText}>
-                      {getPriorityLabel(item.priority)}
-                    </Text>
-                  </View>
-                </View>
-                
-                {item.description && (
-                  <Text 
-                    style={[
-                      styles.taskDescription, 
-                      item.completed && styles.taskCompletedText
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {item.description}
-                  </Text>
-                )}
-                
-                <View style={styles.taskFooter}>
-                  <Text style={styles.dueDate}>
-                    Due: {formatDate(item.dueDate)}
-                  </Text>
-                  
-                  <TouchableOpacity 
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteTask(item.id)}
-                  >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          )}
-          contentContainerStyle={styles.taskList}
-        />
-      )}
-
-      {/* Add Task Button */}
-      <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.background,
   },
-  header: {
-    padding: 20,
-    paddingBottom: 15,
-    backgroundColor: '#4F46E5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  filterContainer: {
+  headerContainer: {
+    backgroundColor: COLORS.primary,
+    padding: SIZES.spacing.md,
+    paddingTop: Platform.OS === 'android' ? SIZES.spacing.xl : SIZES.spacing.md,
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
   },
   filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  filterButtonActive: {
-    backgroundColor: '#4F46E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.spacing.md,
+    paddingVertical: SIZES.spacing.xs,
+    borderRadius: SIZES.radius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: SIZES.spacing.sm,
   },
   filterText: {
-    color: '#666',
-    fontWeight: '500',
+    marginLeft: SIZES.spacing.xs,
   },
-  filterTextActive: {
-    color: '#fff',
-  },
-  loader: {
-    marginTop: 50,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  addButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: SIZES.spacing.md,
+    paddingVertical: SIZES.spacing.xs,
+    borderRadius: SIZES.radius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  errorText: {
-    color: '#E53E3E',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#4F46E5',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
-  emptyContainer: {
+  scrollView: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: SIZES.spacing.md,
     alignItems: 'center',
-    padding: 20,
+    position: 'relative',
   },
-  emptyText: {
-    color: '#666',
-    fontSize: 16,
-    fontStyle: 'italic',
+  activeTabButton: {},
+  tabText: {
+    textAlign: 'center',
   },
-  taskList: {
-    padding: 15,
+  activeTabText: {
+    fontWeight: '600',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '25%',
+    right: '25%',
+    height: 2,
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.radius.sm,
+  },
+  categoryContainer: {
+    marginTop: SIZES.spacing.md,
+    marginHorizontal: SIZES.spacing.md,
+    marginBottom: SIZES.spacing.sm,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SIZES.spacing.sm,
+  },
+  categoryTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryTitle: {
+    marginLeft: SIZES.spacing.sm,
+  },
+  categoryCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryCount: {
+    marginRight: SIZES.spacing.xs,
   },
   taskCard: {
+    marginVertical: SIZES.spacing.xs,
+    borderColor: COLORS.gray200,
+  },
+  taskContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: SIZES.spacing.md,
+    alignItems: 'center',
   },
-  taskStatus: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
     borderWidth: 2,
-    borderColor: '#4F46E5',
-    marginRight: 15,
-    alignSelf: 'center',
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SIZES.spacing.md,
   },
-  taskCompleted: {
-    backgroundColor: '#4F46E5',
+  checkboxChecked: {
+    backgroundColor: COLORS.primary,
   },
   taskContent: {
     flex: 1,
   },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    flex: 1,
-    marginRight: 10,
-  },
-  taskCompletedText: {
+  taskTitleCompleted: {
     textDecorationLine: 'line-through',
-    color: '#888',
+    color: COLORS.gray400,
   },
-  taskDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
-  },
-  taskFooter: {
+  taskInfo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: SIZES.spacing.xs,
+  },
+  dueDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: SIZES.spacing.md,
   },
   dueDate: {
-    fontSize: 12,
-    color: '#888',
+    marginLeft: SIZES.spacing.xs,
   },
-  deleteButton: {
-    padding: 5,
+  priorityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  deleteButtonText: {
-    color: '#E53E3E',
-    fontSize: 12,
-    fontWeight: '500',
+  priority: {
+    marginLeft: SIZES.spacing.xs,
   },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+  taskMenuButton: {
+    padding: SIZES.spacing.xs,
   },
-  priorityText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  addButton: {
+  fabContainer: {
     position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#4F46E5',
+    bottom: SIZES.spacing.xl,
+    right: 0,
+    left: 0,
+    alignItems: 'center',
+  },
+  fab: {
+    backgroundColor: COLORS.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    elevation: 4,
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  addButtonText: {
-    fontSize: 30,
-    color: '#fff',
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
 });
 

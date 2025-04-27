@@ -1,73 +1,65 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
-import * as SplashScreen from 'expo-splash-screen';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NavigationContainer } from '@react-navigation/native';
-import { AuthProvider } from './src/hooks/useAuth';
-import Navigation from './src/navigation/Navigation';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Font from 'expo-font';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
-// Keep the splash screen visible while we initialize resources
-SplashScreen.preventAutoHideAsync();
+// Navegação
+import AppNavigator from './src/navigation/AppNavigator';
 
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Tema
+import { COLORS } from './src/constants/theme';
 
 export default function App() {
-  const [appIsReady, setAppIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  // Função para carregar recursos iniciais, como fontes
+  async function prepare() {
+    try {
+      // Aqui podemos incluir o carregamento de fontes, imagens e outros recursos
+      // Por exemplo:
+      // await Font.loadAsync({
+      //   'roboto-regular': require('./assets/fonts/Roboto-Regular.ttf'),
+      //   'roboto-medium': require('./assets/fonts/Roboto-Medium.ttf'),
+      //   'roboto-bold': require('./assets/fonts/Roboto-Bold.ttf'),
+      // });
+      
+      // Simulando um carregamento para este exemplo
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (e) {
+      console.warn('Erro ao carregar recursos iniciais:', e);
+    } finally {
+      // Quando todos os recursos estiverem carregados, atualizamos o estado
+      setIsReady(true);
+    }
+  }
 
   useEffect(() => {
-    async function prepare() {
-      try {
-        // Pre-load fonts, data, resources etc.
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate loading time
-      } catch (e) {
-        console.warn(e);
-      } finally {
-        // Tell the application to render
-        setAppIsReady(true);
-      }
-    }
-
     prepare();
   }, []);
 
-  useEffect(() => {
-    if (appIsReady) {
-      // Hide the splash screen after the app is ready
-      SplashScreen.hideAsync().catch(() => {
-        /* ignore errors */
-      });
-    }
-  }, [appIsReady]);
-
-  if (!appIsReady) {
-    return null;
+  // Exibimos um loading enquanto os recursos não estão prontos
+  if (!isReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NavigationContainer>
-            <Navigation />
-            <StatusBar style="auto" />
-          </NavigationContainer>
-        </AuthProvider>
-      </QueryClientProvider>
-    </View>
+    <SafeAreaProvider>
+      <StatusBar style="auto" />
+      <AppNavigator />
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
   },
 });
