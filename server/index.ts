@@ -3,11 +3,22 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import { initializeFirebase } from "./firebaseConfig";
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5000",
+      // Add additional origins as needed for mobile development
+      "exp://*", // For Expo development
+    ],
+    credentials: true,
+  })
+);
 // Rota dedicada para servir o service-worker.js com os cabeçalhos corretos
 app.get("/service-worker.js", (req, res) => {
   const swPath = path.join(

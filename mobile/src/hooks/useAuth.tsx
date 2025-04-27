@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { User } from '../../../shared/schema';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import * as SecureStore from "expo-secure-store";
+import { User } from "../../../shared/schema";
 
 type AuthContextType = {
   user: User | null;
@@ -14,7 +14,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Define baseURL for API requests
-const API_URL = 'http://localhost:5000';
+const API_URL = "http://192.168.68.108:5000";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -29,10 +29,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       // Try to fetch the user profile to see if we're logged in
-      const response = await fetch(`${API_URL}/api/auth/me`, {
-        credentials: 'include',
+      const response = await fetch(`${API_URL}/api/user`, {
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -43,21 +43,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error("Error checking auth status:", error);
       setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signIn = async (username: string, password: string): Promise<boolean> => {
+  const signIn = async (
+    username: string,
+    password: string
+  ): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        credentials: 'include',
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -66,14 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await response.json();
         setUser(userData);
         // Store credentials securely
-        await SecureStore.setItemAsync('username', username);
-        await SecureStore.setItemAsync('password', password);
+        await SecureStore.setItemAsync("username", username);
+        await SecureStore.setItemAsync("password", password);
         return true;
       } else {
         return false;
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       return false;
     } finally {
       setIsLoading(false);
@@ -84,17 +87,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       await fetch(`${API_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
       });
-      
+
       // Clear stored credentials
-      await SecureStore.deleteItemAsync('username');
-      await SecureStore.deleteItemAsync('password');
-      
+      await SecureStore.deleteItemAsync("username");
+      await SecureStore.deleteItemAsync("password");
+
       setUser(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -102,8 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/me`, {
-        credentials: 'include',
+      const response = await fetch(`${API_URL}/api/user`, {
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -111,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      console.error("Error refreshing user:", error);
     }
   };
 
@@ -130,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 }
