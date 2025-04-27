@@ -1,23 +1,21 @@
-import * as React from "react";
+import React, { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "./use-toast";
 import { UserType } from "../lib/types";
 import { z } from "zod";
 
-// Tipo do contexto de autenticação
 type AuthContextType = {
   user: UserType | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<any, Error, LoginData>;
-  registerMutation: UseMutationResult<any, Error, RegisterData>;
+  loginMutation: UseMutationResult<UserType, Error, LoginData>;
+  registerMutation: UseMutationResult<UserType, Error, RegisterData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   refreshAuth: () => Promise<UserType | null>;
   isAuthenticated: boolean;
 };
 
-// Tipos de dados para login e registro
 type LoginData = {
   username: string;
   password: string;
@@ -33,26 +31,22 @@ const registerSchema = z.object({
 
 type RegisterData = z.infer<typeof registerSchema>;
 
-// Criação do contexto com valor padrão nulo
-const AuthContext = React.createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Componente provedor de autenticação
-function AuthProvider(props: { children: React.ReactNode }) {
-  // Estado local
-  const [user, setUser] = React.useState<UserType | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<Error | null>(null);
-  
-  // Hooks
+// Simplificação extrema do AuthProvider para resolver problemas com hooks
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { toast } = useToast();
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
-  // Verificar autenticação ao montar o componente
-  React.useEffect(() => {
+  // Verificar autenticação ao carregar o componente
+  useEffect(() => {
     let isMounted = true;
     
-    const checkAuth = async () => {
+    async function checkAuth() {
       try {
-        console.log("Verificando autenticação...");
+        console.log("Verificando autenticação do usuário...");
         const res = await fetch("/api/user", {
           credentials: "include",
         });
@@ -67,26 +61,25 @@ function AuthProvider(props: { children: React.ReactNode }) {
         }
         
         if (!res.ok) {
+          console.error(`Erro na requisição: ${res.status}`);
           throw new Error(`Error: ${res.status}`);
         }
         
         const userData = await res.json();
         console.log("Usuário autenticado:", userData.username);
-        
         if (isMounted) {
           setUser(userData);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.error("Erro ao verificar autenticação:", err);
-        
+      } catch (error) {
+        console.error("Erro ao verificar autenticação:", error);
         if (isMounted) {
-          setError(err instanceof Error ? err : new Error(String(err)));
+          setError(error instanceof Error ? error : new Error(String(error)));
           setUser(null);
           setIsLoading(false);
         }
       }
-    };
+    }
     
     checkAuth();
     
@@ -94,8 +87,8 @@ function AuthProvider(props: { children: React.ReactNode }) {
       isMounted = false;
     };
   }, []);
-  
-  // Mutação para login
+
+  // Simplificando as mutações para evitar problemas com hooks
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -118,8 +111,7 @@ function AuthProvider(props: { children: React.ReactNode }) {
       });
     },
   });
-  
-  // Mutação para registro
+
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
       const res = await apiRequest("POST", "/api/register", userData);
@@ -142,8 +134,7 @@ function AuthProvider(props: { children: React.ReactNode }) {
       });
     },
   });
-  
-  // Mutação para logout
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
@@ -165,11 +156,11 @@ function AuthProvider(props: { children: React.ReactNode }) {
       });
     },
   });
-  
+
   // Função para forçar atualização do estado de autenticação
   const refreshAuth = async (): Promise<UserType | null> => {
     try {
-      console.log("Forçando atualização de autenticação...");
+      console.log("Forçando atualização de autenticação do usuário...");
       const res = await fetch("/api/user", {
         credentials: "include",
       });
@@ -186,43 +177,37 @@ function AuthProvider(props: { children: React.ReactNode }) {
       const userData = await res.json();
       setUser(userData);
       return userData;
-    } catch (err) {
-      console.error("Erro ao atualizar autenticação:", err);
+    } catch (error) {
+      console.error("Erro ao atualizar autenticação:", error);
       return null;
     }
   };
-  
-  // Verificar se o usuário está autenticado
+
+  // Verifica se o usuário está autenticado
   const isAuthenticated = !!user;
-  
-  // Valor do contexto
-  const contextValue: AuthContextType = {
-    user,
-    isLoading,
-    error,
-    loginMutation,
-    registerMutation,
-    logoutMutation,
-    refreshAuth,
-    isAuthenticated,
-  };
-  
+
   return (
-    <AuthContext.Provider value={contextValue}>
-      {props.children}
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        error,
+        loginMutation,
+        registerMutation,
+        logoutMutation,
+        refreshAuth,
+        isAuthenticated
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// Hook personalizado para usar o contexto de autenticação
-function useAuth() {
-  const context = React.useContext(AuthContext);
-  
+export function useAuth() {
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
   return context;
 }
-
-export { AuthContext, AuthProvider, useAuth };

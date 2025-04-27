@@ -14,7 +14,7 @@ app.get("/service-worker.js", (req, res) => {
     process.cwd(),
     "client",
     "public",
-    "service-worker.js",
+    "service-worker.js"
   );
   console.log(`Servindo service worker de: ${swPath}`);
   res.set("Service-Worker-Allowed", "/");
@@ -68,12 +68,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    console.error(err);
-  });
-
-  // Add a health check endpoint for deployments
-  app.get("/", (req, res) => {
-    res.status(200).send("Healthy");
+    throw err;
   });
 
   // importantly only setup vite in development and after
@@ -85,7 +80,10 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const port = process.env.PORT || 5000; // Use PORT environment variable or default to 5000
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
+  const port = 5000;
   server.listen(
     {
       port,
@@ -94,6 +92,6 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
-    },
+    }
   );
 })();

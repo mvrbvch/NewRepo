@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import jwt from "jsonwebtoken";
+
 declare global {
   namespace Express {
     interface User extends SelectUser {}
@@ -36,7 +36,7 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    },
+    }
   };
 
   app.set("trust proxy", 1);
@@ -49,12 +49,12 @@ export function setupAuth(app: Express) {
       try {
         // Try to find user by username or email
         let user = await storage.getUserByUsername(username);
-
+        
         if (!user) {
           // Try by email if username lookup failed
           user = await storage.getUserByEmail(username);
         }
-
+        
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false, { message: "Invalid username or password" });
         } else {
@@ -79,25 +79,25 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       const { username, password, name, email, phoneNumber } = req.body;
-
+      
       // Check if username or email already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
-
+      
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already in use" });
       }
-
+      
       // Create new user
       const user = await storage.createUser({
         username,
         password: await hashPassword(password),
         name,
         email,
-        phoneNumber,
+        phoneNumber
       });
 
       // Remove password from response
@@ -117,14 +117,12 @@ export function setupAuth(app: Express) {
     passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
       if (!user) {
-        return res
-          .status(401)
-          .json({ message: info?.message || "Authentication failed" });
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
-
+      
       req.login(user, (loginErr) => {
         if (loginErr) return next(loginErr);
-
+        
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user;
         return res.status(200).json(userWithoutPassword);
@@ -141,7 +139,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-
+    
     // Remove password from response
     const { password: _, ...userWithoutPassword } = req.user as Express.User;
     res.json(userWithoutPassword);
