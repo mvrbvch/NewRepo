@@ -3,7 +3,6 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import { initializeFirebase } from "./firebaseConfig";
-import cors from "cors";
 
 const app = express();
 app.use(express.json());
