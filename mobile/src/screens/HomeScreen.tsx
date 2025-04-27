@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   View, 
+  Text, 
   StyleSheet, 
   ScrollView, 
   TouchableOpacity,
@@ -11,33 +12,31 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/api';
-import { Card, Button, Text } from '../components/ui';
-import { COLORS, FONTS, SIZES, SHADOWS } from '../constants/theme';
 
 const HomeScreen = () => {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Get user's events
-  const { 
-    data: events, 
-    isLoading: eventsLoading, 
+  const {
+    data: events,
+    isLoading: eventsLoading,
     error: eventsError,
-    refetch: refetchEvents
+    refetch: refetchEvents,
   } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => api.events.getAll()
+    queryKey: ["events"],
+    queryFn: () => api.events.getAll(),
   });
 
   // Get household tasks
-  const { 
-    data: tasks, 
-    isLoading: tasksLoading, 
+  const {
+    data: tasks,
+    isLoading: tasksLoading,
     error: tasksError,
-    refetch: refetchTasks
+    refetch: refetchTasks,
   } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => api.tasks.getAll()
+    queryKey: ["api/tasks"],
+    queryFn: () => api.tasks.getAll(),
   });
 
   // Handle pull-to-refresh
@@ -46,7 +45,7 @@ const HomeScreen = () => {
     try {
       await Promise.all([refetchEvents(), refetchTasks()]);
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error("Error refreshing data:", error);
     } finally {
       setRefreshing(false);
     }
@@ -55,34 +54,34 @@ const HomeScreen = () => {
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
     });
   };
 
   // Calculate if a task is due today
   const isTaskDueToday = (dueDate: string | null) => {
     if (!dueDate) return false;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const taskDate = new Date(dueDate);
     taskDate.setHours(0, 0, 0, 0);
-    
+
     return today.getTime() === taskDate.getTime();
   };
 
   // Get today's events
   const getTodayEvents = () => {
     if (!events) return [];
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    return events.filter(event => {
+
+    return events.filter((event) => {
       const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
       return eventDate.getTime() === today.getTime();
@@ -92,14 +91,19 @@ const HomeScreen = () => {
   // Get today's tasks
   const getTodayTasks = () => {
     if (!tasks) return [];
-    return tasks.filter(task => isTaskDueToday(task.dueDate));
+    return tasks.filter((task) => isTaskDueToday(task.dueDate));
   };
 
   const todayEvents = getTodayEvents();
   const todayTasks = getTodayTasks();
 
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'ios' ? 50 : 30 }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: Platform.OS === "ios" ? 50 : 30 },
+      ]}
+    >
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -107,12 +111,8 @@ const HomeScreen = () => {
         }
       >
         <View style={styles.header}>
-          <Text variant="h2" color={COLORS.white}>Hello, {user?.name || 'there'}!</Text>
-          <Text 
-            variant="body" 
-            color={COLORS.white} 
-            style={{opacity: 0.8}}
-          >
+          <Text style={styles.greeting}>Hello, {user?.name || 'there'}!</Text>
+          <Text style={styles.date}>
             {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
@@ -122,21 +122,15 @@ const HomeScreen = () => {
         </View>
 
         {/* Today's Schedule Section */}
-        <Card style={styles.section} variant="elevated">
-          <Text 
-            variant="h4" 
-            color={COLORS.text} 
-            style={styles.sectionPadding}
-          >
-            Today's Schedule
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today's Schedule</Text>
           
           {eventsLoading ? (
             <ActivityIndicator style={styles.loader} color={COLORS.primary} />
           ) : eventsError ? (
             <Text 
               variant="body" 
-              color={COLORS.error} 
+              color={COL  ORS.error} 
               align="center" 
               style={styles.messagePadding}
             >
@@ -152,7 +146,7 @@ const HomeScreen = () => {
               No events scheduled for today
             </Text>
           ) : (
-            todayEvents.map(event => (
+            todayEvents.map((event) => (
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.eventTimeContainer}>
                   <Text variant="body-sm" color={COLORS.textSecondary}>{event.startTime}</Text>
@@ -171,14 +165,8 @@ const HomeScreen = () => {
         </Card>
 
         {/* Tasks Section */}
-        <Card style={styles.section} variant="elevated">
-          <Text 
-            variant="h4" 
-            color={COLORS.text} 
-            style={styles.sectionPadding}
-          >
-            Today's Tasks
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today's Tasks</Text>
           
           {tasksLoading ? (
             <ActivityIndicator style={styles.loader} color={COLORS.primary} />
@@ -201,26 +189,25 @@ const HomeScreen = () => {
               No tasks due today
             </Text>
           ) : (
-            todayTasks.map(task => (
+            todayTasks.map((task) => (
               <View key={task.id} style={styles.taskCard}>
-                <View style={[styles.taskStatus, task.completed ? styles.taskCompleted : {}]} />
+                <View
+                  style={[
+                    styles.taskStatus,
+                    task.completed ? styles.taskCompleted : {},
+                  ]}
+                />
                 <View style={styles.taskDetails}>
                   <Text 
-                    variant="body"
-                    weight="semibold"
-                    color={task.completed ? COLORS.textLight : COLORS.text}
-                    style={task.completed ? styles.textStrikethrough : {}}
+                    style={[
+                      styles.taskTitle, 
+                      task.completed ? styles.taskCompletedText : {}
+                    ]}
                   >
                     {task.title}
                   </Text>
                   {task.description && (
-                    <Text 
-                      variant="body-sm" 
-                      color={task.completed ? COLORS.textLight : COLORS.textSecondary}
-                      style={task.completed ? styles.textStrikethrough : {}}
-                    >
-                      {task.description}
-                    </Text>
+                    <Text style={styles.taskDescription}>{task.description}</Text>
                   )}
                 </View>
               </View>
@@ -258,153 +245,152 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    padding: SIZES.spacing.md,
-    backgroundColor: COLORS.primary,
+    padding: 20,
+    backgroundColor: '#4F46E5',
   },
-  sectionPadding: {
-    paddingHorizontal: SIZES.spacing.md,
-    paddingTop: SIZES.spacing.md,
-    marginBottom: SIZES.spacing.md,
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
   },
-  messagePadding: {
-    paddingHorizontal: SIZES.spacing.md,
-    paddingBottom: SIZES.spacing.md,
-    marginVertical: SIZES.spacing.md,
+  date: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.8,
   },
   section: {
-    marginTop: SIZES.spacing.md,
-    padding: 0,
-    backgroundColor: COLORS.white,
-    borderRadius: SIZES.radius.md,
-    marginHorizontal: SIZES.spacing.md,
-    marginBottom: SIZES.spacing.md,
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginHorizontal: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: SIZES.lg,
-    ...FONTS.semiBold,
-    marginBottom: SIZES.spacing.md,
-    paddingHorizontal: SIZES.spacing.md,
-    paddingTop: SIZES.spacing.md,
-    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
   },
   loader: {
     marginVertical: SIZES.spacing.md,
   },
   errorText: {
-    color: COLORS.error,
+    color: '#E53E3E',
     textAlign: 'center',
-    marginVertical: SIZES.spacing.md,
-    ...FONTS.medium,
-    paddingHorizontal: SIZES.spacing.md,
+    marginVertical: 15,
   },
   emptyText: {
-    color: COLORS.textSecondary,
+    color: '#666',
     textAlign: 'center',
-    marginVertical: SIZES.spacing.md,
+    marginVertical: 15,
     fontStyle: 'italic',
-    ...FONTS.regular,
-    paddingHorizontal: SIZES.spacing.md,
-    paddingBottom: SIZES.spacing.md,
   },
   eventCard: {
     flexDirection: 'row',
-    padding: SIZES.spacing.md,
-    borderRadius: SIZES.radius.sm,
-    backgroundColor: COLORS.gray50,
-    marginHorizontal: SIZES.spacing.md,
-    marginBottom: SIZES.spacing.sm,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8f9ff',
+    marginBottom: 10,
     borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
+    borderLeftColor: '#4F46E5',
   },
   eventTimeContainer: {
-    marginRight: SIZES.spacing.md,
+    marginRight: 15,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 60,
   },
   eventTime: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    ...FONTS.medium,
+    fontSize: 14,
+    color: '#666',
   },
   eventTimeDivider: {
-    fontSize: SIZES.xs,
-    color: COLORS.textLight,
+    fontSize: 12,
+    color: '#999',
     marginVertical: 2,
   },
   eventDetails: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   eventTitle: {
-    fontSize: SIZES.md,
-    ...FONTS.semiBold,
-    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
     marginBottom: 4,
   },
   eventLocation: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    ...FONTS.regular,
+    fontSize: 14,
+    color: '#666',
   },
   taskCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SIZES.spacing.md,
-    borderRadius: SIZES.radius.sm,
-    backgroundColor: COLORS.gray50,
-    marginHorizontal: SIZES.spacing.md,
-    marginBottom: SIZES.spacing.sm,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8f9ff',
+    marginBottom: 10,
   },
   taskStatus: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: COLORS.primary,
-    marginRight: SIZES.spacing.md,
+    borderColor: '#4F46E5',
+    marginRight: 15,
     backgroundColor: 'transparent',
   },
   taskCompleted: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#4F46E5',
+    borderColor: '#4F46E5',
   },
   taskDetails: {
     flex: 1,
   },
   taskTitle: {
-    fontSize: SIZES.md,
-    ...FONTS.semiBold,
-    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
     marginBottom: 4,
   },
   taskCompletedText: {
     textDecorationLine: 'line-through',
-    color: COLORS.textLight,
+    color: '#888',
   },
   taskDescription: {
-    fontSize: SIZES.sm,
-    color: COLORS.textSecondary,
-    ...FONTS.regular,
+    fontSize: 14,
+    color: '#666',
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: SIZES.spacing.md,
-    paddingHorizontal: SIZES.spacing.md,
-    paddingBottom: SIZES.spacing.md,
+    justifyContent: 'space-around',
+    marginTop: 10,
   },
   actionButton: {
-    width: '48%',
+    backgroundColor: '#4F46E5',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    width: '45%',
+    alignItems: 'center',
   },
-  textStrikethrough: {
-    textDecorationLine: 'line-through',
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 16,
   },
 });
 
