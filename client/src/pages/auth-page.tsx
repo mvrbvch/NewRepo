@@ -84,7 +84,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <img src="./logo.png" alt="Nós Juntos" className="h-20" />
+            <img src="./logo.png" alt="Por Nós" className="h-20" />
           </div>
           <small className="text-muted-foreground px-10 block">
             Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas

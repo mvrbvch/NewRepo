@@ -41,7 +41,7 @@ export function SplashScreen({
       <div className="flex flex-col items-center justify-center p-6 text-center">
         <img
           src="/logo-white.png"
-          alt="Nós Juntos"
+          alt="Por Nós"
           className="w-72 h-auto mb-10 animate-logo-pulse"
         />
 

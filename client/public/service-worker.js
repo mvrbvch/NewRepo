@@ -169,7 +169,7 @@ self.addEventListener('push', event => {
         console.error('[Service Worker] Não foi possível converter texto para JSON:', parseError);
         // Usar o texto como corpo da notificação
         payload = {
-          title: 'Nós Juntos',
+          title: 'Por Nós',
           body: textData,
           icon: '/icons/icon-192x192.png'
         };
@@ -178,7 +178,7 @@ self.addEventListener('push', event => {
       console.error('[Service Worker] Erro ao extrair texto:', textError);
       // Fallback completo
       payload = {
-        title: 'Nós Juntos',
+        title: 'Por Nós',
         body: 'Nova notificação recebida',
         icon: '/icons/icon-192x192.png'
       };
@@ -189,7 +189,7 @@ self.addEventListener('push', event => {
   if (!payload) {
     console.warn('[Service Worker] Payload indefinido, usando valores padrão');
     payload = {
-      title: 'Nós Juntos',
+      title: 'Por Nós',
       body: 'Nova notificação recebida',
       icon: '/icons/icon-192x192.png'
     };
@@ -212,7 +212,7 @@ self.addEventListener('push', event => {
   }
 
   const options = {
-    body: payload.body || 'Notificação do Nós Juntos',
+    body: payload.body || 'Notificação do Por Nós',
     icon: payload.icon || '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
     data: {
@@ -229,7 +229,7 @@ self.addEventListener('push', event => {
   console.log('[Service Worker] Opções de notificação configuradas:', options);
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'Nós Juntos', options)
+    self.registration.showNotification(payload.title || 'Por Nós', options)
   );
 });
 

@@ -25,7 +25,7 @@ import { eq, and } from 'drizzle-orm';
 
 // Configurações gerais do WebAuthn
 // Estas variáveis seriam melhores em variáveis de ambiente
-const rpName = 'Nós Juntos';
+const rpName = 'Por Nós';
 const rpID = process.env.RP_ID || 'localhost'; // No ambiente de produção, use o domínio real
 const expectedOrigin = process.env.EXPECTED_ORIGIN || `https://${rpID}`;
 

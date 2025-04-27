@@ -64,7 +64,7 @@ export default function InstallButton() {
       // Mostra um toast de sucesso
       toast({
         title: "Aplicativo instalado",
-        description: "Nós Juntos foi instalado com sucesso!",
+        description: "Por Nós foi instalado com sucesso!",
       });
     };
 

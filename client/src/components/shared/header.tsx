@@ -44,7 +44,7 @@ export default function Header() {
           <a className="flex items-center">
             <img
               src="/logo-white.png"
-              alt="Nós Juntos"
+              alt="Por Nós"
               className="h-10 drop-shadow-sm"
             />
           </a>

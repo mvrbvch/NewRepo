@@ -733,7 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const emailSent = await sendEmail({
             to: email, // Usando o email autorizado para respeitar as limitações da API
-            subject: `💌 Convite especial de ${inviter.name} para construir algo Nós Juntos`,
+            subject: `💌 Convite especial de ${inviter.name} para construir algo Por Nós`,
             html,
             text,
           });

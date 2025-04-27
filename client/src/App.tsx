@@ -32,7 +32,7 @@ function Router() {
 
       {/* Rotas de autenticação */}
       <Route path="/auth" component={AuthPage} />
-      <Route path="/accept-invite" component={PartnerInvitePage} />
+      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
 
       {/* Experiência unificada de onboarding e boas-vindas */}
       <Route path="/onboarding">
