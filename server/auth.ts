@@ -39,24 +39,6 @@ export function setupAuth(app: Express) {
     },
   };
 
-  const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    try {
-      const decoded = jwt.verify(token, "your-secret-key");
-      req.user = { id: decoded.userId };
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-  };
-
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
@@ -81,7 +63,7 @@ export function setupAuth(app: Express) {
       } catch (error) {
         return done(error);
       }
-    })
+    }),
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
@@ -145,10 +127,7 @@ export function setupAuth(app: Express) {
 
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user;
-        const token = jwt.sign({ userId: user.id }, "your-secret-key", {
-          expiresIn: "7d",
-        });
-        return res.status(200).json({ user: userWithoutPassword, token });
+        return res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });

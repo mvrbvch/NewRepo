@@ -8,24 +8,14 @@ import cors from "cors";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5000",
-      // Add additional origins as needed for mobile development
-      "exp://*", // For Expo development
-    ],
-    credentials: true,
-  })
-);
+
 // Rota dedicada para servir o service-worker.js com os cabeçalhos corretos
 app.get("/service-worker.js", (req, res) => {
   const swPath = path.join(
     process.cwd(),
     "client",
     "public",
-    "service-worker.js"
+    "service-worker.js",
   );
   console.log(`Servindo service worker de: ${swPath}`);
   res.set("Service-Worker-Allowed", "/");
@@ -103,6 +93,6 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
-    }
+    },
   );
 })();
