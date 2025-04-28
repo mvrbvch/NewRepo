@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { useAuth } from './use-auth';
 import { useMutation } from '@tanstack/react-query';
