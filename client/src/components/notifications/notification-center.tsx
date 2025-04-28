@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
 
 // Interface para notificações
 interface Notification {
@@ -45,6 +46,7 @@ interface Notification {
 
 export function NotificationCenter() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -71,6 +73,20 @@ export function NotificationCenter() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
+  const markAllAsRead = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("POST", `/api/notifications-readAll`, {
+        userId: id,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/notifications"],
+      });
     },
   });
 
@@ -111,6 +127,13 @@ export function NotificationCenter() {
   const handleMarkAsRead = (id: number) => {
     markAsReadMutation.mutate(id);
   };
+
+  useEffect(() => {
+    const userId = user?.id;
+    setTimeout(() => {
+      markAllAsRead.mutate(userId);
+    }, 0); // 1 minuto
+  }, []);
 
   // Excluir notificação
   const handleDelete = (id: number) => {

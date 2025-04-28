@@ -26,12 +26,12 @@ export default function Header() {
 
   // Get user initials for avatar
   const userInitials = user?.name
-    ? user.name
-        .split(" ")
-        .map((name) => name[0])
-        .join("")
-        .substring(0, 2)
-        .toUpperCase()
+    ? (() => {
+        const names = user.name.trim().split(" ");
+        const firstInitial = names[0]?.[0] || "";
+        const lastInitial = names.length > 1 ? names[names.length - 1][0] : "";
+        return (firstInitial + lastInitial).toUpperCase();
+      })()
     : "U";
 
   return (
@@ -44,7 +44,7 @@ export default function Header() {
           <a className="flex items-center">
             <img
               src="/logo-white.png"
-              alt="Por Nós"
+              alt="Nós Juntos"
               className="h-10 drop-shadow-sm"
             />
           </a>
@@ -75,20 +75,6 @@ export default function Header() {
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer">
-                <span className="material-icons mr-2 text-primary/80 text-sm">
-                  person
-                </span>
-                <span>Perfil</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem className="cursor-pointer">
-                <span className="material-icons mr-2 text-primary/80 text-sm">
-                  settings
-                </span>
-                <span>Configurações</span>
-              </DropdownMenuItem>
-
               {!user?.partnerId && (
                 <Link href="/invite-partner">
                   <DropdownMenuItem className="cursor-pointer" asChild>

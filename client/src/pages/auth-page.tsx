@@ -36,10 +36,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { loginMutation, registerMutation, user } = useAuth();
   const [, navigate] = useLocation();
-  
+
   // Extrair parâmetros da URL para redirecionamento após autenticação
   const urlParams = new URLSearchParams(window.location.search);
-  const redirectTo = urlParams.get('redirect');
+  const redirectTo = urlParams.get("redirect");
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -63,7 +63,7 @@ export default function AuthPage() {
   // Redirect if already logged in - moved after all hooks are called
   if (user) {
     // Se existe um parâmetro de redirecionamento na URL, usá-lo
-    if (redirectTo === 'welcome') {
+    if (redirectTo === "welcome") {
       navigate("/welcome");
     } else {
       navigate("/");
@@ -84,7 +84,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <img src="./logo.png" alt="Por Nós" className="h-20" />
+            <img src="./logo.png" alt="Nós Juntos" className="h-20" />
           </div>
           <small className="text-muted-foreground px-10 block">
             Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas

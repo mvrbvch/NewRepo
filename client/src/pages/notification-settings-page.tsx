@@ -216,7 +216,7 @@ export default function NotificationSettingsPage() {
 
               <hr />
 
-              {/* Horários silenciosos */}
+              {/* Horários silenciosos
               <div>
                 <h4 className="font-medium text-base mb-3">
                   Horários Silenciosos
@@ -228,7 +228,7 @@ export default function NotificationSettingsPage() {
                 <Button variant="outline" className="w-full">
                   Configurar horários silenciosos
                 </Button>
-              </div>
+              </div> */}
             </div>
           </Card>
 
