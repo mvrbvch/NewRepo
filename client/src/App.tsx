@@ -37,6 +37,9 @@ function Router() {
       {/* Experiência unificada de onboarding e boas-vindas */}
       <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>
       <ProtectedRoute path="/welcome" component={WelcomePage} />
+      <ProtectedRoute path="/tutorial" component={React.lazy(() => 
+        import("./pages/interactive-onboarding-page")
+      )} />
 
       {/* Outras rotas protegidas */}
       <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
