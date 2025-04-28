@@ -798,6 +798,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota para validar um convite
+  app.get("/api/invites/validate", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: "Token é obrigatório" });
+      }
+
+      const invite = await storage.getPartnerInviteByToken(token);
+
+      if (!invite) {
+        return res.status(404).json({ message: "Convite não encontrado ou expirado" });
+      }
+
+      if (invite.status !== "pending") {
+        return res
+          .status(400)
+          .json({ message: `Convite já foi ${invite.status}` });
+      }
+
+      // Obter informações do usuário que enviou o convite
+      const inviter = await storage.getUser(invite.inviterId);
+
+      if (!inviter) {
+        return res.status(404).json({ message: "Usuário que enviou o convite não encontrado" });
+      }
+
+      // Retornar informações sobre o convite
+      res.json({
+        inviteId: invite.id,
+        inviterName: inviter.name,
+        inviterEmail: inviter.email,
+        status: invite.status,
+        createdAt: invite.createdAt
+      });
+    } catch (error) {
+      console.error("Erro ao validar convite:", error);
+      res.status(500).json({ message: "Falha ao validar convite" });
+    }
+  });
+
+  // Rota para aceitar um convite através da API
+  app.post("/api/invites/accept", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { token } = req.body;
+
+      const invite = await storage.getPartnerInviteByToken(token);
+
+      if (!invite) {
+        return res.status(404).json({ message: "Convite não encontrado ou expirado" });
+      }
+
+      if (invite.status !== "pending") {
+        return res
+          .status(400)
+          .json({ message: `Convite já foi ${invite.status}` });
+      }
+
+      const inviterId = invite.inviterId;
+      const acceptorId = req.user?.id as number;
+
+      // Não permitir auto-conexão
+      if (inviterId === acceptorId) {
+        return res
+          .status(400)
+          .json({ message: "Você não pode se conectar consigo mesmo" });
+      }
+
+      // Atualizar o status do convite
+      await storage.updatePartnerInvite(invite.id, { status: "accepted" });
+
+      // Atualizar ambos os usuários para serem parceiros
+      await storage.updateUser(inviterId, {
+        partnerId: acceptorId,
+        partnerStatus: "connected",
+      });
+
+      await storage.updateUser(acceptorId, {
+        partnerId: inviterId,
+        partnerStatus: "connected",
+      });
+
+      // Obter informações do parceiro para retornar
+      const partner = await storage.getUser(inviterId);
+
+      res.json({ 
+        message: "Conexão com parceiro estabelecida com sucesso",
+        partner: {
+          id: partner.id,
+          name: partner.name,
+          email: partner.email
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao aceitar convite:", error);
+      res.status(500).json({ message: "Falha ao aceitar convite" });
+    }
+  });
+
   app.post("/api/partner/accept", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

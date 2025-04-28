@@ -29,11 +29,11 @@ import {
 } from "lucide-react";
 
 // Importando componente de telas do app
-import AppScreensMock from "@/components/app-screens/app-screens-mock";
+import AppScreensMock from "@/components/app-screens/app-screens-mock-new";
 
-// Importando as imagens
-import logoPath from "@assets/logo.png";
-import iconPath from "@assets/icon.png";
+// Referenciando imagens públicas
+const logoPath = "/logo.png";
+const iconPath = "/icon.png";
 
 const LandingPage: React.FC = () => {
   const isMobile = useMedia("(max-width: 768px)");
