@@ -1,39 +1,39 @@
-import { 
+import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
   verifyAuthenticationResponse,
-  verifyRegistrationResponse 
-} from '@simplewebauthn/server';
-import type { 
+  verifyRegistrationResponse,
+} from "@simplewebauthn/server";
+import type {
   GenerateAuthenticationOptionsOpts,
   GenerateRegistrationOptionsOpts,
   VerifyAuthenticationResponseOpts,
-  VerifyRegistrationResponseOpts
-} from '@simplewebauthn/server';
-import { isBefore } from 'date-fns';
-import { db } from './db';
-import { 
-  webAuthnChallenges, 
-  webAuthnCredentials, 
-  users, 
+  VerifyRegistrationResponseOpts,
+} from "@simplewebauthn/server";
+import { isBefore } from "date-fns";
+import { db } from "./db";
+import {
+  webAuthnChallenges,
+  webAuthnCredentials,
+  users,
   insertWebAuthnChallengeSchema,
   insertWebAuthnCredentialSchema,
   WebAuthnCredential,
-  WebAuthnChallenge
-} from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+  WebAuthnChallenge,
+} from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 // Configurações gerais do WebAuthn
 // Estas variáveis seriam melhores em variáveis de ambiente
-const rpName = 'Por Nós';
-const rpID = process.env.RP_ID || 'localhost'; // No ambiente de produção, use o domínio real
+const rpName = "Por Nós";
+const rpID = process.env.RP_ID || "localhost"; // No ambiente de produção, use o domínio real
 const expectedOrigin = process.env.EXPECTED_ORIGIN || `https://${rpID}`;
 
 /**
  * Gera opções para registro de uma nova credencial WebAuthn
  */
 export async function generateWebAuthnRegistrationOptions(
-  userId: number, 
+  userId: number,
   username: string,
   existingCredentials: WebAuthnCredential[] = []
 ) {
@@ -44,19 +44,19 @@ export async function generateWebAuthnRegistrationOptions(
     // Converte o userId numérico para Uint8Array para compatibilidade com a versão mais recente de SimpleWebAuthn
     userID: new Uint8Array(Buffer.from(userId.toString())),
     userName: username,
-    attestationType: 'none',
+    attestationType: "none",
     // Filtra as credenciais existentes do usuário
-    excludeCredentials: existingCredentials.map(cred => ({
-      id: Buffer.from(cred.credentialId, 'base64url').toString('base64url'),
-      type: 'public-key',
+    excludeCredentials: existingCredentials.map((cred) => ({
+      id: Buffer.from(cred.credentialId, "base64url").toString("base64url"),
+      type: "public-key",
       transports: cred.transports ? JSON.parse(cred.transports) : undefined,
     })),
     // Especifica que preferimos credenciais baseadas em plataforma (Touch ID/Face ID)
     authenticatorSelection: {
-      authenticatorAttachment: 'platform',
+      authenticatorAttachment: "platform",
       requireResidentKey: true,
-      userVerification: 'preferred',
-    }
+      userVerification: "preferred",
+    },
   };
 
   // Gera as opções com o desafio
@@ -66,7 +66,7 @@ export async function generateWebAuthnRegistrationOptions(
   // Será usado posteriormente para verificar a resposta
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Válido por 15 minutos - ampliado para dar mais tempo ao usuário
-  
+
   await db.insert(webAuthnChallenges).values({
     userId,
     challenge: registrationOptions.challenge,
@@ -89,7 +89,7 @@ export async function verifyWebAuthnRegistration(
     console.log("UserID:", userId);
     console.log("Device Name:", deviceName);
     console.log("Objeto response:", JSON.stringify(response, null, 2));
-    
+
     // Busca o desafio mais recente do usuário
     const [challenge] = await db
       .select()
@@ -99,7 +99,7 @@ export async function verifyWebAuthnRegistration(
       .limit(1);
 
     if (!challenge) {
-      console.error('Nenhum desafio encontrado para o usuário');
+      console.error("Nenhum desafio encontrado para o usuário");
       return { verified: false };
     }
 
@@ -108,7 +108,7 @@ export async function verifyWebAuthnRegistration(
     // Verifica se o desafio ainda é válido
     const now = new Date();
     if (isBefore(challenge.expiresAt, now)) {
-      console.error('Desafio expirado');
+      console.error("Desafio expirado");
       return { verified: false };
     }
 
@@ -116,31 +116,51 @@ export async function verifyWebAuthnRegistration(
     const verifyOptions: VerifyRegistrationResponseOpts = {
       response,
       expectedChallenge: challenge.challenge, // O desafio que tínhamos armazenado
-      expectedOrigin: process.env.NODE_ENV === 'development' 
-        ? ['http://localhost:5000', 'https://localhost:5000', ...expectedOrigin.split(',')]
-        : expectedOrigin,
+      expectedOrigin:
+        process.env.NODE_ENV === "development"
+          ? [
+              "http://localhost:5000",
+              "https://localhost:5000",
+              ...expectedOrigin.split(","),
+            ]
+          : expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
     };
 
     // Determinamos quais origens são aceitáveis para desenvolvimento
-    const allowedOrigins = process.env.NODE_ENV === 'development' 
-      ? ['http://localhost:5000', 'https://localhost:5000', ...expectedOrigin.split(',')]
-      : expectedOrigin;
-    
-    console.log("Opções de verificação:", JSON.stringify({
-      expectedChallenge: challenge.challenge,
-      expectedOrigin: allowedOrigins,
-      expectedRPID: rpID,
-      requireUserVerification: true
-    }, null, 2));
+    const allowedOrigins =
+      process.env.NODE_ENV === "development"
+        ? [
+            "http://localhost:5000",
+            "https://localhost:5000",
+            ...expectedOrigin.split(","),
+          ]
+        : expectedOrigin;
+
+    console.log(
+      "Opções de verificação:",
+      JSON.stringify(
+        {
+          expectedChallenge: challenge.challenge,
+          expectedOrigin: allowedOrigins,
+          expectedRPID: rpID,
+          requireUserVerification: true,
+        },
+        null,
+        2
+      )
+    );
 
     // Verifica a resposta
     console.log("Chamando verifyRegistrationResponse...");
     let verification;
     try {
       verification = await verifyRegistrationResponse(verifyOptions);
-      console.log("Verificação bem-sucedida:", JSON.stringify(verification, null, 2));
+      console.log(
+        "Verificação bem-sucedida:",
+        JSON.stringify(verification, null, 2)
+      );
     } catch (error) {
       console.error("ERRO na verificação WebAuthn:", error);
       // Analisar o erro detalhadamente
@@ -154,57 +174,69 @@ export async function verifyWebAuthnRegistration(
 
     // Se a verificação falhar, retorna erro
     if (!verification.verified || !verification.registrationInfo) {
-      console.error('Verificação falhou:', JSON.stringify(verification, null, 2));
+      console.error(
+        "Verificação falhou:",
+        JSON.stringify(verification, null, 2)
+      );
       return { verified: false };
     }
 
     // Extrai informações da verificação
     // Na versão mais recente da biblioteca, os campos estão dentro do objeto credential
     // Adicionamos logs para entender a estrutura do objeto
-    console.log("Estrutura do objeto de verificação:", JSON.stringify({
-      verificado: verification.verified,
-      info: Object.keys(verification.registrationInfo),
-      credentialKeys: verification.registrationInfo.credential ? Object.keys(verification.registrationInfo.credential) : null
-    }));
-    
+    console.log(
+      "Estrutura do objeto de verificação:",
+      JSON.stringify({
+        verificado: verification.verified,
+        info: Object.keys(verification.registrationInfo),
+        credentialKeys: verification.registrationInfo.credential
+          ? Object.keys(verification.registrationInfo.credential)
+          : null,
+      })
+    );
+
     // Extraindo dados da credencial
     const credentialID = verification.registrationInfo.credential?.id;
-    const credentialPublicKey = verification.registrationInfo.credential?.publicKey;
+    const credentialPublicKey =
+      verification.registrationInfo.credential?.publicKey;
     // Contador inicia em 0, a versão mais recente não retorna este valor na verificação
     const counter = 0;
-    
+
     // Extrai informações da credencial para o transporte e autenticador
     const transports = response.response.transports;
-    const credentialDeviceType = verification.registrationInfo.credentialDeviceType;
+    const credentialDeviceType =
+      verification.registrationInfo.credentialDeviceType;
     const credentialBackedUp = verification.registrationInfo.credentialBackedUp;
     const authenticatorAttachment = response.authenticatorAttachment;
 
     // Salva a credencial
-    const [savedCredential] = await db.insert(webAuthnCredentials)
+    const [savedCredential] = await db
+      .insert(webAuthnCredentials)
       .values({
         userId,
-        credentialId: Buffer.from(credentialID).toString('base64url'),
-        publicKey: Buffer.from(credentialPublicKey).toString('base64url'),
+        credentialId: Buffer.from(credentialID).toString("base64url"),
+        publicKey: Buffer.from(credentialPublicKey).toString("base64url"),
         counter,
         credentialDeviceType,
         credentialBackedUp,
         // Convertemos arrays para string JSON para armazenamento
         transports: transports ? JSON.stringify(transports) : null,
         authenticatorAttachment,
-        deviceName: deviceName || 'Dispositivo desconhecido',
+        deviceName: deviceName || "Dispositivo desconhecido",
       })
       .returning();
 
     // Limpa o desafio utilizado
-    await db.delete(webAuthnChallenges)
+    await db
+      .delete(webAuthnChallenges)
       .where(eq(webAuthnChallenges.id, challenge.id));
 
-    return { 
+    return {
       verified: true,
-      credential: savedCredential
+      credential: savedCredential,
     };
   } catch (error) {
-    console.error('Erro ao verificar registro WebAuthn:', error);
+    console.error("Erro ao verificar registro WebAuthn:", error);
     return { verified: false };
   }
 }
@@ -214,7 +246,7 @@ export async function verifyWebAuthnRegistration(
  */
 export async function generateWebAuthnAuthenticationOptions(
   username: string,
-  userVerification: 'required' | 'preferred' | 'discouraged' = 'preferred'
+  userVerification: "required" | "preferred" | "discouraged" = "preferred"
 ) {
   try {
     // Busca o usuário
@@ -224,7 +256,7 @@ export async function generateWebAuthnAuthenticationOptions(
       .where(eq(users.username, username));
 
     if (!user) {
-      console.error('Usuário não encontrado');
+      console.error("Usuário não encontrado");
       return null;
     }
 
@@ -235,7 +267,7 @@ export async function generateWebAuthnAuthenticationOptions(
       .where(eq(webAuthnCredentials.userId, user.id));
 
     if (!credentials.length) {
-      console.error('Nenhuma credencial encontrada para o usuário');
+      console.error("Nenhuma credencial encontrada para o usuário");
       return null;
     }
 
@@ -244,9 +276,9 @@ export async function generateWebAuthnAuthenticationOptions(
       rpID,
       userVerification,
       // Especifica quais credenciais são permitidas
-      allowCredentials: credentials.map(cred => ({
-        id: Buffer.from(cred.credentialId, 'base64url').toString('base64url'),
-        type: 'public-key',
+      allowCredentials: credentials.map((cred) => ({
+        id: Buffer.from(cred.credentialId, "base64url").toString("base64url"),
+        type: "public-key",
         transports: cred.transports ? JSON.parse(cred.transports) : undefined,
       })),
     };
@@ -256,19 +288,19 @@ export async function generateWebAuthnAuthenticationOptions(
     // Armazena o desafio no banco de dados
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Válido por 15 minutos - ampliado para dar mais tempo ao usuário
-    
+
     await db.insert(webAuthnChallenges).values({
       userId: user.id,
       challenge: authenticationOptions.challenge,
       expiresAt,
     });
 
-    return { 
+    return {
       authenticationOptions,
-      userId: user.id 
+      userId: user.id,
     };
   } catch (error) {
-    console.error('Erro ao gerar opções de autenticação WebAuthn:', error);
+    console.error("Erro ao gerar opções de autenticação WebAuthn:", error);
     return null;
   }
 }
@@ -290,14 +322,14 @@ export async function verifyWebAuthnAuthentication(
       .limit(1);
 
     if (!challenge) {
-      console.error('Nenhum desafio encontrado para o usuário');
+      console.error("Nenhum desafio encontrado para o usuário");
       return { verified: false };
     }
 
     // Verifica se o desafio ainda é válido
     const now = new Date();
     if (isBefore(challenge.expiresAt, now)) {
-      console.error('Desafio expirado');
+      console.error("Desafio expirado");
       return { verified: false };
     }
 
@@ -314,7 +346,7 @@ export async function verifyWebAuthnAuthentication(
       );
 
     if (!credential) {
-      console.error('Credencial não encontrada');
+      console.error("Credencial não encontrada");
       return { verified: false };
     }
 
@@ -322,17 +354,22 @@ export async function verifyWebAuthnAuthentication(
     const verifyOptions: VerifyAuthenticationResponseOpts = {
       response,
       expectedChallenge: challenge.challenge,
-      expectedOrigin: process.env.NODE_ENV === 'development' 
-        ? ['http://localhost:5000', 'https://localhost:5000', ...expectedOrigin.split(',')]
-        : expectedOrigin,
+      expectedOrigin:
+        process.env.NODE_ENV === "development"
+          ? [
+              "http://localhost:5000",
+              "https://localhost:5000",
+              ...expectedOrigin.split(","),
+            ]
+          : expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
       // Na versão mais recente do @simplewebauthn/server, usamos 'credential' com uma estrutura específica
       credential: {
         id: credential.credentialId,
-        publicKey: Buffer.from(credential.publicKey, 'base64url'),
+        publicKey: Buffer.from(credential.publicKey, "base64url"),
         counter: credential.counter,
-      }
+      },
     };
 
     // Verifica a resposta
@@ -340,7 +377,7 @@ export async function verifyWebAuthnAuthentication(
 
     // Se a verificação falhar, retorna erro
     if (!verification.verified) {
-      console.error('Verificação falhou', verification);
+      console.error("Verificação falhou", verification);
       return { verified: false };
     }
 
@@ -348,29 +385,27 @@ export async function verifyWebAuthnAuthentication(
     if (verification.authenticationInfo.newCounter > credential.counter) {
       await db
         .update(webAuthnCredentials)
-        .set({ 
+        .set({
           counter: verification.authenticationInfo.newCounter,
-          lastUsed: new Date()
+          lastUsed: new Date(),
         })
         .where(eq(webAuthnCredentials.id, credential.id));
     }
 
     // Limpa o desafio utilizado
-    await db.delete(webAuthnChallenges)
+    await db
+      .delete(webAuthnChallenges)
       .where(eq(webAuthnChallenges.id, challenge.id));
 
     // Busca o usuário
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
 
-    return { 
+    return {
       verified: true,
-      user
+      user,
     };
   } catch (error) {
-    console.error('Erro ao verificar autenticação WebAuthn:', error);
+    console.error("Erro ao verificar autenticação WebAuthn:", error);
     return { verified: false };
   }
 }
@@ -378,16 +413,18 @@ export async function verifyWebAuthnAuthentication(
 /**
  * Busca todas as credenciais WebAuthn de um usuário
  */
-export async function getUserWebAuthnCredentials(userId: number): Promise<WebAuthnCredential[]> {
+export async function getUserWebAuthnCredentials(
+  userId: number
+): Promise<WebAuthnCredential[]> {
   try {
     const credentials = await db
       .select()
       .from(webAuthnCredentials)
       .where(eq(webAuthnCredentials.userId, userId));
-    
+
     return credentials;
   } catch (error) {
-    console.error('Erro ao buscar credenciais WebAuthn do usuário:', error);
+    console.error("Erro ao buscar credenciais WebAuthn do usuário:", error);
     return [];
   }
 }
@@ -408,10 +445,10 @@ export async function removeWebAuthnCredential(
           eq(webAuthnCredentials.credentialId, credentialId)
         )
       );
-    
+
     return true;
   } catch (error) {
-    console.error('Erro ao remover credencial WebAuthn:', error);
+    console.error("Erro ao remover credencial WebAuthn:", error);
     return false;
   }
 }

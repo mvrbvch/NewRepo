@@ -1,196 +1,215 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diagnóstico - Por Nós</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diagnóstico - Nós Juntos</title>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #f15a59;
-            border-bottom: 2px solid #f15a59;
-            padding-bottom: 10px;
-        }
-        .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-        .warning {
-            color: orange;
-            font-weight: bold;
-        }
-        button {
-            background-color: #f15a59;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:hover {
-            background-color: #e04949;
-        }
-        #logOutput {
-            background-color: #f7f7f7;
-            padding: 16px;
-            border-radius: 8px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            max-height: 300px;
-            overflow-y: auto;
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #f15a59;
+        border-bottom: 2px solid #f15a59;
+        padding-bottom: 10px;
+      }
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .success {
+        color: green;
+        font-weight: bold;
+      }
+      .error {
+        color: red;
+        font-weight: bold;
+      }
+      .warning {
+        color: orange;
+        font-weight: bold;
+      }
+      button {
+        background-color: #f15a59;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      button:hover {
+        background-color: #e04949;
+      }
+      #logOutput {
+        background-color: #f7f7f7;
+        padding: 16px;
+        border-radius: 8px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
     </style>
-</head>
-<body>
-    <h1>Diagnóstico - Por Nós</h1>
-    
+  </head>
+  <body>
+    <h1>Diagnóstico - Nós Juntos</h1>
+
     <div class="card">
-        <h2>Informações do Navegador</h2>
-        <div id="browserInfo"></div>
-    </div>
-    
-    <div class="card">
-        <h2>Testes de Conectividade</h2>
-        <button onclick="testFetch()">Testar Fetch API</button>
-        <button onclick="testAuth()">Testar Autenticação</button>
-        <button onclick="testWebSocket()">Testar WebSocket</button>
+      <h2>Informações do Navegador</h2>
+      <div id="browserInfo"></div>
     </div>
 
     <div class="card">
-        <h2>Logs</h2>
-        <button onclick="clearLogs()">Limpar Logs</button>
-        <div id="logOutput"></div>
+      <h2>Testes de Conectividade</h2>
+      <button onclick="testFetch()">Testar Fetch API</button>
+      <button onclick="testAuth()">Testar Autenticação</button>
+      <button onclick="testWebSocket()">Testar WebSocket</button>
     </div>
 
     <div class="card">
-        <h2>Navegação</h2>
-        <a href="/">Voltar para o Aplicativo</a>
+      <h2>Logs</h2>
+      <button onclick="clearLogs()">Limpar Logs</button>
+      <div id="logOutput"></div>
+    </div>
+
+    <div class="card">
+      <h2>Navegação</h2>
+      <a href="/">Voltar para o Aplicativo</a>
     </div>
 
     <script>
-        // Exibir informações do navegador
-        function displayBrowserInfo() {
-            const browserInfo = document.getElementById('browserInfo');
-            browserInfo.innerHTML = `
+      // Exibir informações do navegador
+      function displayBrowserInfo() {
+        const browserInfo = document.getElementById("browserInfo");
+        browserInfo.innerHTML = `
                 <p><strong>Navegador:</strong> ${navigator.userAgent}</p>
-                <p><strong>Service Worker Suportado:</strong> ${'serviceWorker' in navigator ? 'Sim' : 'Não'}</p>
-                <p><strong>WebSocket Suportado:</strong> ${'WebSocket' in window ? 'Sim' : 'Não'}</p>
+                <p><strong>Service Worker Suportado:</strong> ${"serviceWorker" in navigator ? "Sim" : "Não"}</p>
+                <p><strong>WebSocket Suportado:</strong> ${"WebSocket" in window ? "Sim" : "Não"}</p>
                 <p><strong>Plataforma:</strong> ${navigator.platform}</p>
-                <p><strong>Modo PWA:</strong> ${window.matchMedia('(display-mode: standalone)').matches ? 'Sim' : 'Não'}</p>
-                <p><strong>iOS:</strong> ${/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window.MSStream) ? 'Sim' : 'Não'}</p>
+                <p><strong>Modo PWA:</strong> ${window.matchMedia("(display-mode: standalone)").matches ? "Sim" : "Não"}</p>
+                <p><strong>iOS:</strong> ${/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream ? "Sim" : "Não"}</p>
             `;
-        }
+      }
 
-        // Função de log
-        function log(message, type = 'info') {
-            const logOutput = document.getElementById('logOutput');
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.className = type;
-            logEntry.textContent = `[${timestamp}] ${message}`;
-            logOutput.appendChild(logEntry);
-            logOutput.scrollTop = logOutput.scrollHeight;
-        }
+      // Função de log
+      function log(message, type = "info") {
+        const logOutput = document.getElementById("logOutput");
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement("div");
+        logEntry.className = type;
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        logOutput.appendChild(logEntry);
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
 
-        // Limpar logs
-        function clearLogs() {
-            document.getElementById('logOutput').innerHTML = '';
-        }
+      // Limpar logs
+      function clearLogs() {
+        document.getElementById("logOutput").innerHTML = "";
+      }
 
-        // Testar Fetch API
-        async function testFetch() {
-            log('Iniciando teste de Fetch API...');
-            try {
-                const response = await fetch('/manifest.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    log(`Fetch bem-sucedido: ${JSON.stringify(data).substring(0, 100)}...`, 'success');
-                } else {
-                    log(`Erro no fetch: ${response.status} ${response.statusText}`, 'error');
-                }
-            } catch (error) {
-                log(`Exceção no fetch: ${error.message}`, 'error');
-            }
+      // Testar Fetch API
+      async function testFetch() {
+        log("Iniciando teste de Fetch API...");
+        try {
+          const response = await fetch("/manifest.json");
+          if (response.ok) {
+            const data = await response.json();
+            log(
+              `Fetch bem-sucedido: ${JSON.stringify(data).substring(0, 100)}...`,
+              "success"
+            );
+          } else {
+            log(
+              `Erro no fetch: ${response.status} ${response.statusText}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          log(`Exceção no fetch: ${error.message}`, "error");
         }
+      }
 
-        // Testar autenticação
-        async function testAuth() {
-            log('Iniciando teste de autenticação...');
-            try {
-                const response = await fetch('/api/user', {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    log(`Autenticação bem-sucedida: ${JSON.stringify(data)}`, 'success');
-                } else if (response.status === 401) {
-                    log('Não autenticado (401) - comportamento esperado para usuário não logado', 'warning');
-                } else {
-                    log(`Erro na autenticação: ${response.status} ${response.statusText}`, 'error');
-                }
-            } catch (error) {
-                log(`Exceção na autenticação: ${error.message}`, 'error');
-            }
+      // Testar autenticação
+      async function testAuth() {
+        log("Iniciando teste de autenticação...");
+        try {
+          const response = await fetch("/api/user", {
+            credentials: "include",
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            log(
+              `Autenticação bem-sucedida: ${JSON.stringify(data)}`,
+              "success"
+            );
+          } else if (response.status === 401) {
+            log(
+              "Não autenticado (401) - comportamento esperado para usuário não logado",
+              "warning"
+            );
+          } else {
+            log(
+              `Erro na autenticação: ${response.status} ${response.statusText}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          log(`Exceção na autenticação: ${error.message}`, "error");
         }
+      }
 
-        // Testar WebSocket
-        function testWebSocket() {
-            log('Iniciando teste de WebSocket...');
-            try {
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const host = window.location.host;
-                const wsUrl = `${protocol}//${host}/ws`;
-                
-                log(`Tentando conectar ao WebSocket: ${wsUrl}`);
-                
-                const socket = new WebSocket(wsUrl);
-                
-                socket.onopen = function() {
-                    log('Conexão WebSocket estabelecida com sucesso!', 'success');
-                    socket.send('Teste de mensagem');
-                };
-                
-                socket.onmessage = function(event) {
-                    log(`Mensagem recebida: ${event.data}`, 'success');
-                };
-                
-                socket.onerror = function(error) {
-                    log(`Erro no WebSocket: ${error}`, 'error');
-                };
-                
-                socket.onclose = function(event) {
-                    log(`WebSocket fechado. Código: ${event.code}, Razão: ${event.reason || 'Não especificada'}`, event.wasClean ? 'info' : 'error');
-                };
-            } catch (error) {
-                log(`Exceção ao criar WebSocket: ${error.message}`, 'error');
-            }
+      // Testar WebSocket
+      function testWebSocket() {
+        log("Iniciando teste de WebSocket...");
+        try {
+          const protocol =
+            window.location.protocol === "https:" ? "wss:" : "ws:";
+          const host = window.location.host;
+          const wsUrl = `${protocol}//${host}/ws`;
+
+          log(`Tentando conectar ao WebSocket: ${wsUrl}`);
+
+          const socket = new WebSocket(wsUrl);
+
+          socket.onopen = function () {
+            log("Conexão WebSocket estabelecida com sucesso!", "success");
+            socket.send("Teste de mensagem");
+          };
+
+          socket.onmessage = function (event) {
+            log(`Mensagem recebida: ${event.data}`, "success");
+          };
+
+          socket.onerror = function (error) {
+            log(`Erro no WebSocket: ${error}`, "error");
+          };
+
+          socket.onclose = function (event) {
+            log(
+              `WebSocket fechado. Código: ${event.code}, Razão: ${event.reason || "Não especificada"}`,
+              event.wasClean ? "info" : "error"
+            );
+          };
+        } catch (error) {
+          log(`Exceção ao criar WebSocket: ${error.message}`, "error");
         }
+      }
 
-        // Inicializar
-        window.onload = function() {
-            displayBrowserInfo();
-            log('Página de diagnóstico carregada');
-        };
+      // Inicializar
+      window.onload = function () {
+        displayBrowserInfo();
+        log("Página de diagnóstico carregada");
+      };
     </script>
-</body>
+  </body>
 </html>

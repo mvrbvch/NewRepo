@@ -50,7 +50,7 @@ export default function IOSInstallGuide() {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Instalar Por Nós no seu iPhone/iPad</DialogTitle>
+            <DialogTitle>Instalar Nós Juntos no seu iPhone/iPad</DialogTitle>
             <DialogDescription>
               Siga estes passos para adicionar o aplicativo à sua tela inicial:
             </DialogDescription>

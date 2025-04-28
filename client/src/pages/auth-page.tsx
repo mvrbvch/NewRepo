@@ -39,14 +39,20 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { loginMutation, registerMutation, user } = useAuth();
   const [, navigate] = useLocation();
-  const { isSupported, loginWithBiometric, isPending: biometricIsPending } = useBiometricAuth();
+  const {
+    isSupported,
+    loginWithBiometric,
+    isPending: biometricIsPending,
+  } = useBiometricAuth();
   const [usernameForBiometric, setUsernameForBiometric] = useState("");
   const [showBiometricOption, setShowBiometricOption] = useState(false);
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState<boolean | null>(null);
-  
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState<
+    boolean | null
+  >(null);
+
   // Extrair parâmetros da URL para redirecionamento após autenticação
   const urlParams = new URLSearchParams(window.location.search);
-  const redirectTo = urlParams.get('redirect');
+  const redirectTo = urlParams.get("redirect");
 
   // Verificar se a biometria está disponível
   useEffect(() => {
@@ -75,7 +81,7 @@ export default function AuthPage() {
   // Redirect if already logged in - moved after all hooks are called
   if (user) {
     // Se existe um parâmetro de redirecionamento na URL, usá-lo
-    if (redirectTo === 'welcome') {
+    if (redirectTo === "welcome") {
       navigate("/welcome");
     } else {
       navigate("/");
@@ -90,18 +96,18 @@ export default function AuthPage() {
   const onSubmitRegister = (data: RegisterFormValues) => {
     registerMutation.mutate(data);
   };
-  
+
   // Função para verificar credenciais biométricas
   const handleCheckBiometric = () => {
     const username = loginForm.getValues("username");
     if (!username) {
-      loginForm.setError("username", { 
-        type: "manual", 
-        message: "Digite seu nome de usuário para usar biometria" 
+      loginForm.setError("username", {
+        type: "manual",
+        message: "Digite seu nome de usuário para usar biometria",
       });
       return;
     }
-    
+
     setUsernameForBiometric(username);
     setShowBiometricOption(true);
   };
@@ -109,10 +115,10 @@ export default function AuthPage() {
   // Função para realizar login biométrico
   const handleBiometricLogin = async () => {
     if (!usernameForBiometric) return;
-    
+
     try {
       const result = await loginWithBiometric(usernameForBiometric);
-      
+
       if (result.success) {
         // Redirecionamento ocorrerá automaticamente pela verificação de 'user'
       }
@@ -126,7 +132,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <img src="./logo.png" alt="Por Nós" className="h-20" />
+            <img src="./logo.png" alt="Nós Juntos" className="h-20" />
           </div>
           <small className="text-muted-foreground px-10 block">
             Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas
@@ -156,7 +162,10 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
-                              <User size={16} className="text-muted-foreground" />
+                              <User
+                                size={16}
+                                className="text-muted-foreground"
+                              />
                               Email ou Nome de Usuário
                             </FormLabel>
                             <FormControl>
@@ -177,7 +186,10 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center gap-2">
-                              <Lock size={16} className="text-muted-foreground" />
+                              <Lock
+                                size={16}
+                                className="text-muted-foreground"
+                              />
                               Senha
                             </FormLabel>
                             <FormControl>
@@ -228,12 +240,15 @@ export default function AuthPage() {
                 ) : (
                   <div className="py-6 flex flex-col items-center space-y-6">
                     <div className="text-center">
-                      <h3 className="text-lg font-medium mb-2">Login com Biometria</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        Login com Biometria
+                      </h3>
                       <p className="text-sm text-muted-foreground mb-6">
-                        Use sua impressão digital ou reconhecimento facial para entrar
+                        Use sua impressão digital ou reconhecimento facial para
+                        entrar
                       </p>
                     </div>
-                    
+
                     <Button
                       className="w-full h-16 flex flex-col gap-1 items-center justify-center"
                       onClick={handleBiometricLogin}
@@ -244,9 +259,9 @@ export default function AuthPage() {
                         {biometricIsPending ? "Verificando..." : "Autenticar"}
                       </span>
                     </Button>
-                    
-                    <Button 
-                      variant="ghost" 
+
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowBiometricOption(false)}
                     >
@@ -348,7 +363,10 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
-                            <Phone size={16} className="text-muted-foreground" />
+                            <Phone
+                              size={16}
+                              className="text-muted-foreground"
+                            />
                             Telefone (opcional)
                           </FormLabel>
                           <FormControl>

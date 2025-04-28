@@ -22,12 +22,14 @@ export default function Header() {
   const { user, logoutMutation } = useAuth();
   const { isSupported } = useBiometricAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState<boolean | null>(null);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState<
+    boolean | null
+  >(null);
 
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-  
+
   // Verifica se a biometria está disponível no dispositivo
   useEffect(() => {
     setIsBiometricAvailable(isSupported);
@@ -53,7 +55,7 @@ export default function Header() {
           <a className="flex items-center">
             <img
               src="/logo-white.png"
-              alt="Por Nós"
+              alt="Nós Juntos"
               className="h-10 drop-shadow-sm"
             />
           </a>
@@ -97,7 +99,7 @@ export default function Header() {
                 </span>
                 <span>Configurações</span>
               </DropdownMenuItem>
-              
+
               {isBiometricAvailable && (
                 <Link href="/biometric-settings">
                   <DropdownMenuItem className="cursor-pointer" asChild>
