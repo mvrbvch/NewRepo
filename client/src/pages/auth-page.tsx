@@ -19,18 +19,33 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Heart, Key, Loader2, Lock, Mail, User, User2, UserCheck } from "lucide-react";
+import { 
+  Heart, 
+  Key, 
+  Loader2, 
+  Lock, 
+  Mail, 
+  User, 
+  User2, 
+  UserCheck, 
+  ThumbsUp, 
+  CalendarDays, 
+  Home, 
+  Coffee,
+  Calendar 
+} from "lucide-react";
 
+// Mensagens de erro personalizadas e descontraídas
 const loginSchema = z.object({
-  username: z.string().min(1, "Nome de usuário ou email é obrigatório").toLowerCase(),
-  password: z.string().min(1, "Senha é obrigatória"),
+  username: z.string().min(1, "Ops! Esqueceu de nos dizer quem você é?").toLowerCase(),
+  password: z.string().min(1, "Sem senha não tem como entrar, viu?"),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-  name: z.string().min(2, "Nome é obrigatório"),
-  email: z.string().email("Digite um email válido"),
+  username: z.string().min(3, "Seu nome de usuário precisa de pelo menos 3 letrinhas, tá?"),
+  password: z.string().min(6, "Uma senha com 6+ caracteres deixa tudo mais seguro! 🔒"),
+  name: z.string().min(2, "Como vamos te chamar com menos de 2 letras? 😊"),
+  email: z.string().email("Hmm, esse email parece meio estranho... Confere pra gente?"),
   phoneNumber: z.string().optional(),
 });
 
@@ -363,71 +378,69 @@ export default function AuthPage() {
       </div>
 
       {/* Coluna direita (hero section) - visível apenas em telas médias e maiores */}
-      <div className="md:w-1/2 w-full bg-gradient-to-br from-primary/30 to-primary/5 hidden md:flex flex-col justify-center items-center p-12">
-        <div className="max-w-md text-center">
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-white/20 backdrop-blur-sm shadow-xl mb-6">
-              <Heart className="h-10 w-10 text-primary" />
+      <div className="md:w-1/2 w-full bg-gradient-to-br from-primary/30 via-rose-500/10 to-primary/5 hidden md:flex flex-col justify-center items-center p-12 relative overflow-hidden">
+        {/* Elementos decorativos de fundo */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[10%] right-[-5%] w-[20rem] h-[20rem] rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute bottom-[10%] left-[-5%] w-[15rem] h-[15rem] rounded-full bg-rose-500/10 blur-3xl" />
+          <div className="absolute top-[40%] left-[30%] w-[10rem] h-[10rem] rounded-full bg-primary/10 blur-3xl" />
+        </div>
+        
+        <div className="max-w-lg relative z-10">
+          <div className="mb-10 text-center">
+            <div className="inline-flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-primary/20 to-rose-500/20 backdrop-blur-sm shadow-xl mb-6">
+              <Heart className="h-12 w-12 text-primary animate-pulse" />
             </div>
-            <h1 className="text-3xl font-bold mb-4">Organize a vida a dois com mais amor</h1>
-            <p className="text-lg mb-8">
-              Compartilhem calendários, tarefas domésticas e fortaleçam sua conexão diária.
+            <h1 className="text-3xl font-bold mb-5 bg-gradient-to-r from-primary to-rose-500 text-transparent bg-clip-text">
+              Juntos para uma vida mais conectada e organizada
+            </h1>
+            <p className="text-lg mb-8 text-gray-700 leading-relaxed">
+              Construam a rotina a dois com mais leveza, união e organização. Porque juntos, cada momento se torna especial.
             </p>
           </div>
           
-          <div className="grid grid-cols-2 gap-6 text-left">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <h3 className="font-medium mb-2 flex items-center">
-                <span className="bg-primary/20 rounded-full p-1 mr-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M11.995 13.7H12.005M8.294 13.7H8.304M8.294 16.7H8.304" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M11.995 16.7H12.005M15.695 13.7H15.705M15.695 16.7H15.705" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-                Calendário Compartilhado
-              </h3>
-              <p className="text-sm opacity-75">Sincronizem eventos, consultas e compromissos importantes do casal.</p>
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Tudo em um só lugar</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Esqueçam as agendas separadas e as listas de tarefas perdidas. No <span className="font-medium text-primary">Nós Juntos</span>, tudo fica centralizado e acessível para vocês dois.
+                </p>
+              </div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <h3 className="font-medium mb-2 flex items-center">
-                <span className="bg-primary/20 rounded-full p-1 mr-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.37 8.88H17.62M6.38 8.88L7.13 9.63L9.38 7.38M12.37 15.88H17.62M6.38 15.88L7.13 16.63L9.38 14.38" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-                Tarefas Domésticas
-              </h3>
-              <p className="text-sm opacity-75">Organizem e dividam as responsabilidades da casa de forma equilibrada.</p>
+            <div className="flex items-start space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              <div className="bg-rose-500/10 p-3 rounded-full">
+                <Coffee className="h-6 w-6 text-rose-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Mais tempo de qualidade</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Com a organização mais eficiente, vocês terão mais tempo para o que realmente importa: momentos de conexão e carinho um com o outro.
+                </p>
+              </div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <h3 className="font-medium mb-2 flex items-center">
-                <span className="bg-primary/20 rounded-full p-1 mr-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 8.5H14.5M6 16.5H8M10.5 16.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M22 14.03V16.11C22 19.62 21.11 20.5 17.56 20.5H6.44C2.89 20.5 2 19.62 2 16.11V7.89C2 4.38 2.89 3.5 6.44 3.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M20 9.5C21.1046 9.5 22 8.60457 22 7.5C22 6.39543 21.1046 5.5 20 5.5C18.8954 5.5 18 6.39543 18 7.5C18 8.60457 18.8954 9.5 20 9.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-                Notificações
-              </h3>
-              <p className="text-sm opacity-75">Recebam lembretes sobre eventos importantes e tarefas pendentes.</p>
+            <div className="flex items-start space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <Home className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Equilíbrio no lar</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Acabou a dúvida sobre "de quem é a vez". Distribuam as tarefas de forma justa e acompanhem juntos o que já foi feito e o que falta fazer.
+                </p>
+              </div>
             </div>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <h3 className="font-medium mb-2 flex items-center">
-                <span className="bg-primary/20 rounded-full p-1 mr-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.1601 10.87C12.0601 10.86 11.9401 10.86 11.8301 10.87C9.4501 10.79 7.5601 8.84 7.5601 6.44C7.5601 3.99 9.5401 2 12.0001 2C14.4501 2 16.4401 3.99 16.4401 6.44C16.4301 8.84 14.5401 10.79 12.1601 10.87Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M7.16021 14.56C4.74021 16.18 4.74021 18.82 7.16021 20.43C9.9102 22.27 14.4202 22.27 17.1702 20.43C19.5902 18.81 19.5902 16.17 17.1702 14.56C14.4302 12.73 9.9202 12.73 7.16021 14.56Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </span>
-                Conexão de Casal
-              </h3>
-              <p className="text-sm opacity-75">Fortaleçam a comunicação e cumplicidade através da organização diária.</p>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-500 italic">
+                "Individualmente, somos uma gota. Juntos, somos um oceano."
+              </p>
+              <p className="text-xs text-gray-400">— Ryunosuke Satoro</p>
             </div>
           </div>
         </div>
