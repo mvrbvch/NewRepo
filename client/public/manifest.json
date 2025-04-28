@@ -28,7 +28,7 @@
       "purpose": "any"
     }
   ],
-  "splash_pages": null,
+  "splash_pages": "/splash",
   "categories": ["lifestyle", "social", "productivity"],
   "lang": "pt-BR",
   "dir": "ltr",

@@ -807,14 +807,7 @@ const LandingPage: React.FC = () => {
                     Benefícios
                   </a>
                 </li>
-                <li>
-                  <a
-                    href="#testimonials"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Depoimentos
-                  </a>
-                </li>
+
                 <li>
                   <Link
                     href="/auth?redirect=welcome"
