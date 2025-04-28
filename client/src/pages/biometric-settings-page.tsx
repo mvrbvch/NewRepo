@@ -51,25 +51,43 @@ import {
 export default function BiometricSettingsPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  // Hook para autenticação biométrica via WebAuthn (navegadores)
   const {
-    isSupported,
-    registerBiometric,
-    getCredentials,
-    removeCredential,
-    isPending,
+    isSupported: isWebAuthnSupported,
+    registerBiometric: registerWebAuthn,
+    getCredentials: getWebAuthnCredentials,
+    removeCredential: removeWebAuthnCredential,
+    isPending: isWebAuthnPending,
   } = useBiometricAuth();
-  const [credentials, setCredentials] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // Hook para autenticação biométrica nativa (iOS/Android)
+  const {
+    isSupported: isNativeSupported,
+    platform: nativePlatform,
+    registerBiometric: registerNativeBiometric,
+    getCredentials: getNativeBiometricCredentials,
+    removeCredential: removeNativeBiometricCredential,
+    isPending: isNativePending,
+  } = useNativeBiometricAuth();
+  
+  // Estado compartilhado
+  const [webAuthnCredentials, setWebAuthnCredentials] = useState<any[]>([]);
+  const [nativeBiometricCredentials, setNativeBiometricCredentials] = useState<any[]>([]);
+  const [isWebAuthnLoading, setIsWebAuthnLoading] = useState(true);
+  const [isNativeLoading, setIsNativeLoading] = useState(true);
   const [deviceName, setDeviceName] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [biometricType, setBiometricType] = useState<'webauthn' | 'native'>('webauthn');
   const [removeDialogData, setRemoveDialogData] = useState<{
     open: boolean;
     id: string | null;
     name: string;
+    type: 'webauthn' | 'native';
   }>({
     open: false,
     id: null,
     name: "",
+    type: 'webauthn'
   });
 
   // Verificar autenticação
@@ -81,32 +99,53 @@ export default function BiometricSettingsPage() {
 
   // Carregar credenciais do usuário
   useEffect(() => {
-    const loadCredentials = async () => {
+    const loadWebAuthnCredentials = async () => {
       try {
-        setIsLoading(true);
-        const result = await getCredentials();
+        setIsWebAuthnLoading(true);
+        const result = await getWebAuthnCredentials();
         if (result.success) {
-          setCredentials(result.credentials);
+          setWebAuthnCredentials(result.credentials);
         }
       } catch (error) {
-        console.error("Erro ao carregar credenciais:", error);
+        console.error("Erro ao carregar credenciais WebAuthn:", error);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar suas credenciais",
+          description: "Não foi possível carregar suas credenciais do navegador",
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        setIsWebAuthnLoading(false);
+      }
+    };
+
+    const loadNativeCredentials = async () => {
+      try {
+        setIsNativeLoading(true);
+        const result = await getNativeBiometricCredentials();
+        if (result.success) {
+          setNativeBiometricCredentials(result.credentials);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar credenciais nativas:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar suas credenciais de dispositivo móvel",
+          variant: "destructive",
+        });
+      } finally {
+        setIsNativeLoading(false);
       }
     };
 
     if (user) {
-      loadCredentials();
+      // Carregar ambos os tipos de credenciais
+      loadWebAuthnCredentials();
+      loadNativeCredentials();
     }
-  }, [user, getCredentials]);
+  }, [user, getWebAuthnCredentials, getNativeBiometricCredentials]);
 
-  // Registrar nova credencial biométrica
-  const handleRegister = async () => {
+  // Registrar nova credencial biométrica WebAuthn
+  const handleRegisterWebAuthn = async () => {
     try {
       if (!deviceName.trim()) {
         toast({
@@ -117,7 +156,7 @@ export default function BiometricSettingsPage() {
         return;
       }
 
-      const result = await registerBiometric(deviceName);
+      const result = await registerWebAuthn(deviceName);
 
       if (result.success) {
         toast({
@@ -126,9 +165,9 @@ export default function BiometricSettingsPage() {
         });
         
         // Recarregar a lista de credenciais
-        const credResult = await getCredentials();
+        const credResult = await getWebAuthnCredentials();
         if (credResult.success) {
-          setCredentials(credResult.credentials);
+          setWebAuthnCredentials(credResult.credentials);
         }
         
         // Fechar o diálogo
@@ -136,7 +175,51 @@ export default function BiometricSettingsPage() {
         setDeviceName("");
       }
     } catch (error) {
-      console.error("Erro ao registrar biometria:", error);
+      console.error("Erro ao registrar biometria WebAuthn:", error);
+    }
+  };
+  
+  // Registrar nova credencial biométrica Nativa
+  const handleRegisterNative = async () => {
+    try {
+      if (!deviceName.trim()) {
+        toast({
+          title: "Nome do dispositivo necessário",
+          description: "Por favor, forneça um nome para identificar este dispositivo",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await registerNativeBiometric(deviceName);
+
+      if (result.success) {
+        toast({
+          title: "Dispositivo registrado",
+          description: "Seu dispositivo foi registrado com sucesso para autenticação biométrica",
+        });
+        
+        // Recarregar a lista de credenciais
+        const credResult = await getNativeBiometricCredentials();
+        if (credResult.success) {
+          setNativeBiometricCredentials(credResult.credentials);
+        }
+        
+        // Fechar o diálogo
+        setIsAddDialogOpen(false);
+        setDeviceName("");
+      }
+    } catch (error) {
+      console.error("Erro ao registrar biometria nativa:", error);
+    }
+  };
+  
+  // Função unificada para registrar credencial dependendo do tipo selecionado
+  const handleRegister = async () => {
+    if (biometricType === 'webauthn') {
+      await handleRegisterWebAuthn();
+    } else {
+      await handleRegisterNative();
     }
   };
 
@@ -144,31 +227,42 @@ export default function BiometricSettingsPage() {
   const handleRemove = async () => {
     try {
       if (!removeDialogData.id) return;
+      
+      let result;
+      
+      // Remover com base no tipo de credencial
+      if (removeDialogData.type === 'webauthn') {
+        result = await removeWebAuthnCredential(removeDialogData.id);
+        if (result.success) {
+          setWebAuthnCredentials(webAuthnCredentials.filter(cred => cred.id !== removeDialogData.id));
+        }
+      } else {
+        result = await removeNativeBiometricCredential(removeDialogData.id);
+        if (result.success) {
+          setNativeBiometricCredentials(nativeBiometricCredentials.filter(cred => cred.id !== removeDialogData.id));
+        }
+      }
 
-      const result = await removeCredential(removeDialogData.id);
-
-      if (result.success) {
+      if (result && result.success) {
         toast({
           title: "Dispositivo removido",
           description: "O dispositivo foi removido com sucesso",
         });
         
-        // Atualizar a lista de credenciais
-        setCredentials(credentials.filter(cred => cred.id !== removeDialogData.id));
-        
         // Fechar o diálogo
-        setRemoveDialogData({ open: false, id: null, name: "" });
+        setRemoveDialogData({ open: false, id: null, name: "", type: 'webauthn' });
       }
     } catch (error) {
       console.error("Erro ao remover credencial:", error);
     }
   };
 
-  const openRemoveDialog = (id: string, name: string) => {
+  const openRemoveDialog = (id: string, name: string, type: 'webauthn' | 'native') => {
     setRemoveDialogData({
       open: true,
       id,
       name,
+      type
     });
   };
 
@@ -186,6 +280,50 @@ export default function BiometricSettingsPage() {
     }).format(date);
   };
 
+  // Função para verificar se há algum dispositivo biométrico disponível
+  const isAnyBiometricSupported = isWebAuthnSupported || isNativeSupported;
+  
+  // Função para verificar se há credenciais registradas
+  const hasWebAuthnCredentials = webAuthnCredentials.length > 0;
+  const hasNativeCredentials = nativeBiometricCredentials.length > 0;
+  
+  // Calcular se está carregando qualquer tipo de credencial
+  const isLoading = isWebAuthnLoading || isNativeLoading;
+  
+  // Calcular se qualquer operação está pendente
+  const isPending = isWebAuthnPending || isNativePending;
+  
+  // Verificar se há credenciais de qualquer tipo
+  const hasCredentials = hasWebAuthnCredentials || hasNativeCredentials;
+  
+  // Função para renderizar o tipo de dispositivo de acordo com a plataforma
+  const getDeviceTypeLabel = (credential: any, type: 'webauthn' | 'native') => {
+    if (type === 'webauthn') {
+      return credential.credentialDeviceType === "platform"
+        ? "Dispositivo integrado (Touch ID, Face ID)"
+        : "Dispositivo externo (Chave de segurança)";
+    } else {
+      // Para dispositivos nativos
+      return credential.platform === "ios"
+        ? "Dispositivo iOS (Touch ID/Face ID)"
+        : credential.platform === "android"
+          ? "Dispositivo Android (Biometria)"
+          : "Dispositivo móvel";
+    }
+  };
+  
+  // Função para renderizar o ícone de acordo com o tipo de credencial
+  const getCredentialIcon = (type: 'webauthn' | 'native', platform?: string) => {
+    if (type === 'webauthn') {
+      return <Monitor className="h-5 w-5 text-muted-foreground" />;
+    } else {
+      // Para dispositivos nativos
+      return platform === "ios" || platform === "android"
+        ? <TabletSmartphone className="h-5 w-5 text-muted-foreground" />
+        : <Smartphone className="h-5 w-5 text-muted-foreground" />;
+    }
+  };
+
   return (
     <div className="container max-w-3xl py-8">
       <div className="flex items-center justify-between mb-6">
@@ -201,18 +339,18 @@ export default function BiometricSettingsPage() {
         </div>
       </div>
 
-      {!isSupported && (
+      {!isAnyBiometricSupported && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Dispositivo não compatível</AlertTitle>
           <AlertDescription>
-            Seu dispositivo ou navegador não suporta autenticação biométrica.
-            Por favor, utilize um dispositivo compatível com WebAuthn.
+            Seu dispositivo ou navegador não suporta qualquer tipo de autenticação biométrica.
+            A autenticação biométrica pode não estar disponível em navegadores mais antigos ou dispositivos sem suporte a hardware seguro.
           </AlertDescription>
         </Alert>
       )}
 
-      {isSupported && (
+      {isAnyBiometricSupported && (
         <Alert variant="default" className="mb-6 bg-muted/50">
           <Info className="h-4 w-4" />
           <AlertTitle>Informação</AlertTitle>
@@ -224,72 +362,165 @@ export default function BiometricSettingsPage() {
         </Alert>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Fingerprint className="h-5 w-5" />
-            Dispositivos Registrados
-          </CardTitle>
-          <CardDescription>
-            Dispositivos cadastrados para autenticação biométrica
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="py-8 text-center text-muted-foreground">
-              Carregando dispositivos...
+      <Tabs defaultValue="browser" className="space-y-4">
+        <TabsList className="grid grid-cols-2">
+          <TabsTrigger value="browser" onClick={() => setBiometricType('webauthn')}>
+            <div className="flex items-center gap-2">
+              <Monitor size={16} />
+              <span>Navegador</span>
             </div>
-          ) : credentials.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              Você não possui dispositivos registrados para biometria.
+          </TabsTrigger>
+          <TabsTrigger value="mobile" onClick={() => setBiometricType('native')}>
+            <div className="flex items-center gap-2">
+              <TabletSmartphone size={16} />
+              <span>Dispositivos Móveis</span>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {credentials.map((credential) => (
-                <div key={credential.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        <Smartphone className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{credential.deviceName}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {credential.credentialDeviceType === "platform"
-                            ? "Dispositivo integrado (Touch ID, Face ID)"
-                            : "Dispositivo externo (Chave de segurança)"}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Último uso: {formatDate(credential.lastUsed)}
-                        </p>
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* Aba para autenticação biométrica em navegadores (WebAuthn) */}
+        <TabsContent value="browser">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Fingerprint className="h-5 w-5" />
+                <span>WebAuthn / FIDO2</span>
+              </CardTitle>
+              <CardDescription>
+                Dispositivos cadastrados para autenticação biométrica no navegador
+                (Touch ID, Face ID, Windows Hello)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isWebAuthnLoading ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Carregando dispositivos...
+                </div>
+              ) : !hasWebAuthnCredentials ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Você não possui dispositivos de navegador registrados para biometria.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {webAuthnCredentials.map((credential) => (
+                    <div key={credential.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1">
+                            {getCredentialIcon('webauthn')}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{credential.deviceName}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {getDeviceTypeLabel(credential, 'webauthn')}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Último uso: {formatDate(credential.lastUsed)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openRemoveDialog(credential.id, credential.deviceName, 'webauthn')}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openRemoveDialog(credential.id, credential.deviceName)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter>
-          {isSupported && (
-            <Button
-              className="w-full flex items-center gap-2"
-              onClick={() => setIsAddDialogOpen(true)}
-              disabled={isPending}
-            >
-              <Plus size={16} />
-              Registrar Novo Dispositivo
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+              )}
+            </CardContent>
+            <CardFooter>
+              {isWebAuthnSupported && (
+                <Button
+                  className="w-full flex items-center gap-2"
+                  onClick={() => {
+                    setBiometricType('webauthn');
+                    setIsAddDialogOpen(true);
+                  }}
+                  disabled={isWebAuthnPending}
+                >
+                  <Plus size={16} />
+                  Registrar Dispositivo de Navegador
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        {/* Aba para autenticação biométrica em dispositivos móveis (Nativa) */}
+        <TabsContent value="mobile">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Fingerprint className="h-5 w-5" />
+                <span>Biometria Nativa (iOS/Android)</span>
+              </CardTitle>
+              <CardDescription>
+                Dispositivos móveis cadastrados para autenticação biométrica nativa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isNativeLoading ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Carregando dispositivos...
+                </div>
+              ) : !hasNativeCredentials ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  Você não possui dispositivos móveis registrados para biometria.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {nativeBiometricCredentials.map((credential) => (
+                    <div key={credential.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1">
+                            {getCredentialIcon('native', credential.platform)}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{credential.deviceName}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {getDeviceTypeLabel(credential, 'native')}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Último uso: {formatDate(credential.lastUsed)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openRemoveDialog(credential.id, credential.deviceName, 'native')}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              {isNativeSupported && (
+                <Button
+                  className="w-full flex items-center gap-2"
+                  onClick={() => {
+                    setBiometricType('native');
+                    setIsAddDialogOpen(true);
+                  }}
+                  disabled={isNativePending}
+                >
+                  <Plus size={16} />
+                  Registrar Dispositivo Móvel
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Diálogo para adicionar novo dispositivo */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -297,7 +528,9 @@ export default function BiometricSettingsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Fingerprint className="h-5 w-5" />
-              Registrar Novo Dispositivo
+              {biometricType === 'webauthn' ? 
+                'Registrar Biometria do Navegador' : 
+                'Registrar Biometria do Dispositivo Móvel'}
             </DialogTitle>
             <DialogDescription>
               Dê um nome para identificar este dispositivo e em seguida
@@ -309,7 +542,9 @@ export default function BiometricSettingsPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Nome do Dispositivo</label>
               <Input
-                placeholder="Ex: Meu Celular, Notebook Pessoal"
+                placeholder={biometricType === 'webauthn' ? 
+                  "Ex: MacBook Pessoal, PC do Trabalho" : 
+                  "Ex: iPhone 13, Galaxy S22"}
                 value={deviceName}
                 onChange={(e) => setDeviceName(e.target.value)}
               />
@@ -319,7 +554,10 @@ export default function BiometricSettingsPage() {
               <ShieldCheck className="h-4 w-4" />
               <AlertTitle>Dispositivo seguro</AlertTitle>
               <AlertDescription>
-                Você será solicitado a usar sua biometria para registrar este dispositivo.
+                {biometricType === 'webauthn' ?
+                  "Você será solicitado a usar a biometria do seu navegador (Touch ID, Face ID ou Windows Hello)." :
+                  "Você será solicitado a usar a biometria do seu dispositivo móvel (Touch ID, Face ID ou impressão digital)."}
+                <br/>
                 Nenhuma informação biométrica é armazenada em nossos servidores.
               </AlertDescription>
             </Alert>
@@ -334,10 +572,12 @@ export default function BiometricSettingsPage() {
             </Button>
             <Button
               onClick={handleRegister}
-              disabled={isPending || !deviceName.trim()}
+              disabled={(biometricType === 'webauthn' ? isWebAuthnPending : isNativePending) || !deviceName.trim()}
               className="flex items-center gap-2"
             >
-              {isPending ? "Registrando..." : "Registrar Dispositivo"}
+              {biometricType === 'webauthn' ? 
+                (isWebAuthnPending ? "Registrando..." : "Registrar Dispositivo") : 
+                (isNativePending ? "Registrando..." : "Registrar Dispositivo Móvel")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -363,16 +603,23 @@ export default function BiometricSettingsPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setRemoveDialogData({ open: false, id: null, name: "" })}
+              onClick={() => setRemoveDialogData({ 
+                open: false, 
+                id: null, 
+                name: "", 
+                type: removeDialogData.type 
+              })}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={handleRemove}
-              disabled={isPending}
+              disabled={removeDialogData.type === 'webauthn' ? isWebAuthnPending : isNativePending}
             >
-              {isPending ? "Removendo..." : "Remover Dispositivo"}
+              {removeDialogData.type === 'webauthn' ? 
+                (isWebAuthnPending ? "Removendo..." : "Remover Dispositivo") : 
+                (isNativePending ? "Removendo..." : "Remover Dispositivo")}
             </Button>
           </DialogFooter>
         </DialogContent>
