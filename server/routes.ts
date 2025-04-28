@@ -35,6 +35,7 @@ import {
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
+import { registerNativeBiometricRoutes } from "./native-biometric-routes";
 import { getVapidPublicKey } from "./pushNotifications";
 
 // Função para expandir eventos recorrentes em múltiplas instâncias
@@ -161,6 +162,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rotas de autenticação biométrica WebAuthn
   registerWebAuthnRoutes(app);
+  
+  // Registrar rotas de autenticação biométrica nativa para iOS e Android
+  registerNativeBiometricRoutes(app);
 
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get("/api/db-health", async (req: Request, res: Response) => {
