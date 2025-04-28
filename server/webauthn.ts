@@ -85,6 +85,11 @@ export async function verifyWebAuthnRegistration(
   deviceName: string
 ): Promise<{ verified: boolean; credential?: WebAuthnCredential }> {
   try {
+    console.log("=== INICIANDO VERIFICAÇÃO DE REGISTRO WEBAUTHN ===");
+    console.log("UserID:", userId);
+    console.log("Device Name:", deviceName);
+    console.log("Objeto response:", JSON.stringify(response, null, 2));
+    
     // Busca o desafio mais recente do usuário
     const [challenge] = await db
       .select()
@@ -97,6 +102,8 @@ export async function verifyWebAuthnRegistration(
       console.error('Nenhum desafio encontrado para o usuário');
       return { verified: false };
     }
+
+    console.log("Desafio encontrado:", JSON.stringify(challenge, null, 2));
 
     // Verifica se o desafio ainda é válido
     const now = new Date();
@@ -114,12 +121,33 @@ export async function verifyWebAuthnRegistration(
       requireUserVerification: true,
     };
 
+    console.log("Opções de verificação:", JSON.stringify({
+      expectedChallenge: challenge.challenge,
+      expectedOrigin,
+      expectedRPID: rpID,
+      requireUserVerification: true
+    }, null, 2));
+
     // Verifica a resposta
-    const verification = await verifyRegistrationResponse(verifyOptions);
+    console.log("Chamando verifyRegistrationResponse...");
+    let verification;
+    try {
+      verification = await verifyRegistrationResponse(verifyOptions);
+      console.log("Verificação bem-sucedida:", JSON.stringify(verification, null, 2));
+    } catch (error) {
+      console.error("ERRO na verificação WebAuthn:", error);
+      // Analisar o erro detalhadamente
+      if (error instanceof Error) {
+        console.error("Nome do erro:", error.name);
+        console.error("Mensagem do erro:", error.message);
+        console.error("Stack trace:", error.stack);
+      }
+      return { verified: false };
+    }
 
     // Se a verificação falhar, retorna erro
     if (!verification.verified || !verification.registrationInfo) {
-      console.error('Verificação falhou', verification);
+      console.error('Verificação falhou:', JSON.stringify(verification, null, 2));
       return { verified: false };
     }
 
@@ -135,7 +163,8 @@ export async function verifyWebAuthnRegistration(
     // Extraindo dados da credencial
     const credentialID = verification.registrationInfo.credential?.id;
     const credentialPublicKey = verification.registrationInfo.credential?.publicKey;
-    const counter = verification.registrationInfo.counter || 0;
+    // Contador inicia em 0, a versão mais recente não retorna este valor na verificação
+    const counter = 0;
     
     // Extrai informações da credencial para o transporte e autenticador
     const transports = response.response.transports;
@@ -289,11 +318,10 @@ export async function verifyWebAuthnAuthentication(
       expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
-      // Na versão mais recente do @simplewebauthn/server, não usamos mais 'authenticator' e sim 'credential'
+      // Na versão mais recente do @simplewebauthn/server, usamos 'credential' com uma estrutura específica
       credential: {
         id: credential.credentialId,
         publicKey: Buffer.from(credential.publicKey, 'base64url'),
-        algorithm: -7, // ES256 algorithm
         counter: credential.counter,
       }
     };
