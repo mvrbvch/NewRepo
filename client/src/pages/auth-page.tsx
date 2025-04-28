@@ -221,7 +221,6 @@ export default function AuthPage() {
 
     try {
       let result;
-
       // Verificar se estamos em ambiente móvel (PWA) e usar a biometria nativa
       if (
         isNativeSupported &&
@@ -231,6 +230,7 @@ export default function AuthPage() {
           "Usando login biométrico nativo para",
           usernameForBiometric,
         );
+
         result = await loginWithNativeBiometric(usernameForBiometric);
       } else {
         // Caso contrário, usar WebAuthn para navegadores
