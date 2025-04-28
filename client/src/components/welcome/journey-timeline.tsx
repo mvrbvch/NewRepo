@@ -55,16 +55,31 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  // Referências para os cards ativos
+  const cardRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   
   // Carregamento simulado de eventos
   useEffect(() => {
     const timer = setTimeout(() => {
       setEvents(DEFAULT_EVENTS);
+      // Inicializar o array de referências com o mesmo tamanho dos eventos
+      cardRefs.current = Array(DEFAULT_EVENTS.length).fill(null);
       setLoading(false);
     }, 800);
 
     return () => clearTimeout(timer);
   }, []);
+  
+  // Efeito para rolar para o card ativo quando activeIndex mudar
+  useEffect(() => {
+    if (!loading && activeIndex < events.length && cardRefs.current[activeIndex]) {
+      // Scroll para o card ativo com uma animação suave
+      cardRefs.current[activeIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center' // centraliza o elemento na tela
+      });
+    }
+  }, [activeIndex, loading, events.length]);
 
   // Animações
   const containerVariants = {
@@ -169,7 +184,8 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
             </div>
 
             {/* Conteúdo do evento - sempre à direita no mobile */}
-            <div className="md:w-5/12 w-full pl-16 md:pl-4 md:pr-4 md:odd:text-right md:even:ml-auto">
+            <div className="md:w-5/12 w-full pl-16 md:pl-4 md:pr-4 md:odd:text-right md:even:ml-auto"
+                 ref={el => cardRefs.current[index] = el}>
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ 
