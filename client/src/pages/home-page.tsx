@@ -407,25 +407,6 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Botão de registro biométrico (se suportado) */}
-      {isSupported && user && (
-        <div className="fixed bottom-24 right-6">
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.5, type: "spring" }}
-          >
-            <Button
-              onClick={handleOpenBiometricDialog}
-              size="lg"
-              className="rounded-full shadow-lg flex items-center gap-2"
-              variant="secondary"
-            >
-              <Fingerprint className="h-5 w-5" />
-              Registrar Biometria
-            </Button>
-          </motion.div>
-        </div>
-      )}
 
       {/* Diálogo para registrar biometria */}
       <Dialog open={biometricDialogOpen} onOpenChange={setBiometricDialogOpen}>
