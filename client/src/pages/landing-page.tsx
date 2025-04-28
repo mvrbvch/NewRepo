@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useMedia } from "react-use";
@@ -25,7 +26,12 @@ import {
   Clock,
   Smile,
   UserPlus,
+  Bell,
+  CheckCircle,
+  Trash2,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import { gsap } from "gsap";
 
 // Importando as imagens
 import logoPath from "@assets/logo.png";
@@ -100,6 +106,84 @@ const LandingPage: React.FC = () => {
       role: "Noivos",
     },
   ];
+
+  // Referências para animação com GSAP
+  const appScreensRef = useRef<HTMLDivElement>(null);
+  const calendarScreenRef = useRef<HTMLDivElement>(null);
+  const tasksScreenRef = useRef<HTMLDivElement>(null);
+  const notificationsScreenRef = useRef<HTMLDivElement>(null);
+
+  // Animação com GSAP para as telas do aplicativo
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Animação das telas do aplicativo quando entram na visualização
+            if (appScreensRef.current) {
+              gsap.fromTo(
+                calendarScreenRef.current,
+                { y: 50, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.2 }
+              );
+              
+              gsap.fromTo(
+                tasksScreenRef.current,
+                { y: 70, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.5 }
+              );
+              
+              gsap.fromTo(
+                notificationsScreenRef.current,
+                { y: 90, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.8 }
+              );
+
+              // Animação dos dados dentro das telas
+              gsap.to(".calendar-event", {
+                backgroundColor: "rgba(241, 90, 89, 0.15)",
+                stagger: 0.1,
+                duration: 0.4,
+                delay: 1,
+                repeat: 1,
+                yoyo: true
+              });
+
+              gsap.to(".task-item-check", {
+                scale: 1.2,
+                stagger: 0.15,
+                duration: 0.3,
+                delay: 1.2,
+                repeat: 1,
+                yoyo: true
+              });
+
+              gsap.to(".notification-dot", {
+                scale: 1.5,
+                stagger: 0.1,
+                duration: 0.4,
+                delay: 1.5,
+                repeat: 1,
+                yoyo: true
+              });
+            }
+            
+            // Desconectar o observer após acionar a animação
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.3 } // Aciona quando 30% do elemento está visível
+    );
+
+    if (appScreensRef.current) {
+      observer.observe(appScreensRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-primary/5 to-white">
