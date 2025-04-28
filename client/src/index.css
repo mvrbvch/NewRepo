@@ -13,10 +13,9 @@
   }
 }
 
-* {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+.prevent-select {
+  -webkit-touch-callout: none;
+
   /* Standard syntax */
 }
 
@@ -100,11 +99,9 @@
 }
 
 .text-primary-gradient {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.9) 0%,
-    hsl(var(--primary)) 100%
-  );
+  background: linear-gradient(90deg,
+      hsl(var(--primary) / 0.9) 0%,
+      hsl(var(--primary)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -135,11 +132,9 @@
 }
 
 .bg-gradient-primary {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--primary) / 0.9) 0%,
-    hsl(var(--primary)) 100%
-  );
+  background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.9) 0%,
+      hsl(var(--primary)) 100%);
   color: hsl(var(--primary-foreground));
 }
 
@@ -168,11 +163,9 @@
 /* Títulos com gradiente */
 .title-gradient {
   @apply font-bold tracking-tight;
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.9) 0%,
-    hsl(var(--primary)) 100%
-  );
+  background: linear-gradient(90deg,
+      hsl(var(--primary) / 0.9) 0%,
+      hsl(var(--primary)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

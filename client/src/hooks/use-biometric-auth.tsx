@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { useAuth } from './use-auth';
 import { useMutation } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ export function useBiometricAuth() {
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   
   // Verificar suporte de biometria ao carregar o hook
-  useEffect(() => {
+  useState(() => {
     // Verificar se o navegador suporta WebAuthn
     const checkSupport = async () => {
       try {
@@ -114,18 +114,6 @@ export function useBiometricAuth() {
       // 1. Obter opções de registro do servidor
       const optionsResult = await registerOptionsMutation.mutateAsync();
       
-      // Verificar se houve erro do servidor
-      if (optionsResult.error || optionsResult.message) {
-        const errorMessage = optionsResult.message || "Falha ao iniciar registro biométrico";
-        toast({
-          title: "Erro no servidor",
-          description: errorMessage,
-          variant: "destructive"
-        });
-        console.error("Erro detalhado:", optionsResult);
-        return { success: false, error: optionsResult };
-      }
-      
       // 2. Iniciar o registro biométrico no dispositivo
       const attResp = await startRegistration(optionsResult);
       
@@ -143,13 +131,12 @@ export function useBiometricAuth() {
         });
         return { success: true, credential: verificationResult.credential };
       } else {
-        const errorMessage = verificationResult.message || "Não foi possível registrar seu dispositivo";
         toast({
           title: "Falha no registro",
-          description: errorMessage,
+          description: "Não foi possível registrar seu dispositivo",
           variant: "destructive"
         });
-        return { success: false, error: verificationResult };
+        return { success: false };
       }
     } catch (error) {
       console.error('Erro ao registrar biometria:', error);
@@ -162,15 +149,6 @@ export function useBiometricAuth() {
         } else if (error.name === 'NotSupportedError') {
           errorMessage = "Seu dispositivo não suporta este tipo de autenticação";
         } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      // Tratar erros da API como objetos
-      if (typeof error === 'object' && error !== null) {
-        // @ts-ignore
-        if (error.message) {
-          // @ts-ignore
           errorMessage = error.message;
         }
       }

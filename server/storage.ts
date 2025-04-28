@@ -8,7 +8,6 @@ import {
   householdTasks,
   userDevices,
   notifications,
-  nativeBiometricCredentials,
 } from "@shared/schema";
 import type {
   User,
@@ -29,8 +28,6 @@ import type {
   InsertUserDevice,
   Notification,
   InsertNotification,
-  NativeBiometricCredential,
-  InsertNativeBiometricCredential,
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -123,13 +120,6 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   deleteNotification(id: number): Promise<boolean>;
 
-  // Native Biometric authentication methods
-  registerNativeBiometricCredential(credential: InsertNativeBiometricCredential): Promise<NativeBiometricCredential>;
-  getNativeBiometricCredentials(userId: number): Promise<NativeBiometricCredential[]>;
-  getNativeBiometricCredentialByBiometricId(biometricId: string): Promise<NativeBiometricCredential | undefined>;
-  updateNativeBiometricCredential(id: number, updates: Partial<NativeBiometricCredential>): Promise<NativeBiometricCredential | undefined>;
-  deleteNativeBiometricCredential(id: number): Promise<boolean>;
-
   // Session store
   sessionStore: SessionStore;
 }
@@ -144,7 +134,6 @@ export class MemStorage implements IStorage {
   private householdTasksMap: Map<number, HouseholdTask>;
   private userDevicesMap: Map<number, UserDevice>;
   private notificationsMap: Map<number, Notification>;
-  private nativeBiometricCredentialsMap: Map<number, NativeBiometricCredential>;
 
   private userIdCounter: number;
   private eventIdCounter: number;
@@ -155,7 +144,6 @@ export class MemStorage implements IStorage {
   private householdTaskIdCounter: number;
   private userDeviceIdCounter: number;
   private notificationIdCounter: number;
-  private nativeBiometricCredentialIdCounter: number;
 
   sessionStore: SessionStore;
 
@@ -169,7 +157,6 @@ export class MemStorage implements IStorage {
     this.householdTasksMap = new Map();
     this.userDevicesMap = new Map();
     this.notificationsMap = new Map();
-    this.nativeBiometricCredentialsMap = new Map();
 
     this.userIdCounter = 1;
     this.eventIdCounter = 1;
@@ -180,7 +167,6 @@ export class MemStorage implements IStorage {
     this.householdTaskIdCounter = 1;
     this.userDeviceIdCounter = 1;
     this.notificationIdCounter = 1;
-    this.nativeBiometricCredentialIdCounter = 1;
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -577,53 +563,6 @@ export class MemStorage implements IStorage {
   async deleteNotification(id: number): Promise<boolean> {
     return this.notificationsMap.delete(id);
   }
-
-  // Native Biometric authentication methods
-  async registerNativeBiometricCredential(
-    insertCredential: InsertNativeBiometricCredential
-  ): Promise<NativeBiometricCredential> {
-    const id = this.nativeBiometricCredentialIdCounter++;
-    const credential: NativeBiometricCredential = {
-      ...insertCredential,
-      id,
-      createdAt: new Date(),
-      lastUsed: new Date(),
-    };
-    this.nativeBiometricCredentialsMap.set(id, credential);
-    return credential;
-  }
-
-  async getNativeBiometricCredentials(userId: number): Promise<NativeBiometricCredential[]> {
-    return Array.from(this.nativeBiometricCredentialsMap.values()).filter(
-      (credential) => credential.userId === userId
-    );
-  }
-
-  async getNativeBiometricCredentialByBiometricId(biometricId: string): Promise<NativeBiometricCredential | undefined> {
-    return Array.from(this.nativeBiometricCredentialsMap.values()).find(
-      (credential) => credential.biometricId === biometricId
-    );
-  }
-
-  async updateNativeBiometricCredential(
-    id: number,
-    updates: Partial<NativeBiometricCredential>
-  ): Promise<NativeBiometricCredential | undefined> {
-    const credential = this.nativeBiometricCredentialsMap.get(id);
-    if (!credential) return undefined;
-
-    const updatedCredential = { 
-      ...credential, 
-      ...updates,
-      lastUsed: new Date() 
-    };
-    this.nativeBiometricCredentialsMap.set(id, updatedCredential);
-    return updatedCredential;
-  }
-
-  async deleteNativeBiometricCredential(id: number): Promise<boolean> {
-    return this.nativeBiometricCredentialsMap.delete(id);
-  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -782,87 +721,6 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(notifications)
       .where(eq(notifications.id, id));
-    return true; // Drizzle não retorna informação fácil sobre se algo foi deletado
-  }
-  
-  // Native Biometric authentication methods
-  async registerNativeBiometricCredential(
-    credential: InsertNativeBiometricCredential
-  ): Promise<NativeBiometricCredential> {
-    const [nativeBiometricCredential] = await db
-      .insert(nativeBiometricCredentials)
-      .values({
-        ...credential,
-        createdAt: new Date(),
-        lastUsed: new Date(),
-      })
-      .returning();
-
-    return {
-      ...nativeBiometricCredential,
-      createdAt: nativeBiometricCredential.createdAt
-        ? nativeBiometricCredential.createdAt.toISOString()
-        : null,
-      lastUsed: nativeBiometricCredential.lastUsed
-        ? nativeBiometricCredential.lastUsed.toISOString()
-        : null,
-    };
-  }
-
-  async getNativeBiometricCredentials(userId: number): Promise<NativeBiometricCredential[]> {
-    const credentials = await db
-      .select()
-      .from(nativeBiometricCredentials)
-      .where(eq(nativeBiometricCredentials.userId, userId));
-
-    return credentials.map((credential) => ({
-      ...credential,
-      createdAt: credential.createdAt ? credential.createdAt.toISOString() : null,
-      lastUsed: credential.lastUsed ? credential.lastUsed.toISOString() : null,
-    }));
-  }
-
-  async getNativeBiometricCredentialByBiometricId(biometricId: string): Promise<NativeBiometricCredential | undefined> {
-    const [credential] = await db
-      .select()
-      .from(nativeBiometricCredentials)
-      .where(eq(nativeBiometricCredentials.biometricId, biometricId));
-
-    if (!credential) return undefined;
-
-    return {
-      ...credential,
-      createdAt: credential.createdAt ? credential.createdAt.toISOString() : null,
-      lastUsed: credential.lastUsed ? credential.lastUsed.toISOString() : null,
-    };
-  }
-
-  async updateNativeBiometricCredential(
-    id: number,
-    updates: Partial<NativeBiometricCredential>
-  ): Promise<NativeBiometricCredential | undefined> {
-    const [credential] = await db
-      .update(nativeBiometricCredentials)
-      .set({
-        ...updates,
-        lastUsed: new Date(),
-      })
-      .where(eq(nativeBiometricCredentials.id, id))
-      .returning();
-
-    if (!credential) return undefined;
-
-    return {
-      ...credential,
-      createdAt: credential.createdAt ? credential.createdAt.toISOString() : null,
-      lastUsed: credential.lastUsed ? credential.lastUsed.toISOString() : null,
-    };
-  }
-
-  async deleteNativeBiometricCredential(id: number): Promise<boolean> {
-    await db
-      .delete(nativeBiometricCredentials)
-      .where(eq(nativeBiometricCredentials.id, id));
     return true; // Drizzle não retorna informação fácil sobre se algo foi deletado
   }
 

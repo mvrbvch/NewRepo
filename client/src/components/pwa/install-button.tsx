@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
-    outcome: "accepted" | "dismissed";
+    outcome: 'accepted' | 'dismissed';
     platform: string;
   }>;
   prompt(): Promise<void>;
@@ -22,8 +22,7 @@ declare global {
 }
 
 export default function InstallButton() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
@@ -31,16 +30,14 @@ export default function InstallButton() {
 
   useEffect(() => {
     // Detecta dispositivos iOS
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOSDevice(isIOS);
 
     // Verifica se o app já está instalado usando a media query do display-mode
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone ||
-      document.referrer.includes("android-app://");
-
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone || 
+                        document.referrer.includes('android-app://');
+    
     setIsInstalled(isStandalone);
 
     // Captura o evento beforeinstallprompt
@@ -51,7 +48,7 @@ export default function InstallButton() {
       setDeferredPrompt(e);
       // Mostra o botão de instalação
       setIsInstallable(true);
-
+      
       console.log("BeforeInstallPrompt capturado", e);
     };
 
@@ -61,34 +58,31 @@ export default function InstallButton() {
       setIsInstallable(false);
       setIsInstalled(true);
       setDeferredPrompt(null);
-
+      
       console.log("Aplicativo instalado");
-
+      
       // Mostra um toast de sucesso
       toast({
         title: "Aplicativo instalado",
-        description: "Nós Juntos foi instalado com sucesso!",
+        description: "Por Nós foi instalado com sucesso!",
       });
     };
 
     // Adiciona os event listeners
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Log para debug
-    console.log("Estado atual do app:", {
-      isIOS,
-      isStandalone,
-      promptSupported: "BeforeInstallPromptEvent" in window,
+    console.log("Estado atual do app:", { 
+      isIOS, 
+      isStandalone, 
+      promptSupported: 'BeforeInstallPromptEvent' in window 
     });
 
     // Remove os event listeners quando o componente é desmontado
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, [toast]);
 
@@ -96,19 +90,18 @@ export default function InstallButton() {
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       console.log("Evento deferredPrompt não disponível");
-
+      
       toast({
         title: "Instalação não disponível",
-        description:
-          "Seu navegador não suporta instalação direta do aplicativo no momento.",
-        variant: "destructive",
+        description: "Seu navegador não suporta instalação direta do aplicativo no momento.",
+        variant: "destructive"
       });
-
+      
       return;
     }
 
     console.log("Mostrando prompt de instalação");
-
+    
     try {
       // Mostra o prompt de instalação
       deferredPrompt.prompt();
@@ -116,21 +109,21 @@ export default function InstallButton() {
       // Espera pela escolha do usuário
       const { outcome } = await deferredPrompt.userChoice;
       console.log("Resultado da instalação:", outcome);
-
+      
       // O prompt só pode ser usado uma vez, então limpa a referência
       setDeferredPrompt(null);
 
-      if (outcome === "accepted") {
+      if (outcome === 'accepted') {
         toast({
           title: "Instalando...",
-          description: "O aplicativo está sendo instalado.",
+          description: "O aplicativo está sendo instalado."
         });
       } else {
         // O usuário recusou a instalação
         toast({
           title: "Instalação cancelada",
           description: "Você pode instalar o aplicativo mais tarde.",
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -138,7 +131,7 @@ export default function InstallButton() {
       toast({
         title: "Erro na instalação",
         description: "Ocorreu um erro ao tentar instalar o aplicativo.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };

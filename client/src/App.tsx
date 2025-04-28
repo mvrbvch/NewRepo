@@ -17,7 +17,6 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
-import BiometricSettingsPage from "./pages/biometric-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
 
@@ -28,11 +27,8 @@ function Router() {
       {/* Landing page pública */}
       <Route path="/landing" component={LandingPage} />
 
-      {/* Página de autenticação como rota principal para facilitar testes */}
-      <Route path="/" component={AuthPage} />
-
-      {/* Rota principal protegida - mudada para /home */}
-      <ProtectedRoute path="/home" component={HomePage} />
+      {/* Rota principal protegida */}
+      <ProtectedRoute path="/" component={HomePage} />
 
       {/* Rotas de autenticação */}
       <Route path="/auth" component={AuthPage} />
@@ -49,10 +45,6 @@ function Router() {
       <ProtectedRoute
         path="/notifications"
         component={NotificationSettingsPage}
-      />
-      <ProtectedRoute
-        path="/biometric-settings"
-        component={BiometricSettingsPage}
       />
       <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
       <ProtectedRoute
@@ -72,11 +64,11 @@ const AppContent = () => {
   // ao invés de usar o contexto que está causando problemas
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Efeito para esconder o splash screen após um tempo reduzido
+  // Efeito para esconder o splash screen após um tempo
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 500); // Reduzido para 500ms para facilitar os testes
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);

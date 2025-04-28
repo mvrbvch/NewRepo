@@ -12,21 +12,13 @@ const urlsToCache = [
   "/icons/icon-512x512.png",
 ];
 
-// Evento de instalação - MODIFICADO PARA TESTES - limpa cache e não armazena
+// Evento de instalação - armazena arquivos em cache
 self.addEventListener("install", (event) => {
-  console.log("[Service Worker] Instalando (modo de teste)...");
+  console.log("[Service Worker] Instalando...");
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          console.log("[Service Worker] Limpando cache para testes:", cacheName);
-          return caches.delete(cacheName);
-        })
-      );
-    }).then(() => {
-      console.log("[Service Worker] Todos os caches foram limpos para testes");
-      // Força o service worker a ser ativado imediatamente
-      return self.skipWaiting();
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log("[Service Worker] Cache aberto");
+      return cache.addAll(urlsToCache);
     })
   );
 });
@@ -49,18 +41,32 @@ self.addEventListener("activate", (event) => {
   return self.clients.claim();
 });
 
-// Evento de fetch - CACHE DESATIVADO PARA TESTES
+// Evento de fetch - responde com recursos em cache quando offline
 self.addEventListener("fetch", (event) => {
-  console.log("[Service Worker] Cache desativado - sempre buscando da rede:", event.request.url);
-  
-  // Bypass cache completamente - sempre buscar da rede
   event.respondWith(
-    fetch(event.request)
-      .catch(error => {
-        console.error('[Service Worker] Falha ao buscar da rede:', error);
-        // Em caso de falha na rede, tenta buscar do cache como fallback
-        return caches.match(event.request);
-      })
+    caches.match(event.request).then((response) => {
+      // Cache hit - retorna a resposta do cache
+      if (response) {
+        return response;
+      }
+
+      // Caso contrário, busca na rede
+      return fetch(event.request).then((response) => {
+        // Verifica se recebemos uma resposta válida
+        if (!response || response.status !== 200 || response.type !== "basic") {
+          return response;
+        }
+
+        // Clone a resposta para armazenar no cache
+        const responseToCache = response.clone();
+
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+
+        return response;
+      });
+    })
   );
 });
 

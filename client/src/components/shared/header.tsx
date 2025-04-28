@@ -10,30 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import InstallButton from "@/components/pwa/install-button";
 import NotificationButton from "@/components/shared/notification-button";
 import IOSInstallGuide from "@/components/shared/ios-install-guide";
 import { NotificationIndicator } from "./notification-indicator";
-import { useBiometricAuth } from "@/hooks/use-biometric-auth";
-import { Fingerprint } from "lucide-react";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
-  const { isSupported } = useBiometricAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState<
-    boolean | null
-  >(null);
 
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-
-  // Verifica se a biometria está disponível no dispositivo
-  useEffect(() => {
-    setIsBiometricAvailable(isSupported);
-  }, [isSupported]);
 
   // Get user initials for avatar
   const userInitials = user?.name
@@ -55,7 +44,7 @@ export default function Header() {
           <a className="flex items-center">
             <img
               src="/logo-white.png"
-              alt="Nós Juntos"
+              alt="Por Nós"
               className="h-10 drop-shadow-sm"
             />
           </a>
@@ -99,17 +88,6 @@ export default function Header() {
                 </span>
                 <span>Configurações</span>
               </DropdownMenuItem>
-
-              {isBiometricAvailable && (
-                <Link href="/biometric-settings">
-                  <DropdownMenuItem className="cursor-pointer" asChild>
-                    <a>
-                      <Fingerprint className="mr-2 h-4 w-4 text-primary/80" />
-                      <span>Configurações Biométricas</span>
-                    </a>
-                  </DropdownMenuItem>
-                </Link>
-              )}
 
               {!user?.partnerId && (
                 <Link href="/invite-partner">
