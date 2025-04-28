@@ -72,6 +72,7 @@ export default function AuthPage() {
     isSupported: isNativeSupported,
     platform: nativePlatform,
     registerBiometric: registerNativeBiometric,
+    loginWithBiometric: loginWithNativeBiometric,
     isPending: isNativePending,
   } = useNativeBiometricAuth();
 
@@ -196,6 +197,20 @@ export default function AuthPage() {
       return;
     }
 
+    // Log para diagnóstico
+    if (isNativeSupported) {
+      console.log(
+        "Biometria nativa disponível para plataforma:",
+        nativePlatform,
+      );
+      console.log(
+        "Modo PWA:",
+        window.matchMedia("(display-mode: standalone)").matches,
+      );
+    } else {
+      console.log("Biometria nativa não disponível, usando WebAuthn");
+    }
+
     setUsernameForBiometric(username);
     setShowBiometricOption(true);
   };
@@ -205,13 +220,36 @@ export default function AuthPage() {
     if (!usernameForBiometric) return;
 
     try {
-      const result = await loginWithBiometric(usernameForBiometric);
+      let result;
+
+      // Verificar se estamos em ambiente móvel (PWA) e usar a biometria nativa
+      if (
+        isNativeSupported &&
+        window.matchMedia("(display-mode: standalone)").matches
+      ) {
+        console.log(
+          "Usando login biométrico nativo para",
+          usernameForBiometric,
+        );
+        result = await loginWithNativeBiometric(usernameForBiometric);
+      } else {
+        // Caso contrário, usar WebAuthn para navegadores
+        console.log("Usando login WebAuthn para", usernameForBiometric);
+        result = await loginWithBiometric(usernameForBiometric);
+      }
 
       if (result.success) {
         // Redirecionamento ocorrerá automaticamente pela verificação de 'user'
+        console.log("Login biométrico bem-sucedido!");
       }
     } catch (error) {
       console.error("Erro ao fazer login com biometria:", error);
+      toast({
+        title: "Falha na autenticação biométrica",
+        description:
+          "Não foi possível autenticar com biometria. Tente novamente ou use sua senha.",
+        variant: "destructive",
+      });
     }
   };
 
