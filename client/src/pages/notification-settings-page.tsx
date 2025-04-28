@@ -68,7 +68,7 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col scroll-id">
       <Header title="Notificações" />
 
       <Tabs

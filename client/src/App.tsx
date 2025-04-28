@@ -19,40 +19,58 @@ import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+
+function ScrollToTop() {
+  const [pathname] = useLocation();
+  console.log(pathname);
+  useEffect(() => {
+    setTimeout(() => {
+      window.document.getElementsByClassName("scroll-id")[0].scrollIntoView();
+    }, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 // Componente de rotas da aplicação
 function Router() {
   return (
-    <Switch>
-      {/* Landing page pública */}
-      <Route path="/" component={LandingPage} />
+    <>
+      <ScrollToTop />
 
-      {/* Rota principal protegida */}
-      <ProtectedRoute path="/calendar" component={HomePage} />
+      <Switch>
+        {/* Landing page pública */}
+        <Route path="/" component={LandingPage} />
 
-      {/* Rotas de autenticação */}
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+        {/* Rota principal protegida */}
+        <ProtectedRoute path="/calendar" component={HomePage} />
 
-      {/* Experiência unificada de onboarding e boas-vindas */}
-      <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>
-      <ProtectedRoute path="/welcome" component={WelcomePage} />
+        {/* Rotas de autenticação */}
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/accept-invite/:token" component={PartnerInvitePage} />
 
-      {/* Outras rotas protegidas */}
-      <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
-      <ProtectedRoute
-        path="/notifications"
-        component={NotificationSettingsPage}
-      />
-      <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
-      <ProtectedRoute
-        path="/tasks/reorder"
-        component={HouseholdTasksPageSimple}
-      />
+        {/* Experiência unificada de onboarding e boas-vindas */}
+        <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>
+        <ProtectedRoute path="/welcome" component={WelcomePage} />
 
-      {/* Rota de não encontrado */}
-      <Route component={NotFound} />
-    </Switch>
+        {/* Outras rotas protegidas */}
+        <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
+        <ProtectedRoute
+          path="/notifications"
+          component={NotificationSettingsPage}
+        />
+        <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
+        <ProtectedRoute
+          path="/tasks/reorder"
+          component={HouseholdTasksPageSimple}
+        />
+
+        {/* Rota de não encontrado */}
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 

@@ -53,7 +53,7 @@ import { Input } from "@/components/ui/input";
 
 export default function HomePage() {
   const [view, setView] = useState<"day" | "week" | "month" | "timeline">(
-    "day"
+    "day",
   );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -114,7 +114,7 @@ export default function HomePage() {
         const eventDate = new Date(event.date);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
         const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate)
+          new Date(selectedDate),
         )?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
@@ -155,7 +155,7 @@ export default function HomePage() {
     const eventDate = new Date(event.date);
     const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
     const formattedSelectedDate = formatDateSafely(
-      new Date(selectedDate)
+      new Date(selectedDate),
     )?.split("T")[0];
 
     if (!formattedEventDate || !formattedSelectedDate) {
@@ -167,10 +167,10 @@ export default function HomePage() {
   });
   // Group events by period for day view
   const morningEvents = dailyEvents.filter(
-    (event) => event.period === "morning"
+    (event) => event.period === "morning",
   );
   const afternoonEvents = dailyEvents.filter(
-    (event) => event.period === "afternoon"
+    (event) => event.period === "afternoon",
   );
   const nightEvents = dailyEvents.filter((event) => event.period === "night");
 
@@ -271,13 +271,13 @@ export default function HomePage() {
 
   // Calcular quantos eventos são compartilhados no período atual
   const sharedEventsCount = filteredEvents.filter(
-    (event) => event.isShared
+    (event) => event.isShared,
   ).length;
 
   return (
     <motion.div
-      className="flex flex-col h-screen"
-      initial={{ opacity: 0 }}
+      className="flex flex-col h-screen scroll-id"
+      initial={{ opacity: 0, y: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
