@@ -82,11 +82,11 @@ export default function PartnerInvitePage() {
         description:
           "Agora vocês estão conectados e podem compartilhar eventos!",
       });
-      navigate("/");
+      navigate("/calendar");
     },
     onError: () => {
       if (!user) {
-        navigate("/");
+        navigate("/calendar");
       } else {
         toast({
           title: "Erro",
@@ -131,7 +131,7 @@ export default function PartnerInvitePage() {
   };
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/calendar");
   };
 
   // Accepting an invite view
@@ -328,7 +328,7 @@ export default function PartnerInvitePage() {
                   className="ml-2"
                   onClick={() => {
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/accept-invite/${inviteLink}`,
+                      `${window.location.origin}/accept-invite/${inviteLink}`
                     );
                     toast({
                       title: "Link copiado",

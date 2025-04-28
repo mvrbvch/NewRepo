@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "@/components/shared/header";
 import BottomNavigation from "@/components/shared/bottom-navigation";
 import DateNavigation from "@/components/shared/date-navigation";
@@ -29,7 +29,7 @@ import {
 } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
+import { Bell, Fingerprint } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   usePushNotifications,
@@ -40,15 +40,32 @@ import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { TransitionComponent } from "@/components/ui/transition-component";
 import { useAuth } from "@/hooks/use-auth";
+import { useBiometricAuth } from "@/hooks/use-biometric-auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function HomePage() {
-  const [view, setView] = useState<"day" | "week" | "month" | "timeline">("day");
+  const [view, setView] = useState<"day" | "week" | "month" | "timeline">(
+    "day"
+  );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+  const [biometricDialogOpen, setBiometricDialogOpen] = useState(false);
+  const [deviceName, setDeviceName] = useState("");
+
   const { toast } = useToast();
   const { pushStatus } = usePushNotifications();
   const { user } = useAuth();
+  const { isSupported, registerBiometric, isPending } = useBiometricAuth();
+
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
     queryKey: ["/api/events"],
@@ -171,6 +188,43 @@ export default function HomePage() {
 
   const handleCloseEventDetails = () => {
     setSelectedEvent(null);
+  };
+
+  // Funções para lidar com biometria
+  const handleOpenBiometricDialog = () => {
+    setBiometricDialogOpen(true);
+  };
+
+  const handleCloseBiometricDialog = () => {
+    setBiometricDialogOpen(false);
+    setDeviceName("");
+  };
+
+  const handleRegisterBiometric = async () => {
+    if (!deviceName.trim()) {
+      toast({
+        title: "Nome do dispositivo necessário",
+        description:
+          "Por favor, forneça um nome para identificar este dispositivo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const result = await registerBiometric(deviceName);
+
+      if (result.success) {
+        toast({
+          title: "Biometria registrada",
+          description:
+            "Sua biometria foi registrada com sucesso para login futuro",
+        });
+        handleCloseBiometricDialog();
+      }
+    } catch (error) {
+      console.error("Erro ao registrar biometria:", error);
+    }
   };
 
   // Navegação otimizada usando date-fns
@@ -352,7 +406,80 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Botão de teste de notificação */}
+      {/* Botão de registro biométrico (se suportado) */}
+      {isSupported && user && (
+        <div className="fixed bottom-24 right-6">
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5, type: "spring" }}
+          >
+            <Button
+              onClick={handleOpenBiometricDialog}
+              size="lg"
+              className="rounded-full shadow-lg flex items-center gap-2"
+              variant="secondary"
+            >
+              <Fingerprint className="h-5 w-5" />
+              Registrar Biometria
+            </Button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Diálogo para registrar biometria */}
+      <Dialog open={biometricDialogOpen} onOpenChange={setBiometricDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Fingerprint className="h-5 w-5" />
+              Registrar Biometria
+            </DialogTitle>
+            <DialogDescription>
+              Registre sua impressão digital ou reconhecimento facial para
+              acessar o app mais rapidamente nas próximas vezes
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Nome do Dispositivo
+              </label>
+              <Input
+                placeholder="Ex: Meu Celular, Notebook Pessoal"
+                value={deviceName}
+                onChange={(e) => setDeviceName(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Este nome será usado para identificar este dispositivo nas suas
+                configurações
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseBiometricDialog}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRegisterBiometric}
+              disabled={isPending || !deviceName.trim()}
+              className="flex items-center gap-2"
+            >
+              {isPending ? (
+                "Registrando..."
+              ) : (
+                <>
+                  <Fingerprint className="h-4 w-4" />
+                  Registrar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div style={{ marginBottom: 90 }}></div>
     </motion.div>
   );

@@ -66,7 +66,7 @@ export default function AuthPage() {
     if (redirectTo === "welcome") {
       navigate("/welcome");
     } else {
-      navigate("/");
+      navigate("/calendar");
     }
     // Don't return null here, it causes the hooks error
   }

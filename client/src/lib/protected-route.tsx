@@ -30,7 +30,12 @@ export function ProtectedRoute({
   }
 
   // Se o usuário está autenticado mas não completou o onboarding e não está na página de boas-vindas
-  if (user && !user.onboardingComplete && path !== "/welcome" && path !== "/onboarding") {
+  if (
+    user &&
+    !user.onboardingComplete &&
+    path !== "/welcome" &&
+    path !== "/onboarding"
+  ) {
     return (
       <Route path={path}>
         <Redirect to="/welcome" />

@@ -40,7 +40,7 @@ export default function Header() {
       style={{ zIndex: 50, paddingTop: 50 }}
     >
       <div className="flex items-center">
-        <Link href="/">
+        <Link href="/calendar">
           <a className="flex items-center">
             <img
               src="/logo-white.png"

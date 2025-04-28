@@ -45,7 +45,7 @@ const WelcomePage = (): JSX.Element => {
       try {
         const response = await apiRequest(
           "GET",
-          `/api/invites/validate?token=${inviteToken}`,
+          `/api/invites/validate?token=${inviteToken}`
         );
         const data = await response.json();
         return data;
@@ -63,13 +63,13 @@ const WelcomePage = (): JSX.Element => {
       setIsFromInvite(true);
       setInviterName(inviteData.inviterName || "seu parceiro");
       // Se o usuário atual não for o convidado (não deve acontecer nesta página)
+      setLocation("/calendar");
       if (inviteData.inviterEmail === user?.email) {
         toast({
           title: "Convite inválido",
           description: "Você não pode aceitar seu próprio convite.",
           variant: "destructive",
         });
-        setLocation("/");
       }
     }
   }, [inviteFound, inviteData, user, setLocation, toast]);
@@ -86,7 +86,7 @@ const WelcomePage = (): JSX.Element => {
             `/api/invites/accept`,
             {
               token: inviteToken,
-            },
+            }
           );
 
           if (!acceptResponse.ok) {
@@ -99,7 +99,7 @@ const WelcomePage = (): JSX.Element => {
             "/api/onboarding/complete",
             {
               inviteAccepted: true,
-            },
+            }
           );
 
           return onboardingResponse.json();
@@ -118,7 +118,7 @@ const WelcomePage = (): JSX.Element => {
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(["/api/user"], updatedUser);
       setTimeout(() => {
-        setLocation("/");
+        setLocation("/calendar");
       }, 2000);
       if (isFromInvite) {
         toast({

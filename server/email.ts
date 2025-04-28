@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 if (!process.env.RESEND_API_KEY) {
   console.warn(
-    "RESEND_API_KEY não está definida. Não será possível enviar e-mails.",
+    "RESEND_API_KEY não está definida. Não será possível enviar e-mails."
   );
 }
 
@@ -50,7 +50,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 export function generatePartnerInviteEmail(
   recipientEmail: string,
   inviterName: string,
-  inviteToken: string,
+  inviteToken: string
 ): { html: string; text: string } {
   const baseUrl =
     process.env.BASE_URL || "https://unidus-clone-mvrbvch.replit.app";
@@ -101,7 +101,7 @@ export function generateTaskReminderEmail(
   taskTitle: string,
   taskDescription: string | null,
   customMessage: string | null,
-  taskId: number,
+  taskId: number
 ): { html: string; text: string } {
   const baseUrl =
     process.env.BASE_URL || "https://unidus-clone-mvrbvch.replit.app/";

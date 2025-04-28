@@ -38,7 +38,7 @@
       "name": "Calendário",
       "short_name": "Calendário",
       "description": "Ver calendário compartilhado",
-      "url": "/",
+      "url": "/calendar",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {

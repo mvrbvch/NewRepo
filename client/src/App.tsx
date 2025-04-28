@@ -25,19 +25,17 @@ function Router() {
   return (
     <Switch>
       {/* Landing page pública */}
-      <Route path="/landing" component={LandingPage} />
+      <Route path="/" component={LandingPage} />
 
       {/* Rota principal protegida */}
-      <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/calendar" component={HomePage} />
 
       {/* Rotas de autenticação */}
       <Route path="/auth" component={AuthPage} />
       <Route path="/accept-invite/:token" component={PartnerInvitePage} />
 
       {/* Experiência unificada de onboarding e boas-vindas */}
-      <Route path="/onboarding">
-        {() => <Redirect to="/welcome" />}
-      </Route>
+      <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>
       <ProtectedRoute path="/welcome" component={WelcomePage} />
 
       {/* Outras rotas protegidas */}
