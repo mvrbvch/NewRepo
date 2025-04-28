@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   partnerId: integer("partner_id").references(() => users.id),
   partnerStatus: text("partner_status").default("none"),
   onboardingComplete: boolean("onboarding_complete").default(false),
+  tutorialComplete: boolean("tutorial_complete").default(false),
 });
 
 export const eventCategories = pgTable("event_categories", {
