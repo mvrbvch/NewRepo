@@ -11,7 +11,7 @@ export function useBiometricAuth() {
   const [isSupported, setIsSupported] = useState<boolean | null>(null);
   
   // Verificar suporte de biometria ao carregar o hook
-  useState(() => {
+  useEffect(() => {
     // Verificar se o navegador suporta WebAuthn
     const checkSupport = async () => {
       try {
