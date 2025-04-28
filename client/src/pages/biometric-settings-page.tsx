@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useBiometricAuth } from "@/hooks/use-biometric-auth";
+import { useNativeBiometricAuth } from "@/hooks/use-native-biometric-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import {
   Info,
   AlertCircle,
   Smartphone,
+  Monitor,
+  TabletSmartphone,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -38,6 +41,12 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 export default function BiometricSettingsPage() {
   const { user } = useAuth();
