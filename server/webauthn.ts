@@ -25,9 +25,17 @@ import { eq, and } from "drizzle-orm";
 
 // Configurações gerais do WebAuthn
 // Estas variáveis seriam melhores em variáveis de ambiente
-const rpName = "Por Nós";
-const rpID = process.env.RP_ID || "localhost"; // No ambiente de produção, use o domínio real
-const expectedOrigin = process.env.EXPECTED_ORIGIN || `https://${rpID}`;
+const rpName = "Nós Juntos"; // Nome da entidade que está registrando a credencial
+const rpID =
+  process.env.RP_ID ||
+  "localhost" ||
+  "192.168.68.105" ||
+  "sharp-oyster-fleet.ngrok-free.app"; // No ambiente de produção, use o domínio real
+const expectedOrigin =
+  process.env.EXPECTED_ORIGIN ||
+  `https://${rpID}` ||
+  "http://192.168.68.105" ||
+  "https://sharp-oyster-fleet.ngrok-free.app";
 
 /**
  * Gera opções para registro de uma nova credencial WebAuthn
@@ -121,6 +129,8 @@ export async function verifyWebAuthnRegistration(
           ? [
               "http://localhost:5000",
               "https://localhost:5000",
+              "http://192.168.68.105:5000",
+              "https://sharp-oyster-fleet.ngrok-free.app",
               ...expectedOrigin.split(","),
             ]
           : expectedOrigin,
@@ -134,6 +144,7 @@ export async function verifyWebAuthnRegistration(
         ? [
             "http://localhost:5000",
             "https://localhost:5000",
+            "http://192.168.68.105:5000",
             ...expectedOrigin.split(","),
           ]
         : expectedOrigin;
@@ -359,6 +370,8 @@ export async function verifyWebAuthnAuthentication(
           ? [
               "http://localhost:5000",
               "https://localhost:5000",
+              "http://192.168.68.105:5000",
+              "https://sharp-oyster-fleet.ngrok-free.app",
               ...expectedOrigin.split(","),
             ]
           : expectedOrigin,
