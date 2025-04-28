@@ -65,7 +65,7 @@ export async function generateWebAuthnRegistrationOptions(
   // Armazena o desafio no banco de dados
   // Será usado posteriormente para verificar a resposta
   const expiresAt = new Date();
-  expiresAt.setMinutes(expiresAt.getMinutes() + 5); // Válido por 5 minutos
+  expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Válido por 15 minutos - ampliado para dar mais tempo ao usuário
   
   await db.insert(webAuthnChallenges).values({
     userId,
@@ -116,14 +116,21 @@ export async function verifyWebAuthnRegistration(
     const verifyOptions: VerifyRegistrationResponseOpts = {
       response,
       expectedChallenge: challenge.challenge, // O desafio que tínhamos armazenado
-      expectedOrigin,
+      expectedOrigin: process.env.NODE_ENV === 'development' 
+        ? ['http://localhost:5000', 'https://localhost:5000', ...expectedOrigin.split(',')]
+        : expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
     };
 
+    // Determinamos quais origens são aceitáveis para desenvolvimento
+    const allowedOrigins = process.env.NODE_ENV === 'development' 
+      ? ['http://localhost:5000', 'https://localhost:5000', ...expectedOrigin.split(',')]
+      : expectedOrigin;
+    
     console.log("Opções de verificação:", JSON.stringify({
       expectedChallenge: challenge.challenge,
-      expectedOrigin,
+      expectedOrigin: allowedOrigins,
       expectedRPID: rpID,
       requireUserVerification: true
     }, null, 2));
@@ -248,7 +255,7 @@ export async function generateWebAuthnAuthenticationOptions(
 
     // Armazena o desafio no banco de dados
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 5); // Válido por 5 minutos
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15); // Válido por 15 minutos - ampliado para dar mais tempo ao usuário
     
     await db.insert(webAuthnChallenges).values({
       userId: user.id,
@@ -315,7 +322,9 @@ export async function verifyWebAuthnAuthentication(
     const verifyOptions: VerifyAuthenticationResponseOpts = {
       response,
       expectedChallenge: challenge.challenge,
-      expectedOrigin,
+      expectedOrigin: process.env.NODE_ENV === 'development' 
+        ? ['http://localhost:5000', 'https://localhost:5000', ...expectedOrigin.split(',')]
+        : expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
       // Na versão mais recente do @simplewebauthn/server, usamos 'credential' com uma estrutura específica
