@@ -229,8 +229,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               className="text-muted-foreground mb-8 max-w-md"
               variants={itemVariants}
             >
-              Vamos conhecer um pouco mais sobre a sua jornada como casal e como podemos
-              ajudar vocês a organizarem a vida juntos de forma mais harmoniosa e conectada.
+              {isFromInvite 
+                ? `${partner?.name || inviterName} convidou você para organizar a vida a dois com mais conexão e harmonia! Vamos conhecer o que podemos fazer juntos.`
+                : `Vamos conhecer um pouco mais sobre a sua jornada como casal e como podemos ajudar vocês a organizarem a vida juntos de forma mais harmoniosa e conectada.`}
             </motion.p>
             
             <motion.div
@@ -368,9 +369,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               className="text-muted-foreground text-lg mb-6 max-w-md"
               variants={itemVariants}
             >
-              {partner ? 
-                `Agora vocês podem começar a organizar a vida juntos com mais conexão, harmonia e propósito!` : 
-                `Agora você já pode começar a usar o aplicativo. O Nós Juntos fica ainda melhor com seu parceiro(a)!`}
+              {isFromInvite
+                ? `Parabéns! Você aceitou o convite de ${partner?.name || inviterName} e agora vocês podem organizar a vida juntos com mais conexão e harmonia!`
+                : partner
+                  ? `Agora vocês podem começar a organizar a vida juntos com mais conexão, harmonia e propósito!` 
+                  : `Agora você já pode começar a usar o aplicativo. O Nós Juntos fica ainda melhor com seu parceiro(a)!`}
             </motion.p>
             
             {!partner && (

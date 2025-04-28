@@ -21,6 +21,7 @@ const WelcomePage = (): JSX.Element => {
   const urlParams = new URLSearchParams(window.location.search);
   const inviteToken = urlParams.get("token");
   const inviterNameFromURL = urlParams.get("name");
+  const redirect = urlParams.get("redirect");
 
   // Inicializamos o partnerEmail com o valor que pode vir na URL
   useEffect(() => {
@@ -30,9 +31,9 @@ const WelcomePage = (): JSX.Element => {
       setPartnerEmail(emailFromURL);
     }
 
-    // Se existe um nome do invitador na URL, usamos ele
-    if (inviterNameFromURL) {
-      setInviterName(inviterNameFromURL);
+    // Se existe um nome do invitador na URL ou o redirect é "invite", estamos em um fluxo de convite
+    if (inviterNameFromURL || redirect === "invite") {
+      setInviterName(inviterNameFromURL || "seu parceiro");
       setIsFromInvite(true);
     }
   }, []);
@@ -62,14 +63,24 @@ const WelcomePage = (): JSX.Element => {
     if (inviteFound && inviteData) {
       setIsFromInvite(true);
       setInviterName(inviteData.inviterName || "seu parceiro");
-      // Se o usuário atual não for o convidado (não deve acontecer nesta página)
-      setLocation("/calendar");
+      
+      // Se o usuário atual for o convidador (não o convidado)
       if (inviteData.inviterEmail === user?.email) {
         toast({
           title: "Convite inválido",
           description: "Você não pode aceitar seu próprio convite.",
           variant: "destructive",
         });
+        
+        // Redirecionar para o calendário após mostrar a mensagem
+        setTimeout(() => {
+          setLocation("/calendar");
+        }, 1500);
+      }
+      
+      // Se houver um e-mail do convidado, atualizar o estado
+      if (inviteData.inviteeEmail) {
+        setPartnerEmail(inviteData.inviteeEmail);
       }
     }
   }, [inviteFound, inviteData, user, setLocation, toast]);
