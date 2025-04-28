@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 
 // Importando componente de telas do app
-import AppScreensMock from "@/components/app-screens/app-screens-mock-new";
+import AppScreensMock from "@/components/app-screens/app-screens-mock";
 
 // Referenciando imagens públicas
 const logoPath = "/logo.png";
