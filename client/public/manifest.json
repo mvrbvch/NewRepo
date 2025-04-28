@@ -1,5 +1,5 @@
 {
-  "name": "Nós Juntos - Calendário para Casais",
+  "name": "Nós Juntos - Rotina para casais",
   "short_name": "Nós Juntos",
   "description": "Todo dia é uma nova chance de nos escolher",
   "theme_color": "#f15a59",
@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/calendar",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -28,7 +28,6 @@
       "purpose": "any"
     }
   ],
-  "splash_pages": "/splash",
   "categories": ["lifestyle", "social", "productivity"],
   "lang": "pt-BR",
   "dir": "ltr",
