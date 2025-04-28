@@ -124,10 +124,18 @@ export async function verifyWebAuthnRegistration(
     }
 
     // Extrai informações da verificação
-    // Na versão mais recente da biblioteca, os nomes dos campos mudaram
-    const credentialID = verification.registrationInfo.credentialID ?? verification.registrationInfo.credential.id;
-    const credentialPublicKey = verification.registrationInfo.credentialPublicKey ?? verification.registrationInfo.credential.publicKey;
-    const counter = verification.registrationInfo.counter ?? 0;
+    // Na versão mais recente da biblioteca, os campos estão dentro do objeto credential
+    // Adicionamos logs para entender a estrutura do objeto
+    console.log("Estrutura do objeto de verificação:", JSON.stringify({
+      verificado: verification.verified,
+      info: Object.keys(verification.registrationInfo),
+      credentialKeys: verification.registrationInfo.credential ? Object.keys(verification.registrationInfo.credential) : null
+    }));
+    
+    // Extraindo dados da credencial
+    const credentialID = verification.registrationInfo.credential?.id;
+    const credentialPublicKey = verification.registrationInfo.credential?.publicKey;
+    const counter = verification.registrationInfo.counter || 0;
     
     // Extrai informações da credencial para o transporte e autenticador
     const transports = response.response.transports;
@@ -281,11 +289,13 @@ export async function verifyWebAuthnAuthentication(
       expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
-      // Na versão atual da biblioteca, os campos são colocados diretamente no objeto
-      // e não mais dentro de 'authenticator'
-      credentialID: Buffer.from(credential.credentialId, 'base64url'),
-      credentialPublicKey: Buffer.from(credential.publicKey, 'base64url'),
-      counter: credential.counter,
+      // Na versão mais recente do @simplewebauthn/server, não usamos mais 'authenticator' e sim 'credential'
+      credential: {
+        id: credential.credentialId,
+        publicKey: Buffer.from(credential.publicKey, 'base64url'),
+        algorithm: -7, // ES256 algorithm
+        counter: credential.counter,
+      }
     };
 
     // Verifica a resposta
