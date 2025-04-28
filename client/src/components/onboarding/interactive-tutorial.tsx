@@ -17,6 +17,7 @@ import {
   Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import "@/styles/confetti.css";
 
 // Definição dos tipos para os passos do tutorial
 interface TutorialStep {
@@ -726,19 +727,7 @@ const InteractiveTutorial: React.FC<InteractiveTutorialProps> = ({
         </motion.div>
       </AnimatePresence>
 
-      {/* Estilo global para animação de confetti */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes confetti-fall {
-          0% {
-            transform: translateX(0) translateY(0) rotate(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(var(--confetti-x)) translateY(var(--confetti-y)) rotate(var(--confetti-rotation));
-            opacity: 0;
-          }
-        }
-      `}} />
+      {/* Os estilos estão definidos no arquivo confetti.css */}
     </div>
   );
 };
