@@ -244,17 +244,20 @@ export const webAuthnCredentials = pgTable("webauthn_credentials", {
 });
 
 // Tabela para credenciais biométricas nativas de iOS e Android
-export const nativeBiometricCredentials = pgTable("native_biometric_credentials", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id),
-  biometricId: text("biometric_id").notNull().unique(), // ID único gerado pelo dispositivo
-  deviceName: text("device_name").notNull(), // Nome amigável para o dispositivo
-  platform: text("platform").notNull(), // ios ou android
-  createdAt: timestamp("created_at").defaultNow(),
-  lastUsed: timestamp("last_used"),
-});
+export const nativeBiometricCredentials = pgTable(
+  "native_biometric_credentials",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    biometricId: text("biometric_id").notNull().unique(), // ID único gerado pelo dispositivo
+    deviceName: text("device_name").notNull(), // Nome amigável para o dispositivo
+    platform: text("platform").notNull(), // ios ou android
+    createdAt: timestamp("created_at").defaultNow(),
+    lastUsed: timestamp("last_used"),
+  }
+);
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -293,7 +296,7 @@ export const insertEventCommentSchema = createInsertSchema(eventComments).pick({
 });
 
 export const insertCalendarConnectionSchema = createInsertSchema(
-  calendarConnections,
+  calendarConnections
 ).pick({
   userId: true,
   provider: true,
@@ -304,7 +307,7 @@ export const insertCalendarConnectionSchema = createInsertSchema(
 });
 
 export const insertPartnerInviteSchema = createInsertSchema(
-  partnerInvites,
+  partnerInvites
 ).pick({
   inviterId: true,
   email: true,
@@ -313,7 +316,7 @@ export const insertPartnerInviteSchema = createInsertSchema(
 });
 
 export const insertHouseholdTaskSchema = createInsertSchema(
-  householdTasks,
+  householdTasks
 ).pick({
   title: true,
   description: true,
@@ -415,7 +418,7 @@ export type Notification = Omit<
 
 // WebAuthn schemas
 export const insertWebAuthnChallengeSchema = createInsertSchema(
-  webAuthnChallenges,
+  webAuthnChallenges
 ).pick({
   userId: true,
   challenge: true,
@@ -424,7 +427,7 @@ export const insertWebAuthnChallengeSchema = createInsertSchema(
 
 // Schemas para inserção de novas entidades
 export const insertEventCategorySchema = createInsertSchema(
-  eventCategories,
+  eventCategories
 ).pick({
   name: true,
   color: true,
@@ -434,7 +437,7 @@ export const insertEventCategorySchema = createInsertSchema(
 });
 
 export const insertEventReminderSchema = createInsertSchema(
-  eventReminders,
+  eventReminders
 ).pick({
   eventId: true,
   userId: true,
@@ -474,7 +477,7 @@ export const insertProjectTaskSchema = createInsertSchema(projectTasks).pick({
 });
 
 export const insertWebAuthnCredentialSchema = createInsertSchema(
-  webAuthnCredentials,
+  webAuthnCredentials
 ).pick({
   userId: true,
   credentialId: true,
@@ -516,7 +519,7 @@ export const insertNativeBiometricCredentialSchema = createInsertSchema(
   userId: true,
   biometricId: true,
   deviceName: true,
-  platform: true
+  platform: true,
 });
 
 export type InsertNativeBiometricCredential = z.infer<
