@@ -138,25 +138,37 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   // Avançar para a próxima etapa
   const nextStep = () => {
-    switch (step) {
-      case WelcomeStep.WELCOME:
-        setStep(WelcomeStep.JOURNEY);
-        break;
-      case WelcomeStep.JOURNEY:
-        setStep(WelcomeStep.FEATURES);
-        break;
-      case WelcomeStep.FEATURES:
-        setStep(WelcomeStep.COMPLETE);
-        break;
-      case WelcomeStep.COMPLETE:
-        onComplete();
-        break;
-    }
+    // Rolar para o topo da página antes de mudar de etapa
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Pequeno atraso para garantir uma transição mais suave
+    setTimeout(() => {
+      switch (step) {
+        case WelcomeStep.WELCOME:
+          setStep(WelcomeStep.JOURNEY);
+          break;
+        case WelcomeStep.JOURNEY:
+          setStep(WelcomeStep.FEATURES);
+          break;
+        case WelcomeStep.FEATURES:
+          setStep(WelcomeStep.COMPLETE);
+          break;
+        case WelcomeStep.COMPLETE:
+          onComplete();
+          break;
+      }
+    }, 300); // Atraso de 300ms para a rolagem ser percebida
   };
 
   // Pular completamente a tela de boas-vindas
   const skipWelcome = () => {
-    onComplete();
+    // Rolar para o topo da página antes de pular
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Pequeno atraso para garantir uma transição mais suave
+    setTimeout(() => {
+      onComplete();
+    }, 300);
   };
 
   // Animações específicas para o passo de recursos
@@ -394,10 +406,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     size="sm" 
                     className="text-primary border-primary/20 flex-1"
                     onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                       if (email) {
                         console.log(`Enviando convite para: ${email}`);
                       }
-                      onComplete();
+                      setTimeout(() => {
+                        onComplete();
+                      }, 300);
                     }}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
@@ -409,8 +424,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     size="sm"
                     className="text-muted-foreground"
                     onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                       setEmail('');
-                      onComplete();
+                      setTimeout(() => {
+                        onComplete();
+                      }, 300);
                     }}
                   >
                     Pular
@@ -424,7 +442,16 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               whileHover="hover"
               whileTap="tap"
             >
-              <Button onClick={onComplete} size="lg" variant="default" className="group">
+              <Button 
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setTimeout(() => {
+                    onComplete();
+                  }, 300);
+                }} 
+                size="lg" 
+                variant="default" 
+                className="group">
                 Começar a usar o app
                 <motion.span
                   className="ml-2 inline-block"

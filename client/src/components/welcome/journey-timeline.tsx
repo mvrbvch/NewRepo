@@ -111,7 +111,13 @@ const JourneyTimeline: React.FC<JourneyTimelineProps> = ({ onComplete }) => {
     if (activeIndex < events.length - 1) {
       setActiveIndex(activeIndex + 1);
     } else {
-      onComplete();
+      // Rolar para o topo antes de completar
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // Pequeno atraso para permitir que a animação de rolagem termine
+      setTimeout(() => {
+        onComplete();
+      }, 300);
     }
   };
 
