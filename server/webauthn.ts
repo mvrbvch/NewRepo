@@ -41,12 +41,13 @@ export async function generateWebAuthnRegistrationOptions(
   const options: GenerateRegistrationOptionsOpts = {
     rpName,
     rpID,
-    userID: userId.toString(),
+    // Converte o userId numérico para Uint8Array para compatibilidade com a versão mais recente de SimpleWebAuthn
+    userID: new Uint8Array(Buffer.from(userId.toString())),
     userName: username,
     attestationType: 'none',
     // Filtra as credenciais existentes do usuário
     excludeCredentials: existingCredentials.map(cred => ({
-      id: Buffer.from(cred.credentialId, 'base64url'),
+      id: Buffer.from(cred.credentialId, 'base64url').toString('base64url'),
       type: 'public-key',
       transports: cred.transports ? JSON.parse(cred.transports) : undefined,
     })),
@@ -123,7 +124,10 @@ export async function verifyWebAuthnRegistration(
     }
 
     // Extrai informações da verificação
-    const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
+    // Na versão mais recente da biblioteca, os nomes dos campos mudaram
+    const credentialID = verification.registrationInfo.credentialID ?? verification.registrationInfo.credential.id;
+    const credentialPublicKey = verification.registrationInfo.credentialPublicKey ?? verification.registrationInfo.credential.publicKey;
+    const counter = verification.registrationInfo.counter ?? 0;
     
     // Extrai informações da credencial para o transporte e autenticador
     const transports = response.response.transports;
@@ -197,7 +201,7 @@ export async function generateWebAuthnAuthenticationOptions(
       userVerification,
       // Especifica quais credenciais são permitidas
       allowCredentials: credentials.map(cred => ({
-        id: Buffer.from(cred.credentialId, 'base64url'),
+        id: Buffer.from(cred.credentialId, 'base64url').toString('base64url'),
         type: 'public-key',
         transports: cred.transports ? JSON.parse(cred.transports) : undefined,
       })),
@@ -277,11 +281,11 @@ export async function verifyWebAuthnAuthentication(
       expectedOrigin,
       expectedRPID: rpID,
       requireUserVerification: true,
-      authenticator: {
-        credentialID: Buffer.from(credential.credentialId, 'base64url'),
-        credentialPublicKey: Buffer.from(credential.publicKey, 'base64url'),
-        counter: credential.counter,
-      },
+      // Na versão atual da biblioteca, os campos são colocados diretamente no objeto
+      // e não mais dentro de 'authenticator'
+      credentialID: Buffer.from(credential.credentialId, 'base64url'),
+      credentialPublicKey: Buffer.from(credential.publicKey, 'base64url'),
+      counter: credential.counter,
     };
 
     // Verifica a resposta
