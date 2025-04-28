@@ -142,7 +142,8 @@ export default function BiometricSettingsPage() {
       loadWebAuthnCredentials();
       loadNativeCredentials();
     }
-  }, [user, getWebAuthnCredentials, getNativeBiometricCredentials]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Registrar nova credencial biométrica WebAuthn
   const handleRegisterWebAuthn = async () => {
