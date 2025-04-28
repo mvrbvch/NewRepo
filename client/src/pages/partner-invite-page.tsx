@@ -14,7 +14,11 @@ export default function PartnerInvitePage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const params = useParams();
-  const { token } = params;
+  // Tentar obter o token do parâmetro da rota primeiro, depois do query parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromQuery = urlParams.get("token");
+  const { token: tokenFromParams } = params;
+  const token = tokenFromParams || tokenFromQuery;
 
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -337,7 +341,7 @@ export default function PartnerInvitePage() {
               <div className="flex">
                 <Input
                   readOnly
-                  value={`${window.location.origin}/accept-invite/${inviteLink}`}
+                  value={`${window.location.origin}/auth?redirect=invite&token=${inviteLink}`}
                   className="text-sm"
                 />
                 <Button
@@ -345,7 +349,7 @@ export default function PartnerInvitePage() {
                   className="ml-2"
                   onClick={() => {
                     navigator.clipboard.writeText(
-                      `${window.location.origin}/accept-invite/${inviteLink}`
+                      `${window.location.origin}/auth?redirect=invite&token=${inviteLink}`
                     );
                     toast({
                       title: "Link copiado",
@@ -365,7 +369,7 @@ export default function PartnerInvitePage() {
               <p className="text-sm font-medium mb-2">QR Code:</p>
               <div className="bg-white p-4 inline-block rounded">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/accept-invite/${inviteLink}`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/auth?redirect=invite&token=${inviteLink}`)}`}
                   alt="QR Code do convite"
                   className="mx-auto"
                 />

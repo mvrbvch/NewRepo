@@ -50,6 +50,7 @@ function Router() {
         {/* Rotas de autenticação */}
         <Route path="/auth" component={AuthPage} />
         <Route path="/accept-invite/:token" component={PartnerInvitePage} />
+        <Route path="/partner-invite" component={PartnerInvitePage} />
 
         {/* Experiência unificada de onboarding e boas-vindas */}
         <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>

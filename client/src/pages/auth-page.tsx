@@ -19,33 +19,42 @@ import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { 
-  Heart, 
-  Key, 
-  Loader2, 
-  Lock, 
-  Mail, 
-  User, 
-  User2, 
-  UserCheck, 
-  ThumbsUp, 
-  CalendarDays, 
-  Home, 
+import {
+  Heart,
+  Key,
+  Loader2,
+  Lock,
+  Mail,
+  User,
+  User2,
+  UserCheck,
+  ThumbsUp,
+  CalendarDays,
+  Home,
   Coffee,
-  Calendar 
+  Calendar,
 } from "lucide-react";
 
 // Mensagens de erro personalizadas e descontraídas
 const loginSchema = z.object({
-  username: z.string().min(1, "Ops! Esqueceu de nos dizer quem você é?").toLowerCase(),
+  username: z
+    .string()
+    .min(1, "Ops! Esqueceu de nos dizer quem você é?")
+    .toLowerCase(),
   password: z.string().min(1, "Sem senha não tem como entrar, viu?"),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Seu nome de usuário precisa de pelo menos 3 letrinhas, tá?"),
-  password: z.string().min(6, "Uma senha com 6+ caracteres deixa tudo mais seguro! 🔒"),
+  username: z
+    .string()
+    .min(3, "Seu nome de usuário precisa de pelo menos 3 letrinhas, tá?"),
+  password: z
+    .string()
+    .min(6, "Uma senha com 6+ caracteres deixa tudo mais seguro! 🔒"),
   name: z.string().min(2, "Como vamos te chamar com menos de 2 letras? 😊"),
-  email: z.string().email("Hmm, esse email parece meio estranho... Confere pra gente?"),
+  email: z
+    .string()
+    .email("Hmm, esse email parece meio estranho... Confere pra gente?"),
   phoneNumber: z.string().optional(),
 });
 
@@ -68,16 +77,16 @@ export default function AuthPage() {
     if (inviteToken) {
       setIsLoadingInviteData(true);
       apiRequest("GET", `/api/invites/validate?token=${inviteToken}`)
-        .then(response => {
+        .then((response) => {
           if (response.ok) {
             return response.json();
           }
           throw new Error("Convite inválido ou expirado");
         })
-        .then(data => {
+        .then((data) => {
           setInviterName(data.inviterName);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Erro ao validar convite:", error);
         })
         .finally(() => {
@@ -112,7 +121,7 @@ export default function AuthPage() {
       navigate("/welcome");
     } else if (redirectTo === "invite" && inviteToken) {
       // Se veio de um convite, redirecionar para a página de aceitação do convite
-      navigate(`/accept-invite/${inviteToken}`);
+      navigate(`/partner-invite?token=${inviteToken}`);
     } else {
       navigate("/calendar");
     }
@@ -136,35 +145,43 @@ export default function AuthPage() {
             <div className="flex justify-center mb-4">
               <img src="./logo.png" alt="Nós Juntos" className="h-20" />
             </div>
-            
+
             {isLoadingInviteData ? (
               <div className="flex justify-center items-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin mr-2 text-primary" />
-                <span className="text-sm text-muted-foreground">Carregando informações do convite...</span>
+                <span className="text-sm text-muted-foreground">
+                  Carregando informações do convite...
+                </span>
               </div>
             ) : inviteToken && inviterName ? (
               <div className="mb-6 bg-gradient-to-r from-primary/20 to-rose-500/20 p-5 rounded-lg text-left">
                 <div className="flex items-center mb-2">
                   <Heart className="text-rose-500 h-5 w-5 mr-2" />
-                  <h3 className="font-semibold text-primary">Convite de {inviterName}!</h3>
+                  <h3 className="font-semibold text-primary">
+                    Convite de {inviterName}!
+                  </h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {inviterName} está te convidando para se conectar no Nós Juntos. 
-                  Faça login ou crie uma conta para aceitar o convite e começar a 
-                  organizar a vida a dois de forma mais conectada e harmoniosa.
+                  {inviterName} está te convidando para se conectar no Nós
+                  Juntos. Faça login ou crie uma conta para aceitar o convite e
+                  começar a organizar a vida a dois de forma mais conectada e
+                  harmoniosa.
                 </p>
               </div>
             ) : (
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-primary mb-2">Nós Juntos</h2>
                 <p className="text-sm text-muted-foreground">
-                  Transformando a rotina do casal em uma jornada de conexão, crescimento e amor.
+                  Transformando a rotina do casal em uma jornada de conexão,
+                  crescimento e amor.
                 </p>
               </div>
             )}
           </div>
 
-          <Tabs defaultValue={inviteToken ? "register" : "login"} className="space-y-6">
+          <Tabs
+            defaultValue={inviteToken ? "register" : "login"}
+            className="space-y-6"
+          >
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="register">Cadastrar</TabsTrigger>
@@ -259,7 +276,11 @@ export default function AuthPage() {
                             <FormControl>
                               <div className="relative">
                                 <User2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="Seu nome" className="pl-10" {...field} />
+                                <Input
+                                  placeholder="Seu nome"
+                                  className="pl-10"
+                                  {...field}
+                                />
                               </div>
                             </FormControl>
                             <FormMessage />
@@ -298,7 +319,11 @@ export default function AuthPage() {
                             <FormControl>
                               <div className="relative">
                                 <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="seunome" className="pl-10" {...field} />
+                                <Input
+                                  placeholder="seunome"
+                                  className="pl-10"
+                                  {...field}
+                                />
                               </div>
                             </FormControl>
                             <FormMessage />
@@ -363,7 +388,7 @@ export default function AuthPage() {
             </TabsContent>
           </Tabs>
 
-          <p className="text-xs text-center text-muted-foreground mt-6">
+          {/* <p className="text-xs text-center text-muted-foreground mt-6">
             Ao continuar, você concorda com nossos{" "}
             <a href="#" className="text-primary hover:underline">
               Termos de Serviço
@@ -373,7 +398,7 @@ export default function AuthPage() {
               Política de Privacidade
             </a>
             .
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -385,7 +410,7 @@ export default function AuthPage() {
           <div className="absolute bottom-[10%] left-[-5%] w-[15rem] h-[15rem] rounded-full bg-rose-500/10 blur-3xl" />
           <div className="absolute top-[40%] left-[30%] w-[10rem] h-[10rem] rounded-full bg-primary/10 blur-3xl" />
         </div>
-        
+
         <div className="max-w-lg relative z-10">
           <div className="mb-10 text-center">
             <div className="inline-flex items-center justify-center h-24 w-24 rounded-full bg-gradient-to-br from-primary/20 to-rose-500/20 backdrop-blur-sm shadow-xl mb-6">
@@ -394,44 +419,70 @@ export default function AuthPage() {
             <h1 className="text-3xl font-bold mb-5 bg-gradient-to-r from-primary to-rose-500 text-transparent bg-clip-text">
               Juntos para uma vida mais conectada e organizada
             </h1>
-            <p className="text-lg mb-8 text-gray-700 leading-relaxed">
-              Construam a rotina a dois com mais leveza, união e organização. Porque juntos, cada momento se torna especial.
+            <p
+              className="text-lg mb-8 text-gray-700 leading-relaxed"
+              style={{ fontSize: 12 }}
+            >
+              Construam a rotina a dois com mais leveza, união e organização.
+              Porque juntos, cada momento se torna especial.
             </p>
           </div>
-          
+
           <div className="space-y-6">
             <div className="flex items-start space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Calendar className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg mb-2">Tudo em um só lugar</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Esqueçam as agendas separadas e as listas de tarefas perdidas. No <span className="font-medium text-primary">Nós Juntos</span>, tudo fica centralizado e acessível para vocês dois.
+                <h3 className="font-semibold text-md mb-2">
+                  Tudo em um só lugar
+                </h3>
+                <p
+                  className="text-gray-600 leading-relaxed"
+                  style={{ fontSize: 12 }}
+                >
+                  Esqueçam as agendas separadas e as listas de tarefas perdidas.
+                  No{" "}
+                  <span className="font-medium text-primary">Nós Juntos</span>,
+                  tudo fica centralizado e acessível para vocês dois.
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
               <div className="bg-rose-500/10 p-3 rounded-full">
                 <Coffee className="h-6 w-6 text-rose-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg mb-2">Mais tempo de qualidade</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Com a organização mais eficiente, vocês terão mais tempo para o que realmente importa: momentos de conexão e carinho um com o outro.
+                <h3 className="font-semibold text-md mb-2">
+                  Mais tempo de qualidade
+                </h3>
+                <p
+                  className="text-gray-600 leading-relaxed"
+                  style={{ fontSize: 12 }}
+                >
+                  Com a organização mais eficiente, vocês terão mais tempo para
+                  o que realmente importa: momentos de conexão e carinho um com
+                  o outro.
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-5 shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Home className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg mb-2">Equilíbrio no lar</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Acabou a dúvida sobre "de quem é a vez". Distribuam as tarefas de forma justa e acompanhem juntos o que já foi feito e o que falta fazer.
+                <h3 className="font-semibold text-md mb-2">
+                  Equilíbrio no lar
+                </h3>
+                <p
+                  className="text-gray-600 leading-relaxed"
+                  style={{ fontSize: 12 }}
+                >
+                  Acabou a dúvida sobre "de quem é a vez". Distribuam as tarefas
+                  de forma justa e acompanhem juntos o que já foi feito e o que
+                  falta fazer.
                 </p>
               </div>
             </div>
