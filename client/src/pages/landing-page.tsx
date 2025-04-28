@@ -526,6 +526,220 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section> */}
+      
+      {/* App Screens Section com GSAP */}
+      <section id="app-screens" className="py-20 bg-white/70 overflow-hidden">
+        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Conheça a Experiência
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Veja como o aplicativo pode transformar o dia a dia de vocês com uma interface intuitiva e funcionalidades práticas.
+            </p>
+          </div>
+
+          {/* Telas do aplicativo com GSAP animations */}
+          <div 
+            ref={appScreensRef} 
+            className="relative grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+          >
+            {/* Tela do Calendário */}
+            <div 
+              ref={calendarScreenRef}
+              className="bg-white rounded-xl shadow-lg border border-primary/10 overflow-hidden"
+            >
+              <div className="bg-primary/10 p-3 flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-medium">Calendário Compartilhado</h3>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-7 gap-1 mb-3">
+                  {["D", "S", "T", "Q", "Q", "S", "S"].map((day, i) => (
+                    <div key={i} className="text-center text-xs text-muted-foreground font-medium">
+                      {day}
+                    </div>
+                  ))}
+                  
+                  {Array.from({ length: 35 }).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`text-center text-xs rounded-full aspect-square flex items-center justify-center ${
+                        i === 14 || i === 22 || i === 27 
+                          ? "bg-primary/10 text-primary font-medium" 
+                          : i === 16 ? "bg-primary text-white font-medium" 
+                          : ""
+                      }`}
+                    >
+                      {i < 2 ? "" : i - 1}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="space-y-2 mt-4">
+                  <div className="calendar-event bg-primary/5 p-2 rounded-md text-sm">
+                    <div className="font-medium">Jantar Romântico</div>
+                    <div className="text-xs text-muted-foreground flex items-center">
+                      <Clock className="h-3 w-3 mr-1" /> 20:00 - 22:00
+                    </div>
+                  </div>
+                  
+                  <div className="calendar-event bg-primary/5 p-2 rounded-md text-sm">
+                    <div className="font-medium">Compras no Supermercado</div>
+                    <div className="text-xs text-muted-foreground flex items-center">
+                      <Clock className="h-3 w-3 mr-1" /> 15:00 - 17:00
+                    </div>
+                  </div>
+                  
+                  <div className="calendar-event bg-primary/5 p-2 rounded-md text-sm">
+                    <div className="font-medium">Manutenção do Apartamento</div>
+                    <div className="text-xs text-muted-foreground flex items-center">
+                      <Clock className="h-3 w-3 mr-1" /> 10:00 - 12:00
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Tela de Tarefas */}
+            <div 
+              ref={tasksScreenRef}
+              className="bg-white rounded-xl shadow-lg border border-primary/10 overflow-hidden"
+            >
+              <div className="bg-primary/10 p-3 flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-medium">Tarefas Domésticas</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-center p-2 border border-primary/10 rounded-md">
+                    <div className="task-item-check mr-3 flex-shrink-0">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium line-through opacity-60">Limpar a cozinha</div>
+                      <div className="text-xs text-muted-foreground">Concluída ontem por Maria</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center p-2 border border-primary/10 rounded-md">
+                    <div className="task-item-check mr-3 flex-shrink-0">
+                      <div className="h-5 w-5 rounded-full border-2 border-primary/50"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Lavar as roupas</div>
+                      <div className="text-xs text-muted-foreground">Hoje - Responsável: João</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center p-2 border border-primary/10 rounded-md">
+                    <div className="task-item-check mr-3 flex-shrink-0">
+                      <div className="h-5 w-5 rounded-full border-2 border-primary/50"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Organizar o quarto</div>
+                      <div className="text-xs text-muted-foreground">Amanhã - Responsável: Maria</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center p-2 border border-primary/10 rounded-md">
+                    <div className="task-item-check mr-3 flex-shrink-0">
+                      <div className="h-5 w-5 rounded-full border-2 border-primary/50"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Pagar contas</div>
+                      <div className="text-xs text-muted-foreground">Próxima semana - Compartilhada</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center p-2 border border-primary/10 rounded-md bg-primary/5">
+                    <div className="task-item-check mr-3 flex-shrink-0">
+                      <div className="h-5 w-5 rounded-full border-2 border-primary/50"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Fazer compras</div>
+                      <div className="text-xs text-muted-foreground">Hoje - Rotatividade</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Tela de Notificações */}
+            <div 
+              ref={notificationsScreenRef}
+              className="bg-white rounded-xl shadow-lg border border-primary/10 overflow-hidden"
+            >
+              <div className="bg-primary/10 p-3 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-medium">Notificações</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3">
+                  <div className="flex p-2 border border-primary/10 rounded-md">
+                    <div className="mr-3 mt-0.5">
+                      <div className="notification-dot h-3 w-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Lembrete: Jantar Romântico</div>
+                      <div className="text-xs text-muted-foreground">Hoje às 20:00 - Com Maria</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex p-2 border border-primary/10 rounded-md">
+                    <div className="mr-3 mt-0.5">
+                      <div className="notification-dot h-3 w-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Tarefa: Lavar as roupas</div>
+                      <div className="text-xs text-muted-foreground">Pendente para hoje - João</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex p-2 border border-primary/10 rounded-md">
+                    <div className="mr-3 mt-0.5">
+                      <div className="notification-dot h-3 w-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">João concluiu uma tarefa</div>
+                      <div className="text-xs text-muted-foreground">Limpar a cozinha - Ontem</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex p-2 border border-primary/10 rounded-md">
+                    <div className="mr-3 mt-0.5">
+                      <div className="notification-dot h-3 w-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Compromisso amanhã</div>
+                      <div className="text-xs text-muted-foreground">Manutenção do Apartamento - 10:00</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex p-2 border border-primary/10 rounded-md">
+                    <div className="mr-3 mt-0.5">
+                      <div className="notification-dot h-3 w-3 rounded-full bg-primary"></div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Lembrete: Lista de compras</div>
+                      <div className="text-xs text-muted-foreground">Atualizada por Maria</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-center mt-12">
+            <Link href="/auth?redirect=welcome">
+              <Button size="lg">
+                Comece sua organização agora
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Welcome Experience Preview Section */}
       <section id="welcome-preview" className="py-20 relative overflow-hidden">
