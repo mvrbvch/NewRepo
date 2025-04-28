@@ -134,6 +134,23 @@ export default function PartnerInvitePage() {
     navigate("/calendar");
   };
 
+  // Verificar se o usuário está autenticado quando acessando um convite
+  useEffect(() => {
+    // Se temos um token de convite mas o usuário não está logado, redirecionar para autenticação
+    if (token && !user && !isLoadingInvite) {
+      // Salvar o token de convite no sessionStorage para usar após login/registro
+      sessionStorage.setItem('pendingInviteToken', token);
+      
+      // Redirecionar para a página de autenticação com parâmetro de redirecionamento
+      navigate(`/auth?redirect=invite&token=${token}`);
+      
+      toast({
+        title: "Autenticação necessária",
+        description: "Você precisa entrar ou criar uma conta para aceitar o convite.",
+      });
+    }
+  }, [token, user, isLoadingInvite, navigate]);
+
   // Accepting an invite view
   if (token) {
     if (isLoadingInvite) {

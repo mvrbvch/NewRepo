@@ -40,6 +40,7 @@ export default function AuthPage() {
   // Extrair parâmetros da URL para redirecionamento após autenticação
   const urlParams = new URLSearchParams(window.location.search);
   const redirectTo = urlParams.get("redirect");
+  const inviteToken = urlParams.get("token"); // Pegar o token de convite da URL, se existir
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -62,9 +63,12 @@ export default function AuthPage() {
 
   // Redirect if already logged in - moved after all hooks are called
   if (user) {
-    // Se existe um parâmetro de redirecionamento na URL, usá-lo
+    // Se existe um parâmetro de redirecionamento na URL, usá-lo de acordo com o tipo
     if (redirectTo === "welcome") {
       navigate("/welcome");
+    } else if (redirectTo === "invite" && inviteToken) {
+      // Se veio de um convite, redirecionar para a página de aceitação do convite
+      navigate(`/accept-invite/${inviteToken}`);
     } else {
       navigate("/calendar");
     }
@@ -86,14 +90,24 @@ export default function AuthPage() {
           <div className="flex justify-center mb-4">
             <img src="./logo.png" alt="Nós Juntos" className="h-20" />
           </div>
-          <small className="text-muted-foreground px-10 block">
-            Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas
-            pequenas tarefas do cotidiano. Vamos juntos transformar a rotina em
-            uma jornada de crescimento e amor.
-          </small>
+          {redirectTo === "invite" && inviteToken ? (
+            <div className="mb-4 bg-primary/10 p-4 rounded-md">
+              <h3 className="font-semibold text-primary mb-1">Convite recebido!</h3>
+              <small className="text-muted-foreground block">
+                Para aceitar o convite, faça login ou crie uma conta. Após isso, você será redirecionado 
+                automaticamente para aceitar o convite e conectar-se com seu parceiro.
+              </small>
+            </div>
+          ) : (
+            <small className="text-muted-foreground px-10 block">
+              Cada dia é uma nova oportunidade de nos escolhermos — mesmo nas
+              pequenas tarefas do cotidiano. Vamos juntos transformar a rotina em
+              uma jornada de crescimento e amor.
+            </small>
+          )}
         </div>
 
-        <Tabs defaultValue="login" className="space-y-6">
+        <Tabs defaultValue={redirectTo === "invite" ? "register" : "login"} className="space-y-6">
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="login">Entrar</TabsTrigger>
             <TabsTrigger value="register">Cadastrar</TabsTrigger>
