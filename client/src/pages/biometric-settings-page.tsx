@@ -97,61 +97,62 @@ export default function BiometricSettingsPage() {
     }
   }, [user, navigate]);
 
-  // Função para carregar credenciais WebAuthn
-  const loadWebAuthnCredentials = async () => {
-    try {
-      setIsWebAuthnLoading(true);
-      const result = await getWebAuthnCredentials();
-      if (result.success) {
-        setWebAuthnCredentials(result.credentials);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar credenciais WebAuthn:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar suas credenciais do navegador",
-        variant: "destructive",
-      });
-    } finally {
-      setIsWebAuthnLoading(false);
-    }
-  };
-
-  // Função para carregar credenciais nativas
-  const loadNativeCredentials = async () => {
-    try {
-      setIsNativeLoading(true);
-      const result = await getNativeBiometricCredentials();
-      if (result.success) {
-        setNativeBiometricCredentials(result.credentials);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar credenciais nativas:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar suas credenciais de dispositivo móvel",
-        variant: "destructive",
-      });
-    } finally {
-      setIsNativeLoading(false);
-    }
-  };
-
   // Carregar credenciais do usuário
   useEffect(() => {
+    // Importante: evitar loops infinitos removendo as dependências problemáticas
     let isMounted = true;
     
-    const loadCredentials = async () => {
-      if (user && isMounted) {
-        // Carregar ambos os tipos de credenciais
-        await Promise.all([
-          loadWebAuthnCredentials(),
-          loadNativeCredentials()
-        ]);
+    const loadWebAuthnCredentials = async () => {
+      try {
+        if (!isMounted) return;
+        setIsWebAuthnLoading(true);
+        const result = await getWebAuthnCredentials();
+        if (result.success && isMounted) {
+          setWebAuthnCredentials(result.credentials);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.error("Erro ao carregar credenciais WebAuthn:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar suas credenciais do navegador",
+          variant: "destructive",
+        });
+      } finally {
+        if (isMounted) {
+          setIsWebAuthnLoading(false);
+        }
       }
     };
     
-    loadCredentials();
+    const loadNativeCredentials = async () => {
+      try {
+        if (!isMounted) return;
+        setIsNativeLoading(true);
+        const result = await getNativeBiometricCredentials();
+        if (result.success && isMounted) {
+          setNativeBiometricCredentials(result.credentials);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.error("Erro ao carregar credenciais nativas:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar suas credenciais de dispositivo móvel",
+          variant: "destructive",
+        });
+      } finally {
+        if (isMounted) {
+          setIsNativeLoading(false);
+        }
+      }
+    };
+    
+    if (user) {
+      // Carregar ambos os tipos de credenciais
+      loadWebAuthnCredentials();
+      loadNativeCredentials();
+    }
     
     // Função de limpeza para evitar atualizações em componentes desmontados
     return () => {
