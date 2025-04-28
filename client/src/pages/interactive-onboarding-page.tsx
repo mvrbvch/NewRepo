@@ -7,7 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 
-export default function InteractiveOnboardingPage() {
+// Definindo o tipo de retorno explicitamente como Element
+export default function InteractiveOnboardingPage(): React.ReactElement {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -70,9 +71,17 @@ export default function InteractiveOnboardingPage() {
     completeOnboardingMutation.mutate();
   };
 
-  // Se o usuário não estiver logado, redirecione para a página de autenticação
+  // Se o usuário não estiver logado, mostrar uma tela de carregamento
+  // O componente ProtectedRoute já lidará com o redirecionamento
   if (!user) {
-    return null; // o hook ProtectedRoute já lidará com o redirecionamento
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

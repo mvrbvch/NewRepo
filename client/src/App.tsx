@@ -15,7 +15,7 @@ import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import LandingPage from "./pages/landing-page";
 import WelcomePage from "./pages/welcome-page";
 import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "./hooks/use-auth";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
