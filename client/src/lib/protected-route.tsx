@@ -36,6 +36,33 @@ export function ProtectedRoute({
     path !== "/welcome" &&
     path !== "/onboarding"
   ) {
+    // Verificar novamente se o onboarding foi completado, pode ter sido uma atualização recente
+    const checkOnboardingStatus = async () => {
+      try {
+        const res = await fetch("/api/user", {
+          credentials: "include",
+        });
+        
+        if (res.ok) {
+          const updatedUser = await res.json();
+          // Se o onboarding foi completado recentemente, permitir acesso
+          if (updatedUser.onboardingComplete) {
+            return true;
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao verificar status de onboarding:", error);
+      }
+      return false;
+    };
+
+    // Podemos permitir acesso enquanto verifica, se o usuário acabou de completar o onboarding
+    const recentlyCompleted = sessionStorage.getItem("onboardingCompleted") === "true";
+    if (recentlyCompleted) {
+      sessionStorage.removeItem("onboardingCompleted");
+      return <Route path={path} component={Component} />;
+    }
+
     return (
       <Route path={path}>
         <Redirect to="/welcome" />

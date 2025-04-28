@@ -117,9 +117,15 @@ const WelcomePage = (): JSX.Element => {
     },
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(["/api/user"], updatedUser);
+      
+      // Marcar que o onboarding foi completado recentemente para evitar redirecionamento circular
+      sessionStorage.setItem("onboardingCompleted", "true");
+      
       setTimeout(() => {
-        setLocation("/calendar");
-      }, 2000);
+        // Força a navegação direta, ignorando as proteções de rota que poderiam redirecionar de volta
+        window.location.href = "/calendar";
+      }, 1000);
+      
       if (isFromInvite) {
         toast({
           title: "Conexão realizada!",
