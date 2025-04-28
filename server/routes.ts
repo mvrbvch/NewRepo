@@ -856,10 +856,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user?.id as number;
 
-      // Mark onboarding and tutorial as complete
+      // Mark onboarding as complete
       const updatedUser = await storage.updateUser(userId, {
         onboardingComplete: true,
-        tutorialComplete: true,  // Marcar também que o tutorial foi concluído
       });
 
       if (!updatedUser) {

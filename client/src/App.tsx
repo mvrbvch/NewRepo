@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Suspense } from "react";
 import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,14 +14,11 @@ import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import LandingPage from "./pages/landing-page";
 import WelcomePage from "./pages/welcome-page";
 import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider, useAuth } from "./hooks/use-auth";
+import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
-
-// Importando a página de onboarding interativo diretamente
-import InteractiveOnboardingPage from "./pages/interactive-onboarding-page";
 
 // Componente de rotas da aplicação
 function Router() {
@@ -41,7 +37,6 @@ function Router() {
       {/* Experiência unificada de onboarding e boas-vindas */}
       <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>
       <ProtectedRoute path="/welcome" component={WelcomePage} />
-      <ProtectedRoute path="/tutorial" component={InteractiveOnboardingPage} />
 
       {/* Outras rotas protegidas */}
       <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
