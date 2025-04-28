@@ -243,6 +243,19 @@ export const webAuthnCredentials = pgTable("webauthn_credentials", {
   deviceName: text("device_name"), // nome amigável do dispositivo
 });
 
+// Tabela para credenciais biométricas nativas de iOS e Android
+export const nativeBiometricCredentials = pgTable("native_biometric_credentials", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  biometricId: text("biometric_id").notNull().unique(), // ID único gerado pelo dispositivo
+  deviceName: text("device_name").notNull(), // Nome amigável para o dispositivo
+  platform: text("platform").notNull(), // ios ou android
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsed: timestamp("last_used"),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -490,6 +503,27 @@ export type InsertWebAuthnCredential = z.infer<
 >;
 export type WebAuthnCredential = Omit<
   typeof webAuthnCredentials.$inferSelect,
+  "createdAt" | "lastUsed"
+> & {
+  createdAt: Date | string | null;
+  lastUsed: Date | string | null;
+};
+
+// Native Biometric schemas
+export const insertNativeBiometricCredentialSchema = createInsertSchema(
+  nativeBiometricCredentials
+).pick({
+  userId: true,
+  biometricId: true,
+  deviceName: true,
+  platform: true
+});
+
+export type InsertNativeBiometricCredential = z.infer<
+  typeof insertNativeBiometricCredentialSchema
+>;
+export type NativeBiometricCredential = Omit<
+  typeof nativeBiometricCredentials.$inferSelect,
   "createdAt" | "lastUsed"
 > & {
   createdAt: Date | string | null;
