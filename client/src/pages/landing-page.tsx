@@ -140,7 +140,7 @@ const LandingPage: React.FC = () => {
               Depoimentos
             </a> */}
             <a
-              href="#welcome-preview"
+              href="#o-app"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               Experiência
@@ -314,6 +314,22 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+      <section id="o-app" className="py-20 bg-white/70 overflow-hidden">
+        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Conheça a Experiência
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Veja como o aplicativo pode transformar o dia a dia de vocês com
+              uma interface intuitiva e funcionalidades práticas.
+            </p>
+          </div>
+
+          {/* Telas do aplicativo usando o componente AppScreensMock */}
+          <AppScreensMock />
+        </div>
+      </section>
 
       {/* Benefits Section */}
       <section id="benefits" className="py-20">
@@ -448,30 +464,14 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section> */}
-      
+
       {/* App Screens Section com GSAP */}
-      <section id="app-screens" className="py-20 bg-white/70 overflow-hidden">
-        <div className="container px-4 md:px-6 mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Conheça a Experiência
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Veja como o aplicativo pode transformar o dia a dia de vocês com uma interface intuitiva e funcionalidades práticas.
-            </p>
-          </div>
-          
-          {/* Telas do aplicativo usando o componente AppScreensMock */}
-          <AppScreensMock />
-        </div>
-      </section>
       <footer className="border-t border-border py-8 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <img src={logoPath} alt="Nós Juntos" className="h-8 w-auto" />
-                <span className="font-bold text-xl">Nós Juntos</span>
               </div>
               <p className="text-muted-foreground">
                 Organizando a vida a dois com mais leveza, conexão e amor.
@@ -513,10 +513,10 @@ const LandingPage: React.FC = () => {
                 Tem dúvidas ou sugestões?
               </p>
               <a
-                href="mailto:contato@nosjuntos.app"
+                href="mailto:matheus@murbach.work"
                 className="text-primary hover:underline"
               >
-                contato@nosjuntos.app
+                Vem cá, fala com a gente!
               </a>
             </div>
           </div>
