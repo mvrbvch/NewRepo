@@ -17,6 +17,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
 import NotificationSettingsPage from "./pages/notification-settings-page";
+import BiometricSettingsPage from "./pages/biometric-settings-page";
 import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
 
@@ -45,6 +46,10 @@ function Router() {
       <ProtectedRoute
         path="/notifications"
         component={NotificationSettingsPage}
+      />
+      <ProtectedRoute
+        path="/biometric-settings"
+        component={BiometricSettingsPage}
       />
       <ProtectedRoute path="/tasks" component={HouseholdTasksPage} />
       <ProtectedRoute
