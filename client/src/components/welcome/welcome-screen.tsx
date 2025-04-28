@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserType } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Heart, 
   ArrowRight, 
@@ -52,6 +53,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 }) => {
   const [step, setStep] = useState<WelcomeStep>(WelcomeStep.WELCOME);
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
   
   // Usar o usuário fornecido nas props, ou um valor padrão
   const [user, setUser] = useState<UserType | null>(userProp || null);
@@ -406,13 +408,56 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     size="sm" 
                     className="text-primary border-primary/20 flex-1"
                     onClick={() => {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                      if (email) {
-                        console.log(`Enviando convite para: ${email}`);
-                      }
-                      setTimeout(() => {
-                        onComplete();
-                      }, 300);
+                      // Definindo uma função local que faz referência a constantes do escopo superior
+                      const handleInvitePartner = (email: string) => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        if (email) {
+                          // Realmente enviar o convite antes de completar
+                          fetch('/api/partner/invite', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email }),
+                            credentials: 'include'
+                          })
+                          .then(response => {
+                            if (!response.ok) {
+                              throw new Error('Falha ao enviar convite');
+                            }
+                            return response.json();
+                          })
+                          .then(data => {
+                            toast({
+                              title: "Convite enviado!",
+                              description: "Seu parceiro receberá um e-mail com o link de convite.",
+                            });
+                          })
+                          .catch(error => {
+                            console.error('Erro ao enviar convite:', error);
+                            toast({
+                              title: "Erro ao enviar convite",
+                              description: "Não foi possível enviar o convite. Tente novamente mais tarde.",
+                              variant: "destructive"
+                            });
+                          })
+                          .finally(() => {
+                            // Completar o onboarding mesmo se o convite falhar
+                            setTimeout(() => {
+                              onComplete();
+                            }, 300);
+                          });
+                        } else {
+                          toast({
+                            title: "E-mail necessário",
+                            description: "Por favor, forneça o e-mail do seu parceiro para enviar o convite.",
+                            variant: "destructive"
+                          });
+                        }
+                      };
+                      
+                      // Chama a função com o email atual
+                      handleInvitePartner(email);
                     }}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
