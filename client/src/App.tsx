@@ -28,8 +28,11 @@ function Router() {
       {/* Landing page pública */}
       <Route path="/landing" component={LandingPage} />
 
-      {/* Rota principal protegida */}
-      <ProtectedRoute path="/" component={HomePage} />
+      {/* Página de autenticação como rota principal para facilitar testes */}
+      <Route path="/" component={AuthPage} />
+
+      {/* Rota principal protegida - mudada para /home */}
+      <ProtectedRoute path="/home" component={HomePage} />
 
       {/* Rotas de autenticação */}
       <Route path="/auth" component={AuthPage} />
@@ -69,11 +72,11 @@ const AppContent = () => {
   // ao invés de usar o contexto que está causando problemas
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Efeito para esconder o splash screen após um tempo
+  // Efeito para esconder o splash screen após um tempo reduzido
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2500);
+    }, 500); // Reduzido para 500ms para facilitar os testes
 
     return () => clearTimeout(timer);
   }, []);
