@@ -48,7 +48,7 @@ export default function IOSInstallGuide() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md p-6">
           <DialogHeader>
             <DialogTitle>Instalar Nós Juntos no seu iPhone/iPad</DialogTitle>
             <DialogDescription>
@@ -56,7 +56,7 @@ export default function IOSInstallGuide() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 p-6">
             <div className="flex gap-4 items-start">
               <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0">
                 1

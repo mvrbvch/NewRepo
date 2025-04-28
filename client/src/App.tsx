@@ -27,7 +27,9 @@ function ScrollToTop() {
   console.log(pathname);
   useEffect(() => {
     setTimeout(() => {
-      window.document.getElementsByClassName("scroll-id")[0].scrollIntoView();
+      window.document
+        .getElementsByClassName("scroll-id")[0]
+        .scrollIntoView({ behavior: "smooth" });
     }, 0);
   }, [pathname]);
 
