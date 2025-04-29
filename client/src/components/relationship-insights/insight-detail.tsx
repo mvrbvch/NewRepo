@@ -165,12 +165,19 @@ export function InsightDetail() {
             <div className="mt-6 bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium text-base mb-3">Ações sugeridas:</h4>
               <ul className="space-y-2">
-                {(insight.actions as string[]).map((action: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>{action}</span>
-                  </li>
-                ))}
+                {(insight.actions as any[]).map((action, index: number) => {
+                  // Verificar se a ação é uma string ou um objeto
+                  const actionText = typeof action === 'string' 
+                    ? action 
+                    : (action.action || action.description || JSON.stringify(action));
+                  
+                  return (
+                    <li key={index} className="flex items-start gap-2">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{actionText}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

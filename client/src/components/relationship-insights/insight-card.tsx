@@ -143,12 +143,19 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
               Ações sugeridas
             </h4>
             <ul className="space-y-1.5">
-              {(insight.actions as string[]).map((action: string, index: number) => (
-                <li key={index} className="flex items-start gap-1.5 text-xs bg-white p-2 rounded border border-gray-100">
-                  <Check className="h-3.5 w-3.5 text-[#F27474] mt-0.5 flex-shrink-0" />
-                  <span>{action}</span>
-                </li>
-              ))}
+              {(insight.actions as any[]).map((action, index: number) => {
+                // Verificar se a ação é uma string ou um objeto
+                const actionText = typeof action === 'string' 
+                  ? action 
+                  : (action.action || action.description || JSON.stringify(action));
+                
+                return (
+                  <li key={index} className="flex items-start gap-1.5 text-xs bg-white p-2 rounded border border-gray-100">
+                    <Check className="h-3.5 w-3.5 text-[#F27474] mt-0.5 flex-shrink-0" />
+                    <span>{actionText}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
