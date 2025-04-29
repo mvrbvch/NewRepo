@@ -543,3 +543,51 @@ export type TaskReminder = Omit<
   reminderDate: Date | string;
   createdAt: Date | string | null;
 };
+
+// Tabela para armazenar insights de relacionamento gerados pela IA
+export const relationshipInsights = pgTable("relationship_insights", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  partnerId: integer("partner_id")
+    .notNull()
+    .references(() => users.id),
+  insightType: text("insight_type").notNull(), // communication, tasks, time_spent, habits, goals, etc.
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  sentiment: text("sentiment").notNull().default("neutral"), // positive, negative, neutral
+  score: integer("score"), // De 1 a 10, indicando importância/urgência
+  userRead: boolean("user_read").default(false),
+  partnerRead: boolean("partner_read").default(false),
+  rawData: jsonb("raw_data"), // Dados brutos que foram usados para gerar o insight
+  metadata: jsonb("metadata"), // Dados adicionais, como pontuações ou destaques específicos
+  actions: jsonb("actions"), // Sugestões de ações para melhorar
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Alguns insights podem ter prazo de validade
+});
+
+export const insertRelationshipInsightSchema = createInsertSchema(
+  relationshipInsights
+).pick({
+  userId: true,
+  partnerId: true,
+  insightType: true,
+  title: true,
+  content: true,
+  sentiment: true,
+  score: true,
+  rawData: true,
+  metadata: true,
+  actions: true,
+  expiresAt: true,
+});
+
+export type InsertRelationshipInsight = z.infer<typeof insertRelationshipInsightSchema>;
+export type RelationshipInsight = Omit<
+  typeof relationshipInsights.$inferSelect,
+  "createdAt" | "expiresAt"
+> & {
+  createdAt: Date | string | null;
+  expiresAt: Date | string | null;
+};

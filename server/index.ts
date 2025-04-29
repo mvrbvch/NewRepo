@@ -5,6 +5,7 @@ import path from "path";
 import { initializeFirebase } from "./firebaseConfig";
 import { storage } from "./storage";
 import { ReminderService } from "./reminderService";
+import { RelationshipInsightsService } from "./relationshipInsightsService";
 
 const app = express();
 app.use(express.json());
@@ -70,6 +71,15 @@ app.use((req, res, next) => {
     console.log("Serviço de lembretes inicializado com sucesso");
   } catch (error) {
     console.error("Erro ao inicializar serviço de lembretes:", error);
+  }
+  
+  // Inicializar o serviço de insights de relacionamento
+  try {
+    const insightsService = new RelationshipInsightsService(storage);
+    insightsService.start();
+    console.log("Serviço de insights de relacionamento inicializado com sucesso");
+  } catch (error) {
+    console.error("Erro ao inicializar serviço de insights de relacionamento:", error);
   }
 
   const server = await registerRoutes(app);

@@ -10,6 +10,7 @@ import {
   notifications,
   eventReminders,
   taskReminders,
+  relationshipInsights,
 } from "@shared/schema";
 import type {
   User,
@@ -28,6 +29,8 @@ import type {
   InsertHouseholdTask,
   UserDevice,
   InsertUserDevice,
+  RelationshipInsight,
+  InsertRelationshipInsight,
   Notification,
   InsertNotification,
   EventReminder,
@@ -143,6 +146,15 @@ export interface IStorage {
   markTaskReminderAsSent(id: number): Promise<TaskReminder | undefined>;
   deleteTaskReminder(id: number): Promise<boolean>;
 
+  // Relationship Insights
+  createRelationshipInsight(insight: InsertRelationshipInsight): Promise<RelationshipInsight>;
+  getRelationshipInsight(id: number): Promise<RelationshipInsight | undefined>;
+  getUserRelationshipInsights(userId: number): Promise<RelationshipInsight[]>;
+  getPartnerRelationshipInsights(userId: number, partnerId: number): Promise<RelationshipInsight[]>;
+  updateRelationshipInsight(id: number, updates: Partial<RelationshipInsight>): Promise<RelationshipInsight | undefined>;
+  markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined>;
+  deleteRelationshipInsight(id: number): Promise<boolean>;
+
   // Session store
   sessionStore: SessionStore;
 }
@@ -159,6 +171,7 @@ export class MemStorage implements IStorage {
   private notificationsMap: Map<number, Notification>;
   private eventRemindersMap: Map<number, EventReminder>;
   private taskRemindersMap: Map<number, TaskReminder>;
+  private relationshipInsightsMap: Map<number, RelationshipInsight>;
 
   private userIdCounter: number;
   private eventIdCounter: number;
@@ -171,6 +184,7 @@ export class MemStorage implements IStorage {
   private notificationIdCounter: number;
   private eventReminderIdCounter: number;
   private taskReminderIdCounter: number;
+  private relationshipInsightIdCounter: number;
 
   sessionStore: SessionStore;
 
@@ -186,6 +200,7 @@ export class MemStorage implements IStorage {
     this.notificationsMap = new Map();
     this.eventRemindersMap = new Map();
     this.taskRemindersMap = new Map();
+    this.relationshipInsightsMap = new Map();
 
     this.userIdCounter = 1;
     this.eventIdCounter = 1;
@@ -198,6 +213,7 @@ export class MemStorage implements IStorage {
     this.notificationIdCounter = 1;
     this.eventReminderIdCounter = 1;
     this.taskReminderIdCounter = 1;
+    this.relationshipInsightIdCounter = 1;
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -764,6 +780,93 @@ export class MemStorage implements IStorage {
 
   async deleteTaskReminder(id: number): Promise<boolean> {
     return this.taskRemindersMap.delete(id);
+  }
+
+  // Relationship Insights implementation
+  private relationshipInsightsMap: Map<number, RelationshipInsight>;
+  private relationshipInsightIdCounter: number;
+
+  async createRelationshipInsight(insight: InsertRelationshipInsight): Promise<RelationshipInsight> {
+    const id = ++this.relationshipInsightIdCounter;
+    const now = new Date();
+    
+    const newInsight: RelationshipInsight = {
+      id,
+      userId: insight.userId,
+      partnerId: insight.partnerId,
+      insightType: insight.insightType,
+      title: insight.title,
+      content: insight.content,
+      sentiment: insight.sentiment,
+      score: insight.score,
+      actions: insight.actions,
+      rawData: insight.rawData,
+      metadata: insight.metadata,
+      userRead: false,
+      partnerRead: false,
+      createdAt: now,
+      expiresAt: insight.expiresAt || null
+    };
+    
+    this.relationshipInsightsMap.set(id, newInsight);
+    return newInsight;
+  }
+
+  async getRelationshipInsight(id: number): Promise<RelationshipInsight | undefined> {
+    return this.relationshipInsightsMap.get(id);
+  }
+
+  async getUserRelationshipInsights(userId: number): Promise<RelationshipInsight[]> {
+    const now = new Date();
+    return Array.from(this.relationshipInsightsMap.values())
+      .filter(
+        insight => 
+          (insight.userId === userId || insight.partnerId === userId) && 
+          (!insight.expiresAt || insight.expiresAt > now)
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getPartnerRelationshipInsights(userId: number, partnerId: number): Promise<RelationshipInsight[]> {
+    const now = new Date();
+    return Array.from(this.relationshipInsightsMap.values())
+      .filter(
+        insight => 
+          ((insight.userId === userId && insight.partnerId === partnerId) || 
+           (insight.userId === partnerId && insight.partnerId === userId)) && 
+          (!insight.expiresAt || insight.expiresAt > now)
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateRelationshipInsight(id: number, updates: Partial<RelationshipInsight>): Promise<RelationshipInsight | undefined> {
+    const insight = this.relationshipInsightsMap.get(id);
+    if (!insight) return undefined;
+    
+    const updatedInsight = { 
+      ...insight,
+      ...updates
+    };
+    
+    this.relationshipInsightsMap.set(id, updatedInsight);
+    return updatedInsight;
+  }
+
+  async markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined> {
+    const insight = this.relationshipInsightsMap.get(id);
+    if (!insight) return undefined;
+    
+    const updatedInsight = { 
+      ...insight, 
+      ...(isUser ? { userRead: true } : { partnerRead: true })
+    };
+    
+    this.relationshipInsightsMap.set(id, updatedInsight);
+    return updatedInsight;
+  }
+
+  async deleteRelationshipInsight(id: number): Promise<boolean> {
+    return this.relationshipInsightsMap.delete(id);
   }
 }
 
@@ -2259,6 +2362,192 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error updating task positions:", error);
+      return false;
+    }
+  }
+
+  // Relationship Insights methods
+  async createRelationshipInsight(insight: InsertRelationshipInsight): Promise<RelationshipInsight> {
+    try {
+      // Use current date for createdAt if not provided
+      const now = new Date();
+      
+      const [newInsight] = await db
+        .insert(relationshipInsights)
+        .values({
+          userId: insight.userId,
+          partnerId: insight.partnerId,
+          insightType: insight.insightType,
+          title: insight.title,
+          content: insight.content,
+          sentiment: insight.sentiment,
+          score: insight.score,
+          actions: insight.actions,
+          rawData: insight.rawData,
+          metadata: insight.metadata,
+          userRead: false,
+          partnerRead: false,
+          createdAt: now,
+          expiresAt: insight.expiresAt || null
+        })
+        .returning();
+
+      return {
+        ...newInsight,
+        createdAt: new Date(newInsight.createdAt),
+        expiresAt: newInsight.expiresAt ? new Date(newInsight.expiresAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao criar insight de relacionamento:", error);
+      throw error;
+    }
+  }
+
+  async getRelationshipInsight(id: number): Promise<RelationshipInsight | undefined> {
+    try {
+      const insight = await db
+        .select()
+        .from(relationshipInsights)
+        .where(eq(relationshipInsights.id, id))
+        .limit(1);
+
+      if (!insight || insight.length === 0) {
+        return undefined;
+      }
+
+      return {
+        ...insight[0],
+        createdAt: new Date(insight[0].createdAt),
+        expiresAt: insight[0].expiresAt ? new Date(insight[0].expiresAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao obter insight de relacionamento:", error);
+      return undefined;
+    }
+  }
+
+  async getUserRelationshipInsights(userId: number): Promise<RelationshipInsight[]> {
+    try {
+      const now = new Date();
+      const insights = await db
+        .select()
+        .from(relationshipInsights)
+        .where(
+          and(
+            or(
+              eq(relationshipInsights.userId, userId),
+              eq(relationshipInsights.partnerId, userId)
+            ),
+            or(
+              isNull(relationshipInsights.expiresAt),
+              gt(relationshipInsights.expiresAt, now)
+            )
+          )
+        )
+        .orderBy(desc(relationshipInsights.createdAt));
+
+      return insights.map(insight => ({
+        ...insight,
+        createdAt: new Date(insight.createdAt),
+        expiresAt: insight.expiresAt ? new Date(insight.expiresAt) : null
+      }));
+    } catch (error) {
+      console.error("Erro ao obter insights de relacionamento do usuário:", error);
+      return [];
+    }
+  }
+
+  async getPartnerRelationshipInsights(userId: number, partnerId: number): Promise<RelationshipInsight[]> {
+    try {
+      const now = new Date();
+      const insights = await db
+        .select()
+        .from(relationshipInsights)
+        .where(
+          and(
+            or(
+              and(
+                eq(relationshipInsights.userId, userId),
+                eq(relationshipInsights.partnerId, partnerId)
+              ),
+              and(
+                eq(relationshipInsights.userId, partnerId),
+                eq(relationshipInsights.partnerId, userId)
+              )
+            ),
+            or(
+              isNull(relationshipInsights.expiresAt),
+              gt(relationshipInsights.expiresAt, now)
+            )
+          )
+        )
+        .orderBy(desc(relationshipInsights.createdAt));
+
+      return insights.map(insight => ({
+        ...insight,
+        createdAt: new Date(insight.createdAt),
+        expiresAt: insight.expiresAt ? new Date(insight.expiresAt) : null
+      }));
+    } catch (error) {
+      console.error("Erro ao obter insights de relacionamento do casal:", error);
+      return [];
+    }
+  }
+
+  async updateRelationshipInsight(id: number, updates: Partial<RelationshipInsight>): Promise<RelationshipInsight | undefined> {
+    try {
+      const [updatedInsight] = await db
+        .update(relationshipInsights)
+        .set(updates)
+        .where(eq(relationshipInsights.id, id))
+        .returning();
+
+      if (!updatedInsight) {
+        return undefined;
+      }
+
+      return {
+        ...updatedInsight,
+        createdAt: new Date(updatedInsight.createdAt),
+        expiresAt: updatedInsight.expiresAt ? new Date(updatedInsight.expiresAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao atualizar insight de relacionamento:", error);
+      return undefined;
+    }
+  }
+
+  async markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined> {
+    try {
+      const [updatedInsight] = await db
+        .update(relationshipInsights)
+        .set(isUser ? { userRead: true } : { partnerRead: true })
+        .where(eq(relationshipInsights.id, id))
+        .returning();
+
+      if (!updatedInsight) {
+        return undefined;
+      }
+
+      return {
+        ...updatedInsight,
+        createdAt: new Date(updatedInsight.createdAt),
+        expiresAt: updatedInsight.expiresAt ? new Date(updatedInsight.expiresAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao marcar insight como lido:", error);
+      return undefined;
+    }
+  }
+
+  async deleteRelationshipInsight(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(relationshipInsights)
+        .where(eq(relationshipInsights.id, id));
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir insight de relacionamento:", error);
       return false;
     }
   }

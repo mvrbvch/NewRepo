@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { setupReminderRoutes } from "./reminder-routes";
+import { setupRelationshipInsightsRoutes } from "./relationship-insights-routes";
 import { z } from "zod";
 // Importações e preparações necessárias
 import { sql, eq } from "drizzle-orm";
@@ -165,6 +166,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Configurar rotas para o sistema de lembretes
   setupReminderRoutes(app, storage);
+  
+  // Configurar rotas para o sistema de insights de relacionamento
+  setupRelationshipInsightsRoutes(app, storage);
 
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get("/api/db-health", async (req: Request, res: Response) => {
