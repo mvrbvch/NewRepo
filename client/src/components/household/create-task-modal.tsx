@@ -39,9 +39,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, ChevronDown } from "lucide-react";
+import RecurrenceOptionsSelector, { RecurrenceOptionsProps } from "./recurrence-options-selector";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -52,10 +54,16 @@ interface CreateTaskModalProps {
 const taskFormSchema = z.object({
   title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
   description: z.string().optional(),
-  frequency: z.enum(["once", "daily", "weekly", "monthly"]),
+  frequency: z.enum(["once", "daily", "weekly", "biweekly", "monthly"]),
   assignedTo: z.number().nullable().optional(),
   dueDate: z.date().nullable().optional(),
   priority: z.number().default(0), // 0: baixa, 1: média, 2: alta
+  recurrenceOptions: z.object({
+    frequency: z.string(),
+    weekdays: z.array(z.number()).optional(),
+    monthDay: z.number().optional(),
+    endDate: z.date().optional().nullable(),
+  }).optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -106,8 +114,24 @@ export default function CreateTaskModal({
     },
   });
 
+  // Função para formatar array de dias da semana para string
+  const formatWeekdays = (weekdays?: number[]): string | null => {
+    if (!weekdays || weekdays.length === 0) return null;
+    return weekdays.join(',');
+  };
+
   const onSubmit = (values: TaskFormValues) => {
-    createTaskMutation.mutate(values);
+    // Cria uma cópia dos valores para adicionar propriedades específicas
+    const taskData: any = { ...values };
+    
+    // Adiciona as opções de recorrência, se disponíveis
+    if (values.recurrenceOptions) {
+      taskData.weekdays = formatWeekdays(values.recurrenceOptions.weekdays);
+      taskData.monthDay = values.recurrenceOptions.monthDay || null;
+      taskData.recurrenceEnd = values.recurrenceOptions.endDate || null;
+    }
+    
+    createTaskMutation.mutate(taskData);
   };
 
   return (
@@ -167,7 +191,18 @@ export default function CreateTaskModal({
                 <FormItem>
                   <FormLabel className="text-subtitle">Frequência</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // Inicializar as opções de recorrência quando a frequência muda
+                      if (value === "weekly" || value === "biweekly" || value === "monthly") {
+                        form.setValue("recurrenceOptions", {
+                          frequency: value,
+                          weekdays: value === "weekly" || value === "biweekly" ? [1, 2, 3, 4, 5] : undefined, // Seg a Sex por padrão
+                          monthDay: value === "monthly" ? 1 : undefined, // Dia 1 por padrão
+                          endDate: null,
+                        });
+                      }
+                    }}
                     defaultValue={field.value}
                   >
                     <FormControl>
@@ -179,6 +214,7 @@ export default function CreateTaskModal({
                       <SelectItem value="once">Uma vez</SelectItem>
                       <SelectItem value="daily">Diariamente</SelectItem>
                       <SelectItem value="weekly">Semanalmente</SelectItem>
+                      <SelectItem value="biweekly">Quinzenalmente</SelectItem>
                       <SelectItem value="monthly">Mensalmente</SelectItem>
                     </SelectContent>
                   </Select>
@@ -189,6 +225,47 @@ export default function CreateTaskModal({
                 </FormItem>
               )}
             />
+            
+            {form.watch("frequency") !== "once" && form.watch("frequency") !== "daily" && (
+              <Collapsible className="space-y-2 border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">Opções de recorrência</h4>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-9 p-0">
+                      <ChevronDown className="h-4 w-4" />
+                      <span className="sr-only">Toggle</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+                <CollapsibleContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="recurrenceOptions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <RecurrenceOptionsSelector
+                            options={field.value || {
+                              frequency: form.watch("frequency"),
+                              weekdays: [1, 2, 3, 4, 5], // Seg a Sex
+                              monthDay: 1,
+                              endDate: null
+                            }}
+                            onChange={(newOptions) => {
+                              field.onChange(newOptions);
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription className="text-small text-medium">
+                          Configure opções adicionais de recorrência para esta tarefa.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
             {user?.partnerId && (
               <FormField

@@ -87,7 +87,7 @@ export interface HouseholdTaskType {
   id: number;
   title: string;
   description: string | null;
-  frequency: "once" | "daily" | "weekly" | "monthly";
+  frequency: "once" | "daily" | "weekly" | "biweekly" | "monthly";
   assignedTo: number | null;
   createdBy: number;
   dueDate: string | Date | null;
@@ -97,6 +97,10 @@ export interface HouseholdTaskType {
   priority: number; // 0: baixa, 1: média, 2: alta
   position: number; // posição para ordenação na lista
   createdAt: string | Date | null;
+  // Campos adicionais para opções de recorrência
+  weekdays?: string | null; // formato: "1,2,3,4,5" para segunda a sexta
+  monthDay?: number | null; // dia do mês para recorrências mensais
+  recurrenceEnd?: string | Date | null; // data de término da recorrência
 }
 
 export interface EventReminderType {

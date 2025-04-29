@@ -81,17 +81,41 @@ export default function TaskCompletionHistory({ taskId, userId }: TaskCompletion
     data, 
     isLoading, 
     isError, 
-    refetch 
+    refetch,
+    error 
   } = useQuery<{ task: HouseholdTaskType; history: TaskCompletionHistoryType[] }>({
-    queryKey: ['/api/tasks/completion-history', taskId, timeRange],
-    queryFn: () => apiRequest(buildQueryUrl()),
+    queryKey: [`/api/tasks/${taskId}/completion-history`, timeRange],
+    queryFn: async () => {
+      console.log(`Buscando histórico de conclusão para tarefa ${taskId} com filtro ${timeRange}`);
+      const url = buildQueryUrl();
+      console.log(`URL da consulta: ${url}`);
+      try {
+        const response = await fetch(url, {
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+        console.log("Resposta do histórico:", responseData);
+        return responseData;
+      } catch (err) {
+        console.error("Erro ao buscar histórico:", err);
+        throw err;
+      }
+    },
     enabled: !!taskId
   });
   
   // Efeito para recarregar dados quando filtros mudam
   useEffect(() => {
-    refetch();
-  }, [timeRange, refetch]);
+    if (taskId) {
+      console.log(`Recarregando histórico para tarefa ${taskId} com filtro ${timeRange}`);
+      refetch();
+    }
+  }, [timeRange, refetch, taskId]);
   
   // Função auxiliar para formatar datas
   const formatDate = (date: string | Date | null) => {

@@ -142,6 +142,8 @@ export default function TaskDetailsModal({
         return "Diária";
       case "weekly":
         return "Semanal";
+      case "biweekly":
+        return "Quinzenal";
       case "monthly":
         return "Mensal";
       default:
@@ -375,12 +377,61 @@ export default function TaskDetailsModal({
                   
                   {task.nextDueDate && task.frequency !== "once" && (
                     <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-                      <p className="text-sm flex items-center gap-1.5">
+                      <p className="text-sm flex items-center gap-1.5 font-medium">
                         <CalendarIcon className="h-4 w-4 text-amber-500" />
                         <span>
                           Próximo vencimento: {format(new Date(task.nextDueDate), "PPP", { locale: ptBR })}
                         </span>
                       </p>
+                    </div>
+                  )}
+                  
+                  {task.frequency !== "once" && (
+                    <div className="bg-primary-light/5 p-3 rounded-lg border border-primary-light/20">
+                      <h4 className="text-sm font-semibold mb-2">Detalhes da recorrência</h4>
+                      
+                      <div className="space-y-2 text-sm">
+                        <p className="flex items-center gap-1.5">
+                          <RefreshCw className="h-4 w-4 text-primary" />
+                          <span>Frequência: {getFrequencyText(task.frequency)}</span>
+                        </p>
+                        
+                        {(task.frequency === "weekly" || task.frequency === "biweekly") && task.weekdays && (
+                          <p className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <span>
+                              Dias da semana: {task.weekdays.split(',').map(day => {
+                                switch (day.trim()) {
+                                  case '0': return 'Dom';
+                                  case '1': return 'Seg';
+                                  case '2': return 'Ter';
+                                  case '3': return 'Qua';
+                                  case '4': return 'Qui';
+                                  case '5': return 'Sex';
+                                  case '6': return 'Sáb';
+                                  default: return '';
+                                }
+                              }).filter(Boolean).join(', ')}
+                            </span>
+                          </p>
+                        )}
+                        
+                        {task.frequency === "monthly" && task.monthDay && (
+                          <p className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <span>Dia do mês: {task.monthDay}</span>
+                          </p>
+                        )}
+                        
+                        {task.recurrenceEnd && (
+                          <p className="flex items-center gap-1.5">
+                            <CalendarIcon className="h-4 w-4 text-primary" />
+                            <span>
+                              Término da recorrência: {format(new Date(task.recurrenceEnd), "PPP", { locale: ptBR })}
+                            </span>
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </TabsContent>
