@@ -219,6 +219,30 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
         return res.status(500).json({ error: "Método de geração não disponível" });
       }
 
+      // Verificar se já existem insights recentes (últimas 24 horas) para evitar duplicação
+      const existingInsights = await storage.getPartnerRelationshipInsights(
+        userId,
+        user.partnerId
+      );
+      
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      
+      // Filtra insights criados nas últimas 24 horas
+      const recentInsights = existingInsights.filter(insight => {
+        const createdAt = insight.createdAt instanceof Date ? 
+          insight.createdAt : 
+          new Date(insight.createdAt as string);
+        return createdAt > oneDayAgo;
+      });
+      
+      if (recentInsights.length > 0) {
+        // Se já existem insights recentes, retornar eles sem gerar novos
+        console.log(`Encontrados ${recentInsights.length} insights recentes para o casal (${userId}, ${user.partnerId}). Pulando geração.`);
+        return res.json(recentInsights);
+      }
+      
+      // Se não existem insights recentes, gerar novos
       await generateMethod.call(insightsService, userId, user.partnerId);
       
       // Buscar insights atualizados

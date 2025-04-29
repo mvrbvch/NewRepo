@@ -176,6 +176,44 @@ export class RelationshipInsightsService {
   }
 
   /**
+   * Verifica se já existe um insight similar no sistema
+   * para evitar duplicação de conteúdo
+   */
+  private async hasSimilarInsight(
+    userId: number, 
+    partnerId: number, 
+    type: InsightType, 
+    title: string, 
+    content: string
+  ): Promise<boolean> {
+    try {
+      // Buscar todos os insights ativos para esse casal
+      const existingInsights = await this.storage.getRelationshipInsights(userId, partnerId);
+      if (!existingInsights || existingInsights.length === 0) return false;
+
+      // Primeiro verificar por títulos idênticos para o mesmo tipo
+      const sameTitleInsights = existingInsights.filter(insight => 
+        insight.insightType === type && 
+        insight.title.trim() === title.trim()
+      );
+      
+      if (sameTitleInsights.length > 0) return true;
+      
+      // Se não encontrou pelo título, verificar similaridade no conteúdo
+      // Implementação simplificada - considerar similares se as primeiras 100 caracteres forem iguais
+      const contentStart = content.trim().substring(0, 100);
+      return existingInsights.some(insight => {
+        if (insight.insightType !== type) return false;
+        const existingContentStart = insight.content.trim().substring(0, 100);
+        return existingContentStart === contentStart;
+      });
+    } catch (error) {
+      console.error("Erro ao verificar insights similares:", error);
+      return false; // Em caso de erro, presumimos que não há similar para continuar o fluxo
+    }
+  }
+
+  /**
    * Gera insights para um casal específico
    */
   private async generateInsightsForCouple(userId: number, partnerId: number): Promise<void> {
@@ -189,10 +227,26 @@ export class RelationshipInsightsService {
       // Insight sobre equilíbrio de tarefas
       if (taskDistribution) {
         const taskInsight = await this.generateTaskDistributionInsight(taskDistribution);
-        if (taskInsight) insights.push(taskInsight);
+        
+        if (taskInsight) {
+          // Verificar se já existe um insight similar
+          const hasSimilar = await this.hasSimilarInsight(
+            userId,
+            partnerId,
+            taskInsight.type,
+            taskInsight.title,
+            taskInsight.content
+          );
+          
+          if (!hasSimilar) {
+            insights.push(taskInsight);
+          } else {
+            console.log(`Insight similar sobre ${taskInsight.type} já existe para o casal (${userId}, ${partnerId}). Ignorando.`);
+          }
+        }
       }
       
-      // 3. Salvar os insights gerados no banco de dados
+      // 3. Salvar os insights gerados no banco de dados (apenas os não similares)
       for (const insight of insights) {
         const insertData: InsertRelationshipInsight = {
           userId,
