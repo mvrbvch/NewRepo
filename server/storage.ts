@@ -46,6 +46,7 @@ import { eq, and, or, SQL, inArray, desc, sql, count, isNull, gt } from "drizzle
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { formatDateSafely } from "./utils";
+import { UnifiedRecurrenceService } from "./services/UnifiedRecurrenceService";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -2082,19 +2083,37 @@ export class DatabaseStorage implements IStorage {
 
       // Objeto com os campos a serem atualizados
       const updateData: any = { completed };
-
-      // Caso esteja marcando como concluída e é uma tarefa recorrente
-      if (completed && task.frequency && task.frequency !== "once" && task.frequency !== "never") {
-        // Usar o serviço unificado para calcular a próxima data de vencimento
-        const nextDueDate = UnifiedRecurrenceService.calculateNextDueDateForTask(task);
+      
+      // Registrar data de conclusão
+      if (completed) {
+        // Registra a data atual como momento da conclusão
+        const completionDate = new Date();
+        updateData.completedAt = completionDate;
         
-        if (nextDueDate) {
-          updateData.nextDueDate = nextDueDate;
-          console.log("Próxima data de vencimento calculada:", {
-            taskId: id,
-            frequency: task.frequency,
-            nextDueDate: nextDueDate.toISOString()
-          });
+        // Caso seja uma tarefa recorrente
+        if (task.frequency && task.frequency !== "once" && task.frequency !== "never") {
+          // Se a tarefa tinha uma data de vencimento, usamos ela como base para o cálculo
+          // da próxima data de vencimento, caso contrário usamos a data atual
+          const baseDate = task.dueDate || completionDate;
+          
+          // Atualiza o campo dueDate com a data atual de conclusão antes de calcular a próxima
+          const taskWithUpdatedDueDate = {
+            ...task,
+            dueDate: baseDate
+          };
+          
+          // Usar o serviço unificado para calcular a próxima data de vencimento
+          const nextDueDate = UnifiedRecurrenceService.calculateNextDueDateForTask(taskWithUpdatedDueDate);
+          
+          if (nextDueDate) {
+            updateData.nextDueDate = nextDueDate;
+            console.log("Próxima data de vencimento calculada:", {
+              taskId: id,
+              frequency: task.frequency,
+              baseDate: baseDate.toISOString(),
+              nextDueDate: nextDueDate.toISOString()
+            });
+          }
         }
       }
       // Caso esteja desmarcando (voltando a incompleta)
@@ -2102,6 +2121,8 @@ export class DatabaseStorage implements IStorage {
         // Se a tarefa tiver uma próxima data programada, reseta-a para null
         // isso evita que tarefas recorrentes gerem múltiplas instâncias quando desmarcadas
         updateData.nextDueDate = null;
+        // Limpar a data de conclusão
+        updateData.completedAt = null;
       }
 
       console.log("Atualizando status da tarefa:", {

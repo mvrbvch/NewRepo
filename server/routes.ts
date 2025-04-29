@@ -91,6 +91,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configurar rotas para o sistema de insights de relacionamento
   setupRelationshipInsightsRoutes(app, storage);
 
+  // Rota de teste para a funcionalidade de marcar tarefas como concluídas
+  app.get("/api/test/task-complete/:id", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getHouseholdTask(taskId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+      
+      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, true);
+      
+      // Verificar se a data de conclusão foi registrada
+      if (updatedTask && updatedTask.completedAt) {
+        return res.json({
+          message: "Tarefa marcada como concluída com sucesso",
+          task: updatedTask
+        });
+      } else {
+        return res.status(500).json({ 
+          message: "Falha ao marcar data de conclusão", 
+          task: updatedTask 
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao testar conclusão de tarefa:", error);
+      return res.status(500).json({ message: "Erro ao testar conclusão de tarefa" });
+    }
+  });
+
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get("/api/db-health", async (req: Request, res: Response) => {
     try {

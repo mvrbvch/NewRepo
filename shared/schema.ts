@@ -113,6 +113,7 @@ export const householdTasks = pgTable("household_tasks", {
     .references(() => users.id),
   dueDate: timestamp("due_date"),
   completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"), // Data em que a tarefa foi concluída
   nextDueDate: timestamp("next_due_date"),
   recurrenceRule: text("recurrence_rule"),
   priority: integer("priority").default(0), // Valores: 0 (baixa), 1 (média), 2 (alta) prioridade
@@ -318,21 +319,7 @@ export const insertPartnerInviteSchema = createInsertSchema(
   token: true,
 });
 
-export const insertHouseholdTaskSchema = createInsertSchema(
-  householdTasks,
-).pick({
-  title: true,
-  description: true,
-  frequency: true,
-  assignedTo: true,
-  createdBy: true,
-  dueDate: true,
-  completed: true,
-  nextDueDate: true,
-  recurrenceRule: true,
-  priority: true,
-  position: true,
-});
+// Este schema será atualizado mais abaixo
 
 export const insertUserDeviceSchema = createInsertSchema(userDevices).pick({
   userId: true,
@@ -392,14 +379,32 @@ export type PartnerInvite = Omit<
   createdAt: Date | string | null;
 };
 
+export const insertHouseholdTaskSchema = createInsertSchema(
+  householdTasks,
+).pick({
+  title: true,
+  description: true,
+  frequency: true,
+  assignedTo: true,
+  createdBy: true,
+  dueDate: true,
+  completed: true,
+  completedAt: true,
+  nextDueDate: true,
+  recurrenceRule: true,
+  priority: true,
+  position: true,
+});
+
 export type InsertHouseholdTask = z.infer<typeof insertHouseholdTaskSchema>;
 export type HouseholdTask = Omit<
   typeof householdTasks.$inferSelect,
-  "dueDate" | "nextDueDate" | "createdAt"
+  "dueDate" | "nextDueDate" | "createdAt" | "completedAt"
 > & {
   dueDate: Date | string | null;
   nextDueDate: Date | string | null;
   createdAt: Date | string | null;
+  completedAt: Date | string | null;
 };
 
 export type InsertUserDevice = z.infer<typeof insertUserDeviceSchema>;
