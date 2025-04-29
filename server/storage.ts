@@ -11,6 +11,7 @@ import {
   eventReminders,
   taskReminders,
   relationshipInsights,
+  taskCompletionHistory,
 } from "@shared/schema";
 import type {
   User,
@@ -37,6 +38,8 @@ import type {
   InsertEventReminder,
   TaskReminder,
   InsertTaskReminder,
+  TaskCompletionHistory,
+  InsertTaskCompletionHistory,
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -110,8 +113,23 @@ export interface IStorage {
   deleteHouseholdTask(id: number): Promise<boolean>;
   markHouseholdTaskAsCompleted(
     id: number,
-    completed: boolean
+    completed: boolean,
+    userId?: number
   ): Promise<HouseholdTask | undefined>;
+  
+  // Task Completion History
+  addTaskCompletionRecord(record: InsertTaskCompletionHistory): Promise<TaskCompletionHistory>;
+  getTaskCompletionHistory(taskId: number): Promise<TaskCompletionHistory[]>;
+  getTaskCompletionHistoryForPeriod(
+    taskId: number, 
+    startDate: Date, 
+    endDate: Date
+  ): Promise<TaskCompletionHistory[]>;
+  getMissedTasksForPeriod(
+    userId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{task: HouseholdTask, missedDates: Date[]}[]>;
 
   // User devices for push notifications
   registerUserDevice(device: InsertUserDevice): Promise<UserDevice>;
@@ -173,6 +191,7 @@ export class MemStorage implements IStorage {
   private eventRemindersMap: Map<number, EventReminder>;
   private taskRemindersMap: Map<number, TaskReminder>;
   private relationshipInsightsMap: Map<number, RelationshipInsight>;
+  private taskCompletionHistoryMap: Map<number, TaskCompletionHistory>;
 
   private userIdCounter: number;
   private eventIdCounter: number;
@@ -186,6 +205,7 @@ export class MemStorage implements IStorage {
   private eventReminderIdCounter: number;
   private taskReminderIdCounter: number;
   private relationshipInsightIdCounter: number;
+  private taskCompletionHistoryIdCounter: number;
 
   sessionStore: SessionStore;
 
@@ -202,6 +222,7 @@ export class MemStorage implements IStorage {
     this.eventRemindersMap = new Map();
     this.taskRemindersMap = new Map();
     this.relationshipInsightsMap = new Map();
+    this.taskCompletionHistoryMap = new Map();
 
     this.userIdCounter = 1;
     this.eventIdCounter = 1;
@@ -215,6 +236,7 @@ export class MemStorage implements IStorage {
     this.eventReminderIdCounter = 1;
     this.taskReminderIdCounter = 1;
     this.relationshipInsightIdCounter = 1;
+    this.taskCompletionHistoryIdCounter = 1;
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -501,7 +523,8 @@ export class MemStorage implements IStorage {
 
   async markHouseholdTaskAsCompleted(
     id: number,
-    completed: boolean
+    completed: boolean,
+    userId?: number
   ): Promise<HouseholdTask | undefined> {
     const task = this.householdTasksMap.get(id);
     if (!task) return undefined;
@@ -514,17 +537,41 @@ export class MemStorage implements IStorage {
       const currentDate = new Date();
       completedAt = currentDate;
       
-      if (task.frequency !== "once" && task.frequency !== "never") {
-        if (task.frequency === "daily") {
-          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
-        } else if (task.frequency === "weekly") {
-          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
-        } else if (task.frequency === "monthly") {
-          nextDueDate = new Date(
-            currentDate.setMonth(currentDate.getMonth() + 1)
-          );
-        }
+      // Registrar no histórico de conclusão se tiver userId
+      if (userId) {
+        const completionRecord: InsertTaskCompletionHistory = {
+          taskId: id,
+          userId: userId,
+          completedDate: currentDate,
+          expectedDate: task.dueDate,
+          isCompleted: true
+        };
+        this.addTaskCompletionRecord(completionRecord);
       }
+      
+      // Calcular a próxima data de vencimento com base na frequência e nas opções de recorrência
+      if (task.frequency !== "once" && task.frequency !== "never") {
+        const options: RecurrenceOptions = {
+          frequency: task.frequency as RecurrenceFrequency,
+          startDate: currentDate,
+          weekdays: task.weekdays ? task.weekdays.split(',').map(day => parseInt(day)) : undefined,
+          monthDay: task.monthDay || undefined
+        };
+        
+        // Usar o UnifiedRecurrenceService para calcular a próxima data
+        nextDueDate = UnifiedRecurrenceService.calculateNextDate(currentDate, options);
+      }
+    } else if (task.completed && !completed && userId) {
+      // Se estiver desmarcando uma tarefa como concluída, registrar como não concluída
+      const currentDate = new Date();
+      const completionRecord: InsertTaskCompletionHistory = {
+        taskId: id,
+        userId: userId,
+        completedDate: currentDate,
+        expectedDate: task.dueDate,
+        isCompleted: false
+      };
+      this.addTaskCompletionRecord(completionRecord);
     }
 
     const updatedTask = { 
@@ -535,6 +582,74 @@ export class MemStorage implements IStorage {
     };
     this.householdTasksMap.set(id, updatedTask);
     return updatedTask;
+  }
+  
+  // Implementação de métodos para histórico de conclusão de tarefas
+  async addTaskCompletionRecord(record: InsertTaskCompletionHistory): Promise<TaskCompletionHistory> {
+    const id = this.taskCompletionHistoryIdCounter++;
+    const historyRecord: TaskCompletionHistory = {
+      ...record,
+      id,
+      createdAt: new Date()
+    };
+    this.taskCompletionHistoryMap.set(id, historyRecord);
+    return historyRecord;
+  }
+  
+  async getTaskCompletionHistory(taskId: number): Promise<TaskCompletionHistory[]> {
+    return Array.from(this.taskCompletionHistoryMap.values())
+      .filter(record => record.taskId === taskId)
+      .sort((a, b) => {
+        const dateA = new Date(a.completedDate).getTime();
+        const dateB = new Date(b.completedDate).getTime();
+        return dateB - dateA; // Ordenar por data de conclusão, mais recente primeiro
+      });
+  }
+  
+  async getTaskCompletionHistoryForPeriod(
+    taskId: number, 
+    startDate: Date, 
+    endDate: Date
+  ): Promise<TaskCompletionHistory[]> {
+    return Array.from(this.taskCompletionHistoryMap.values())
+      .filter(record => {
+        const recordDate = new Date(record.completedDate);
+        return record.taskId === taskId && 
+               recordDate >= startDate && 
+               recordDate <= endDate;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.completedDate).getTime();
+        const dateB = new Date(b.completedDate).getTime();
+        return dateA - dateB; // Ordenar por data de conclusão, mais antiga primeiro
+      });
+  }
+  
+  async getMissedTasksForPeriod(
+    userId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{task: HouseholdTask, missedDates: Date[]}[]> {
+    // Obter tarefas do usuário
+    const userTasks = await this.getUserHouseholdTasks(userId);
+    const result: {task: HouseholdTask, missedDates: Date[]}[] = [];
+    
+    // Para cada tarefa, verificar histórico de não conclusões no período
+    for (const task of userTasks) {
+      const history = await this.getTaskCompletionHistoryForPeriod(task.id, startDate, endDate);
+      
+      // Filtrar por registros marcados como não concluídos
+      const missedRecords = history.filter(record => !record.isCompleted);
+      if (missedRecords.length > 0) {
+        const missedDates = missedRecords.map(record => new Date(record.completedDate));
+        result.push({
+          task,
+          missedDates
+        });
+      }
+    }
+    
+    return result;
   }
 
   // Métodos para dispositivos do usuário
