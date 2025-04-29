@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, Calendar, User, MessageSquare } from "lucide-react";
+import { Plus, Home, Calendar, User, MessageSquare, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { NotificationIndicator } from "./notification-indicator";
 
@@ -38,6 +38,16 @@ export default function BottomNavigation({
           <Calendar className="h-6 w-6" />
           <span className="text-xs mt-1">Agenda</span>
         </Link>
+        
+        <Link
+          to="/insights"
+          className={`flex flex-col items-center justify-center w-12 h-12 ${
+            isActive("/insights") ? "text-primary" : "text-gray-600"
+          }`}
+        >
+          <Sparkles className="h-6 w-6" />
+          <span className="text-xs mt-1">Insights</span>
+        </Link>
 
         <div className="relative">
           <Button
@@ -47,6 +57,7 @@ export default function BottomNavigation({
             <Plus className="h-8 w-8" />
           </Button>
         </div>
+        
         <Link
           to="/tasks"
           className={`flex flex-col items-center justify-center w-12 h-12 ${

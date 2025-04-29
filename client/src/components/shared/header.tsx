@@ -75,6 +75,17 @@ export default function Header() {
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
+              <Link href="/insights">
+                <DropdownMenuItem className="cursor-pointer" asChild>
+                  <a>
+                    <span className="material-icons mr-2 text-primary/80 text-sm">
+                      insights
+                    </span>
+                    <span>Insights de Relacionamento</span>
+                  </a>
+                </DropdownMenuItem>
+              </Link>
+              
               {!user?.partnerId && (
                 <Link href="/invite-partner">
                   <DropdownMenuItem className="cursor-pointer" asChild>
