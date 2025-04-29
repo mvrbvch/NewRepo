@@ -116,9 +116,27 @@ export const householdTasks = pgTable("household_tasks", {
   completedAt: timestamp("completed_at"), // Data em que a tarefa foi concluída
   nextDueDate: timestamp("next_due_date"),
   recurrenceRule: text("recurrence_rule"),
+  // Campos adicionais para configuração de recorrência
+  weekdays: text("weekdays"), // Para recorrência semanal, dias da semana (ex: "0,2,4" para domingo, terça, quinta)
+  monthDay: integer("month_day"), // Para recorrência mensal, dia do mês (1-31)
   priority: integer("priority").default(0), // Valores: 0 (baixa), 1 (média), 2 (alta) prioridade
   createdAt: timestamp("created_at").defaultNow(),
   position: integer().notNull().default(0),
+});
+
+// Tabela para histórico de conclusão de tarefas
+export const taskCompletionHistory = pgTable("task_completion_history", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id")
+    .notNull()
+    .references(() => householdTasks.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  completedDate: timestamp("completed_date").notNull(), // Data de conclusão da tarefa
+  expectedDate: timestamp("expected_date"), // Data em que a tarefa deveria ter sido concluída
+  isCompleted: boolean("is_completed").default(true), // Se foi concluída ou marcada como não concluída
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Tabela para dispositivos registrados para push notifications
@@ -392,6 +410,9 @@ export const insertHouseholdTaskSchema = createInsertSchema(
   completedAt: true,
   nextDueDate: true,
   recurrenceRule: true,
+  // Campos adicionais para configuração de recorrência
+  weekdays: true,
+  monthDay: true,
   priority: true,
   position: true,
 });
@@ -422,6 +443,27 @@ export type Notification = Omit<
   "createdAt"
 > & {
   createdAt: Date | string | null;
+};
+
+// Schema para o histórico de conclusão de tarefas
+export const insertTaskCompletionHistorySchema = createInsertSchema(
+  taskCompletionHistory
+).pick({
+  taskId: true,
+  userId: true,
+  completedDate: true,
+  expectedDate: true,
+  isCompleted: true
+});
+
+export type InsertTaskCompletionHistory = z.infer<typeof insertTaskCompletionHistorySchema>;
+export type TaskCompletionHistory = Omit<
+  typeof taskCompletionHistory.$inferSelect,
+  "createdAt" | "completedDate" | "expectedDate"
+> & {
+  createdAt: Date | string | null;
+  completedDate: Date | string;
+  expectedDate: Date | string | null;
 };
 
 // WebAuthn schemas
