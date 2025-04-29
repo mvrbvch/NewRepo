@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Plus, Home, Calendar, User, MessageSquare, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Home,
+  Calendar,
+  User,
+  MessageSquare,
+  Sparkles,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { NotificationIndicator } from "./notification-indicator";
+import { Badge } from "@/components/ui/badge";
 
 interface BottomNavigationProps {
   onCreateEvent?: () => void;
@@ -38,7 +46,7 @@ export default function BottomNavigation({
           <Calendar className="h-6 w-6" />
           <span className="text-xs mt-1">Agenda</span>
         </Link>
-        
+
         <Link
           to="/insights"
           className={`flex flex-col items-center justify-center w-12 h-12 ${
@@ -57,7 +65,7 @@ export default function BottomNavigation({
             <Plus className="h-8 w-8" />
           </Button>
         </div>
-        
+
         <Link
           to="/tasks"
           className={`flex flex-col items-center justify-center w-12 h-12 ${
@@ -66,6 +74,16 @@ export default function BottomNavigation({
         >
           <span className="material-icons text-[22px]">task_alt</span>
           <span className="text-xs mt-1">Tarefas</span>
+        </Link>
+
+        <Link
+          to="#"
+          className={`flex flex-col items-center justify-center w-25 h-12 disabled pointer-events-none text-gray-300`}
+        >
+          <span className="material-icons text-[22px]">book</span>
+          <Badge variant="secondary" className={"text-xs font-normal"}>
+            Notas
+          </Badge>
         </Link>
       </div>
     </div>

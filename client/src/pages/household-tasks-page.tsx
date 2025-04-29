@@ -763,6 +763,18 @@ export default function HouseholdTasksPage() {
                     {getFrequencyIcon(task.frequency)}
                     <span className="ml-1">
                       {getFrequencyText(task.frequency)}
+                      {task.weekdays && task.frequency === "weekly" && (
+                        <span className="ml-1 text-primary-dark/70">
+                          ({task.weekdays.split(",").map(day => 
+                            ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][parseInt(day)]
+                          ).join(", ")})
+                        </span>
+                      )}
+                      {task.monthDay && task.frequency === "monthly" && (
+                        <span className="ml-1 text-primary-dark/70">
+                          (Dia {task.monthDay})
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}

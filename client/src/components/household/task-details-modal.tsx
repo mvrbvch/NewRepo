@@ -221,6 +221,18 @@ export default function TaskDetailsModal({
                     <p className="text-xs text-medium">Frequência</p>
                     <p className="font-medium text-dark truncate">
                       {getFrequencyText(task.frequency)}
+                      {task.weekdays && task.frequency === "weekly" && (
+                        <span className="ml-1 text-gray-500 text-xs">
+                          ({task.weekdays.split(",").map(day => 
+                            ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][parseInt(day)]
+                          ).join(", ")})
+                        </span>
+                      )}
+                      {task.monthDay && task.frequency === "monthly" && (
+                        <span className="ml-1 text-gray-500 text-xs">
+                          (Dia {task.monthDay})
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
