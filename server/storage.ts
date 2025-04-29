@@ -49,7 +49,7 @@ import { eq, and, or, SQL, inArray, desc, sql, count, isNull, gt } from "drizzle
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { formatDateSafely } from "./utils";
-import { UnifiedRecurrenceService } from "./services/UnifiedRecurrenceService";
+import { UnifiedRecurrenceService, RecurrenceOptions, RecurrenceFrequency } from "./services/UnifiedRecurrenceService";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
