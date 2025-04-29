@@ -13,6 +13,7 @@ import HouseholdTasksPage from "./pages/household-tasks-page";
 import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import LandingPage from "./pages/landing-page";
 import WelcomePage from "./pages/welcome-page";
+import { RelationshipInsightsPage } from "./pages/relationship-insights-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
@@ -69,6 +70,9 @@ function Router() {
           path="/tasks/reorder"
           component={HouseholdTasksPageSimple}
         />
+        
+        {/* Insights de relacionamento */}
+        <ProtectedRoute path="/insights/:id?" component={RelationshipInsightsPage} />
 
         {/* Rota de não encontrado */}
         <Route component={NotFound} />

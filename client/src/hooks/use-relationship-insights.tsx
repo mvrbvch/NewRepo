@@ -1,79 +1,135 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { RelationshipInsight } from "@shared/schema";
 
 /**
- * Hook para buscar e gerenciar insights de relacionamento
+ * Custom hook para gerenciar insights de relacionamento
  */
 export function useRelationshipInsights() {
-  const queryClient = useQueryClient();
-
-  // Buscar todos os insights do usuário
+  /**
+   * Hook para buscar todos os insights
+   */
   const useAllInsights = () => {
     return useQuery({
-      queryKey: ['/api/relationship-insights'],
+      queryKey: ["relationshipInsights", "all"],
       queryFn: async () => {
-        const response = await apiRequest('/api/relationship-insights');
-        return response as RelationshipInsight[];
+        const response = await fetch("/api/relationship-insights");
+        
+        if (!response.ok) {
+          throw new Error("Erro ao buscar insights");
+        }
+        
+        return response.json() as Promise<RelationshipInsight[]>;
       }
     });
   };
 
-  // Buscar insights do casal (usuário e parceiro)
+  /**
+   * Hook para buscar insights de parceiro
+   */
   const usePartnerInsights = () => {
     return useQuery({
-      queryKey: ['/api/relationship-insights/partner'],
+      queryKey: ["relationshipInsights", "partner"],
       queryFn: async () => {
-        const response = await apiRequest('/api/relationship-insights/partner');
-        return response as RelationshipInsight[];
+        const response = await fetch("/api/relationship-insights/partner");
+        
+        if (!response.ok) {
+          throw new Error("Erro ao buscar insights de parceiro");
+        }
+        
+        return response.json() as Promise<RelationshipInsight[]>;
       }
     });
   };
 
-  // Buscar insight específico por ID
+  /**
+   * Hook para buscar um insight específico por ID
+   */
   const useInsightById = (id: number) => {
     return useQuery({
-      queryKey: ['/api/relationship-insights', id],
+      queryKey: ["relationshipInsights", id],
       queryFn: async () => {
-        const response = await apiRequest(`/api/relationship-insights/${id}`);
-        return response as RelationshipInsight;
+        const response = await fetch(`/api/relationship-insights/${id}`);
+        
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar insight ${id}`);
+        }
+        
+        return response.json() as Promise<RelationshipInsight>;
       },
-      enabled: !!id, // Só executa se o ID for válido
+      enabled: !!id // Só executa se tiver um ID válido
     });
   };
 
-  // Marcar insight como lido
+  /**
+   * Hook para marcar um insight como lido
+   */
   const useMarkAsRead = () => {
     return useMutation({
-      mutationFn: async (id: number) => {
-        const response = await apiRequest(`/api/relationship-insights/${id}/read`, {
-          method: 'POST'
+      mutationFn: async (insightId: number) => {
+        const response = await fetch(`/api/relationship-insights/${insightId}/read`, {
+          method: "POST"
         });
-        return response;
+        
+        if (!response.ok) {
+          throw new Error("Erro ao marcar insight como lido");
+        }
+        
+        return response.json();
       },
-      onSuccess: (_, id) => {
-        // Invalida as consultas para forçar uma atualização
-        queryClient.invalidateQueries({ queryKey: ['/api/relationship-insights'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/relationship-insights/partner'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/relationship-insights', id] });
+      onSuccess: (_, insightId) => {
+        // Invalida as queries para forçar uma atualização
+        queryClient.invalidateQueries({ queryKey: ["relationshipInsights"] });
       }
     });
   };
 
-  // Gerar novos insights manualmente (para testes/demonstração)
+  /**
+   * Hook para excluir um insight
+   */
+  const useDeleteInsight = () => {
+    return useMutation({
+      mutationFn: async (insightId: number) => {
+        const response = await fetch(`/api/relationship-insights/${insightId}`, {
+          method: "DELETE"
+        });
+        
+        if (!response.ok) {
+          throw new Error("Erro ao excluir insight");
+        }
+        
+        return response.json();
+      },
+      onSuccess: () => {
+        // Invalida as queries para forçar uma atualização
+        queryClient.invalidateQueries({ queryKey: ["relationshipInsights"] });
+      }
+    });
+  };
+
+  /**
+   * Hook para gerar um novo insight (útil para testes)
+   */
   const useGenerateInsights = () => {
     return useMutation({
       mutationFn: async (type?: string) => {
-        const response = await apiRequest(`/api/relationship-insights/generate`, {
-          method: 'POST',
-          body: type ? { type } : {}
+        const response = await fetch("/api/relationship-insights/generate", {
+          method: "POST",
+          body: type ? JSON.stringify({ type }) : JSON.stringify({}),
+          headers: {
+            "Content-Type": "application/json"
+          }
         });
-        return response;
+        
+        if (!response.ok) {
+          throw new Error("Erro ao gerar novos insights");
+        }
+        
+        return response.json();
       },
       onSuccess: () => {
-        // Invalida as consultas para forçar uma atualização
-        queryClient.invalidateQueries({ queryKey: ['/api/relationship-insights'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/relationship-insights/partner'] });
+        // Invalida as queries para forçar uma atualização
+        queryClient.invalidateQueries({ queryKey: ["relationshipInsights"] });
       }
     });
   };
@@ -83,6 +139,7 @@ export function useRelationshipInsights() {
     usePartnerInsights,
     useInsightById,
     useMarkAsRead,
+    useDeleteInsight,
     useGenerateInsights
   };
 }
