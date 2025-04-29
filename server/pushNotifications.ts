@@ -54,6 +54,43 @@ export function getVapidPublicKey(): string {
   return vapidPublicKey;
 }
 
+/**
+ * Função simplificada para enviar uma notificação push para um único token
+ * @param deviceToken Token do dispositivo
+ * @param payload Conteúdo da notificação
+ * @returns Promise que resolve para true se a notificação foi enviada com sucesso
+ */
+export async function sendPushNotification(
+  deviceToken: string,
+  payload: PushNotificationPayload
+): Promise<boolean> {
+  try {
+    // Criar um objeto de dispositivo simplificado
+    const device: UserDevice = {
+      id: 0, // ID temporário
+      userId: 0, // UserID temporário
+      deviceToken,
+      deviceType: "web", // Assumir Web Push por padrão
+      pushEnabled: true,
+      deviceName: null,
+      lastUsed: null,
+      createdAt: null,
+    };
+    
+    // Tentar determinar o tipo de dispositivo pelo formato do token
+    if (deviceToken.startsWith("{") && deviceToken.endsWith("}")) {
+      device.deviceType = PushTargetPlatform.WEB;
+    } else if (deviceToken.length > 100) {
+      device.deviceType = PushTargetPlatform.FIREBASE;
+    }
+    
+    return await sendPushToDevice(device, payload);
+  } catch (error) {
+    console.error("Erro ao enviar notificação push:", error);
+    return false;
+  }
+}
+
 // Possíveis plataformas de destino para notificações push
 export enum PushTargetPlatform {
   WEB = "web",

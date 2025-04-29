@@ -1,7 +1,7 @@
 import { IStorage } from "./storage";
 import { EventReminder, TaskReminder } from "@shared/schema";
 import { sendEmail } from "./email";
-import { sendPushNotification } from "./pushNotifications";
+import { sendPushToUser } from "./pushNotifications";
 import { formatDateSafely } from "./utils";
 
 /**
@@ -133,29 +133,21 @@ export class ReminderService {
           html: message,
         });
       } else if (reminder.reminderType === "push") {
-        // Obter dispositivos do usuário
-        const devices = await this.storage.getUserDevices(user.id);
-        if (devices.length === 0) {
-          console.log(`Usuário ${user.id} não tem dispositivos registrados para notificações push`);
-        } else {
-          // Enviar para todos os dispositivos
-          const pushPromises = devices
-            .filter(device => device.pushEnabled)
-            .map(device => 
-              sendPushNotification(device.deviceToken, {
-                title: subject,
-                body: `${event.title} - ${formattedDate} às ${event.startTime}`,
-                data: {
-                  type: "event",
-                  eventId: event.id.toString(),
-                  url: `/event/${event.id}`
-                }
-              })
-            );
-          
-          const results = await Promise.allSettled(pushPromises);
-          sent = results.some(result => result.status === "fulfilled");
-        }
+        // Usar a função sendPushToUser para enviar para todos os dispositivos do usuário
+        const successCount = await sendPushToUser(user.id, {
+          title: subject,
+          body: `${event.title} - ${formattedDate} às ${event.startTime}`,
+          data: {
+            type: "event",
+            eventId: event.id.toString(),
+            url: `/event/${event.id}`
+          },
+          referenceType: "event",
+          referenceId: event.id
+        });
+        
+        sent = successCount > 0;
+        console.log(`Notificação push enviada para ${successCount} dispositivo(s) do usuário ${user.id}`);
       }
       
       // Criar notificação in-app
@@ -228,29 +220,21 @@ export class ReminderService {
           html: message,
         });
       } else if (reminder.reminderType === "push") {
-        // Obter dispositivos do usuário
-        const devices = await this.storage.getUserDevices(user.id);
-        if (devices.length === 0) {
-          console.log(`Usuário ${user.id} não tem dispositivos registrados para notificações push`);
-        } else {
-          // Enviar para todos os dispositivos
-          const pushPromises = devices
-            .filter(device => device.pushEnabled)
-            .map(device => 
-              sendPushNotification(device.deviceToken, {
-                title: subject,
-                body: task.title + dueDateMessage,
-                data: {
-                  type: "task",
-                  taskId: task.id.toString(),
-                  url: `/household-tasks?task=${task.id}`
-                }
-              })
-            );
-          
-          const results = await Promise.allSettled(pushPromises);
-          sent = results.some(result => result.status === "fulfilled");
-        }
+        // Usar a função sendPushToUser para enviar para todos os dispositivos do usuário
+        const successCount = await sendPushToUser(user.id, {
+          title: subject,
+          body: task.title + dueDateMessage,
+          data: {
+            type: "task",
+            taskId: task.id.toString(),
+            url: `/household-tasks?task=${task.id}`
+          },
+          referenceType: "task",
+          referenceId: task.id
+        });
+        
+        sent = successCount > 0;
+        console.log(`Notificação push enviada para ${successCount} dispositivo(s) do usuário ${user.id}`);
       }
       
       // Criar notificação in-app
