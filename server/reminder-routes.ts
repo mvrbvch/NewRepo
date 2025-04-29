@@ -83,7 +83,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
         const emailReminder = await storage.createEventReminder({
           eventId,
           userId,
-          reminderDate,
+          reminderTime: reminderDate,
           reminderType: "email",
           message: customMessage || null,
           sent: false,
@@ -95,7 +95,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
         const pushReminder = await storage.createEventReminder({
           eventId,
           userId,
-          reminderDate,
+          reminderTime: reminderDate,
           reminderType: "push",
           message: customMessage || null,
           sent: false,
