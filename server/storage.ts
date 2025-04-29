@@ -2084,22 +2084,17 @@ export class DatabaseStorage implements IStorage {
       const updateData: any = { completed };
 
       // Caso esteja marcando como concluída e é uma tarefa recorrente
-      if (completed && task.frequency !== "once") {
-        const currentDate = new Date();
-
-        // Calcular próxima data de vencimento com base na frequência
-        if (task.frequency === "daily") {
-          updateData.nextDueDate = new Date(
-            new Date().setDate(currentDate.getDate() + 1)
-          );
-        } else if (task.frequency === "weekly") {
-          updateData.nextDueDate = new Date(
-            new Date().setDate(currentDate.getDate() + 7)
-          );
-        } else if (task.frequency === "monthly") {
-          updateData.nextDueDate = new Date(
-            new Date().setMonth(currentDate.getMonth() + 1)
-          );
+      if (completed && task.frequency && task.frequency !== "once" && task.frequency !== "never") {
+        // Usar o serviço unificado para calcular a próxima data de vencimento
+        const nextDueDate = UnifiedRecurrenceService.calculateNextDueDateForTask(task);
+        
+        if (nextDueDate) {
+          updateData.nextDueDate = nextDueDate;
+          console.log("Próxima data de vencimento calculada:", {
+            taskId: id,
+            frequency: task.frequency,
+            nextDueDate: nextDueDate.toISOString()
+          });
         }
       }
       // Caso esteja desmarcando (voltando a incompleta)

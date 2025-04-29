@@ -34,6 +34,7 @@ import {
   sendPushToDevice,
   PushNotificationPayload,
 } from "./pushNotifications";
+import { UnifiedRecurrenceService } from "./services/UnifiedRecurrenceService";
 import { WebSocketServer } from "ws";
 import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
@@ -48,95 +49,15 @@ function expandRecurringEvents(
   const result: Event[] = [];
 
   for (const event of events) {
-    // Eventos sem recorrência são adicionados diretamente
-    if (!event.recurrence || event.recurrence === "never") {
-      result.push(event);
-      continue;
-    }
-
-    // Para eventos recorrentes, precisamos gerar instâncias adicionais
-    // Primeiro, adicione a instância original
-    result.push(event);
-
-    // Se não tem regra de recorrência, pule
-    if (!event.recurrenceRule) {
-      continue;
-    }
-
-    // Parse a data do evento
-    let eventDate: Date;
-    if (typeof event.date === "string") {
-      try {
-        eventDate = parseISO(event.date);
-      } catch {
-        continue; // Pula se não conseguir converter a data
-      }
-    } else if (event.date instanceof Date) {
-      eventDate = event.date;
-    } else {
-      continue; // Pula se não tiver data
-    }
-
-    // Se a data está após o período de visualização, pule
-    if (isAfter(eventDate, endDate)) {
-      continue;
-    }
-
-    // Parse a data final da recorrência
-    let recurrenceEndDate: Date | null = null;
-    if (event.recurrenceEnd) {
-      if (typeof event.recurrenceEnd === "string") {
-        try {
-          recurrenceEndDate = parseISO(event.recurrenceEnd);
-        } catch {
-          // Se não conseguir converter, deixa null
-        }
-      } else if (event.recurrenceEnd instanceof Date) {
-        recurrenceEndDate = event.recurrenceEnd;
-      }
-    }
-
-    // Limite pelo período de visualização ou pela data de fim da recorrência
-    const finalEndDate =
-      recurrenceEndDate && isBefore(recurrenceEndDate, endDate)
-        ? recurrenceEndDate
-        : endDate;
-
-    // Extrair a frequência da regra de recorrência
-    const freqMatch = event.recurrenceRule.match(/FREQ=([A-Z]+)/);
-    if (!freqMatch) continue;
-
-    const freq = freqMatch[1];
-    let currentDate = eventDate;
-
-    // Gerar instâncias baseadas na frequência
-    while (isBefore(currentDate, finalEndDate)) {
-      if (freq === "DAILY") {
-        currentDate = addDays(currentDate, 1);
-      } else if (freq === "WEEKLY") {
-        currentDate = addWeeks(currentDate, 1);
-      } else if (freq === "MONTHLY") {
-        currentDate = addMonths(currentDate, 1);
-      } else {
-        break; // Frequência desconhecida
-      }
-
-      // Se a data está fora do período, pule
-      if (isAfter(currentDate, finalEndDate)) {
-        break;
-      }
-
-      // Adicionar nova instância do evento recorrente
-      const recurringInstance: Event = {
-        ...event,
-        date: currentDate.toISOString(),
-        id: event.id, // ID da instância original
-        isRecurring: true, // Marcar como instância de recorrência
-        originalDate: event.date, // Guardar a data original para referência
-      };
-
-      result.push(recurringInstance);
-    }
+    // Usar o serviço unificado de recorrência para expandir eventos
+    const expandedEvents = UnifiedRecurrenceService.expandRecurringEvent(
+      event,
+      startDate,
+      endDate
+    );
+    
+    // Adicionar todas as instâncias expandidas ao resultado
+    result.push(...expandedEvents);
   }
 
   return result;
