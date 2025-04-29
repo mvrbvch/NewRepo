@@ -489,8 +489,16 @@ export default function HouseholdTasksPage() {
         return "Diária";
       case "weekly":
         return "Semanal";
+      case "biweekly":
+        return "Quinzenal";
       case "monthly":
         return "Mensal";
+      case "quarterly":
+        return "Trimestral";
+      case "yearly":
+        return "Anual";
+      case "custom":
+        return "Personalizada";
       default:
         return frequency;
     }
@@ -502,7 +510,15 @@ export default function HouseholdTasksPage() {
         return <Repeat className="h-4 w-4 text-primary flex-shrink-0" />;
       case "weekly":
         return <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />;
+      case "biweekly":
+        return <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />;
       case "monthly":
+        return <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />;
+      case "quarterly":
+        return <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />;
+      case "yearly":
+        return <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />;
+      case "custom":
         return <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />;
       default:
         return <Clock className="h-4 w-4 text-primary flex-shrink-0" />;
@@ -852,8 +868,24 @@ export default function HouseholdTasksPage() {
         title = "Tarefas Semanais";
         icon = <CalendarDays className="h-5 w-5" />;
         break;
+      case "biweekly":
+        title = "Tarefas Quinzenais";
+        icon = <CalendarDays className="h-5 w-5" />;
+        break;
       case "monthly":
         title = "Tarefas Mensais";
+        icon = <CalendarClock className="h-5 w-5" />;
+        break;
+      case "quarterly":
+        title = "Tarefas Trimestrais";
+        icon = <CalendarClock className="h-5 w-5" />;
+        break;
+      case "yearly":
+        title = "Tarefas Anuais";
+        icon = <CalendarClock className="h-5 w-5" />;
+        break;
+      case "custom":
+        title = "Tarefas Personalizadas";
         icon = <CalendarClock className="h-5 w-5" />;
         break;
       case "once":
@@ -1052,7 +1084,11 @@ export default function HouseholdTasksPage() {
         <>
           {renderTaskGroup("daily", groupedTasks.daily || [])}
           {renderTaskGroup("weekly", groupedTasks.weekly || [])}
+          {renderTaskGroup("biweekly", groupedTasks.biweekly || [])}
           {renderTaskGroup("monthly", groupedTasks.monthly || [])}
+          {renderTaskGroup("quarterly", groupedTasks.quarterly || [])}
+          {renderTaskGroup("yearly", groupedTasks.yearly || [])}
+          {renderTaskGroup("custom", groupedTasks.custom || [])}
           {renderTaskGroup("once", groupedTasks.once || [])}
 
           {!hasAnyTasks && renderEmptyState()}
