@@ -13,7 +13,9 @@ export function useRelationshipInsights() {
     return useQuery({
       queryKey: ["relationshipInsights", "all"],
       queryFn: async () => {
-        const response = await fetch("/api/relationship-insights");
+        const response = await fetch("/api/relationship-insights", {
+          credentials: "include"
+        });
         
         if (!response.ok) {
           throw new Error("Erro ao buscar insights");
@@ -31,7 +33,9 @@ export function useRelationshipInsights() {
     return useQuery({
       queryKey: ["relationshipInsights", "partner"],
       queryFn: async () => {
-        const response = await fetch("/api/relationship-insights/partner");
+        const response = await fetch("/api/relationship-insights/partner", {
+          credentials: "include"
+        });
         
         if (!response.ok) {
           throw new Error("Erro ao buscar insights de parceiro");
@@ -49,7 +53,9 @@ export function useRelationshipInsights() {
     return useQuery({
       queryKey: ["relationshipInsights", id],
       queryFn: async () => {
-        const response = await fetch(`/api/relationship-insights/${id}`);
+        const response = await fetch(`/api/relationship-insights/${id}`, {
+          credentials: "include"
+        });
         
         if (!response.ok) {
           throw new Error(`Erro ao buscar insight ${id}`);
@@ -68,7 +74,8 @@ export function useRelationshipInsights() {
     return useMutation({
       mutationFn: async (insightId: number) => {
         const response = await fetch(`/api/relationship-insights/${insightId}/read`, {
-          method: "POST"
+          method: "POST",
+          credentials: "include"
         });
         
         if (!response.ok) {

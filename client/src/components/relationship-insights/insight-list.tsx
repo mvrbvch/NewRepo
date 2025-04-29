@@ -3,7 +3,7 @@ import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
 import { InsightCard } from "./insight-card";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState } from "../shared/empty-state";
 
 interface InsightListProps {
   type: "all" | "partner";
