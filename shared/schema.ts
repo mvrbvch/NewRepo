@@ -177,6 +177,22 @@ export const eventReminders = pgTable("event_reminders", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Lembretes personalizados para tarefas domésticas
+export const taskReminders = pgTable("task_reminders", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id")
+    .notNull()
+    .references(() => householdTasks.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  reminderTime: timestamp("reminder_time").notNull(),
+  reminderType: text("reminder_type").notNull(), // push, email, sms, etc.
+  message: text("message"), // Mensagem personalizada opcional
+  sent: boolean("sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Notas compartilhadas entre parceiros
 export const sharedNotes = pgTable("shared_notes", {
   id: serial("id").primaryKey(),
@@ -429,6 +445,16 @@ export const insertEventReminderSchema = createInsertSchema(
   reminderType: true,
 });
 
+export const insertTaskReminderSchema = createInsertSchema(
+  taskReminders,
+).pick({
+  taskId: true,
+  userId: true,
+  reminderTime: true,
+  reminderType: true,
+  message: true,
+});
+
 export const insertSharedNoteSchema = createInsertSchema(sharedNotes).pick({
   title: true,
   content: true,
@@ -494,4 +520,22 @@ export type WebAuthnCredential = Omit<
 > & {
   createdAt: Date | string | null;
   lastUsed: Date | string | null;
+};
+
+export type InsertEventReminder = z.infer<typeof insertEventReminderSchema>;
+export type EventReminder = Omit<
+  typeof eventReminders.$inferSelect,
+  "reminderTime" | "createdAt"
+> & {
+  reminderTime: Date | string;
+  createdAt: Date | string | null;
+};
+
+export type InsertTaskReminder = z.infer<typeof insertTaskReminderSchema>;
+export type TaskReminder = Omit<
+  typeof taskReminders.$inferSelect,
+  "reminderTime" | "createdAt"
+> & {
+  reminderTime: Date | string;
+  createdAt: Date | string | null;
 };

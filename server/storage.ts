@@ -8,6 +8,8 @@ import {
   householdTasks,
   userDevices,
   notifications,
+  eventReminders,
+  taskReminders,
 } from "@shared/schema";
 import type {
   User,
@@ -28,6 +30,10 @@ import type {
   InsertUserDevice,
   Notification,
   InsertNotification,
+  EventReminder,
+  InsertEventReminder,
+  TaskReminder,
+  InsertTaskReminder,
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -119,8 +125,23 @@ export interface IStorage {
   getNotification(id: number): Promise<Notification | undefined>;
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<Notification[]>;
-
   deleteNotification(id: number): Promise<boolean>;
+
+  // Event Reminders
+  createEventReminder(reminder: InsertEventReminder): Promise<EventReminder>;
+  getEventReminders(eventId: number): Promise<EventReminder[]>;
+  getUserEventReminders(userId: number): Promise<EventReminder[]>;
+  getPendingEventReminders(): Promise<EventReminder[]>;
+  markEventReminderAsSent(id: number): Promise<EventReminder | undefined>;
+  deleteEventReminder(id: number): Promise<boolean>;
+
+  // Task Reminders
+  createTaskReminder(reminder: InsertTaskReminder): Promise<TaskReminder>;
+  getTaskReminders(taskId: number): Promise<TaskReminder[]>;
+  getUserTaskReminders(userId: number): Promise<TaskReminder[]>;
+  getPendingTaskReminders(): Promise<TaskReminder[]>;
+  markTaskReminderAsSent(id: number): Promise<TaskReminder | undefined>;
+  deleteTaskReminder(id: number): Promise<boolean>;
 
   // Session store
   sessionStore: SessionStore;
@@ -136,6 +157,8 @@ export class MemStorage implements IStorage {
   private householdTasksMap: Map<number, HouseholdTask>;
   private userDevicesMap: Map<number, UserDevice>;
   private notificationsMap: Map<number, Notification>;
+  private eventRemindersMap: Map<number, EventReminder>;
+  private taskRemindersMap: Map<number, TaskReminder>;
 
   private userIdCounter: number;
   private eventIdCounter: number;
@@ -146,6 +169,8 @@ export class MemStorage implements IStorage {
   private householdTaskIdCounter: number;
   private userDeviceIdCounter: number;
   private notificationIdCounter: number;
+  private eventReminderIdCounter: number;
+  private taskReminderIdCounter: number;
 
   sessionStore: SessionStore;
 
@@ -159,6 +184,8 @@ export class MemStorage implements IStorage {
     this.householdTasksMap = new Map();
     this.userDevicesMap = new Map();
     this.notificationsMap = new Map();
+    this.eventRemindersMap = new Map();
+    this.taskRemindersMap = new Map();
 
     this.userIdCounter = 1;
     this.eventIdCounter = 1;
@@ -169,6 +196,8 @@ export class MemStorage implements IStorage {
     this.householdTaskIdCounter = 1;
     this.userDeviceIdCounter = 1;
     this.notificationIdCounter = 1;
+    this.eventReminderIdCounter = 1;
+    this.taskReminderIdCounter = 1;
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
