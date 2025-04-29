@@ -53,7 +53,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
       
       const { reminderType, reminderTime, customMessage } = validation.data;
       
-      // Calcular a data e hora do lembrete com base no reminderTime
+      // Calcular a data e hora do lembrete com base no reminderTime (reminderDate no banco)
       const eventDate = event.date instanceof Date 
         ? event.date 
         : new Date(event.date);
@@ -258,7 +258,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
         reminderUserId = recipientId;
       }
       
-      // Calcular a data e hora do lembrete com base no reminderTime
+      // Calcular a data e hora do lembrete com base no reminderTime (reminderDate no banco)
       let reminderDate = new Date();
       
       // Se a tarefa tiver data de vencimento, usar como base

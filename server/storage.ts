@@ -704,44 +704,51 @@ export class MemStorage implements IStorage {
   }
 
   async getTaskReminders(taskId: number): Promise<TaskReminder[]> {
-    return Array.from(this.taskRemindersMap.values())
-      .filter((reminder) => reminder.taskId === taskId)
-      .sort((a, b) => {
-        // Ordenar por tempo do lembrete, mais próximos primeiro
-        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
-        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
-        return timeA - timeB;
-      });
+    const results = await db
+      .select()
+      .from(taskReminders)
+      .where(eq(taskReminders.taskId, taskId))
+      .orderBy(taskReminders.reminderDate);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderDate: reminder.reminderDate.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
   }
 
   async getUserTaskReminders(userId: number): Promise<TaskReminder[]> {
-    return Array.from(this.taskRemindersMap.values())
-      .filter((reminder) => reminder.userId === userId)
-      .sort((a, b) => {
-        // Ordenar por tempo do lembrete, mais próximos primeiro
-        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
-        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
-        return timeA - timeB;
-      });
+    const results = await db
+      .select()
+      .from(taskReminders)
+      .where(eq(taskReminders.userId, userId))
+      .orderBy(taskReminders.reminderDate);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderDate: reminder.reminderDate.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
   }
 
   async getPendingTaskReminders(): Promise<TaskReminder[]> {
     const now = new Date();
-    return Array.from(this.taskRemindersMap.values())
-      .filter((reminder) => {
-        // Filtrar lembretes não enviados e que já passaram do tempo programado
-        return (
-          !reminder.sent &&
-          reminder.reminderTime &&
-          new Date(reminder.reminderTime) <= now
-        );
-      })
-      .sort((a, b) => {
-        // Ordenar por tempo do lembrete, mais antigos primeiro
-        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
-        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
-        return timeA - timeB;
-      });
+    const results = await db
+      .select()
+      .from(taskReminders)
+      .where(
+        and(
+          eq(taskReminders.sent, false),
+          sql`${taskReminders.reminderDate} <= ${now}`
+        )
+      )
+      .orderBy(taskReminders.reminderDate);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderDate: reminder.reminderDate.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
   }
 
   async markTaskReminderAsSent(
@@ -1042,7 +1049,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...newReminder,
-      reminderTime: newReminder.reminderTime.toISOString(),
+      reminderDate: newReminder.reminderDate.toISOString(),
       createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
     };
   }
@@ -1052,11 +1059,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(taskReminders)
       .where(eq(taskReminders.taskId, taskId))
-      .orderBy(taskReminders.reminderTime);
+      .orderBy(taskReminders.reminderDate);
 
     return results.map((reminder) => ({
       ...reminder,
-      reminderTime: reminder.reminderTime.toISOString(),
+      reminderDate: reminder.reminderDate.toISOString(),
       createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
     }));
   }
@@ -1066,11 +1073,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(taskReminders)
       .where(eq(taskReminders.userId, userId))
-      .orderBy(taskReminders.reminderTime);
+      .orderBy(taskReminders.reminderDate);
 
     return results.map((reminder) => ({
       ...reminder,
-      reminderTime: reminder.reminderTime.toISOString(),
+      reminderDate: reminder.reminderDate.toISOString(),
       createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
     }));
   }
