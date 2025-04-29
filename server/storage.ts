@@ -997,6 +997,114 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Implementação dos métodos de histórico de conclusão de tarefas
+  async addTaskCompletionRecord(record: InsertTaskCompletionHistory): Promise<TaskCompletionHistory> {
+    try {
+      const [newRecord] = await db
+        .insert(taskCompletionHistory)
+        .values({
+          taskId: record.taskId,
+          userId: record.userId,
+          completedDate: record.completedDate,
+          expectedDate: record.expectedDate || null,
+          isCompleted: record.isCompleted !== undefined ? record.isCompleted : true,
+        })
+        .returning();
+        
+      return {
+        ...newRecord,
+        completedDate: formatDateSafely(newRecord.completedDate),
+        expectedDate: newRecord.expectedDate ? formatDateSafely(newRecord.expectedDate) : null,
+        createdAt: newRecord.createdAt ? formatDateSafely(newRecord.createdAt) : null,
+      };
+    } catch (error) {
+      console.error("Erro ao adicionar registro de conclusão:", error);
+      throw error;
+    }
+  }
+  
+  async getTaskCompletionHistory(taskId: number): Promise<TaskCompletionHistory[]> {
+    try {
+      const results = await db
+        .select()
+        .from(taskCompletionHistory)
+        .where(eq(taskCompletionHistory.taskId, taskId))
+        .orderBy(desc(taskCompletionHistory.completedDate));
+        
+      return results.map(record => ({
+        ...record,
+        completedDate: formatDateSafely(record.completedDate),
+        expectedDate: record.expectedDate ? formatDateSafely(record.expectedDate) : null,
+        createdAt: record.createdAt ? formatDateSafely(record.createdAt) : null,
+      }));
+    } catch (error) {
+      console.error("Erro ao obter histórico de conclusão:", error);
+      return [];
+    }
+  }
+  
+  async getTaskCompletionHistoryForPeriod(
+    taskId: number, 
+    startDate: Date, 
+    endDate: Date
+  ): Promise<TaskCompletionHistory[]> {
+    try {
+      const results = await db
+        .select()
+        .from(taskCompletionHistory)
+        .where(
+          and(
+            eq(taskCompletionHistory.taskId, taskId),
+            // Verificar se a data de conclusão está dentro do período
+            sql`${taskCompletionHistory.completedDate} >= ${startDate}`,
+            sql`${taskCompletionHistory.completedDate} <= ${endDate}`
+          )
+        )
+        .orderBy(taskCompletionHistory.completedDate);
+        
+      return results.map(record => ({
+        ...record,
+        completedDate: formatDateSafely(record.completedDate),
+        expectedDate: record.expectedDate ? formatDateSafely(record.expectedDate) : null,
+        createdAt: record.createdAt ? formatDateSafely(record.createdAt) : null,
+      }));
+    } catch (error) {
+      console.error("Erro ao obter histórico de conclusão para o período:", error);
+      return [];
+    }
+  }
+  
+  async getMissedTasksForPeriod(
+    userId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{task: HouseholdTask, missedDates: Date[]}[]> {
+    try {
+      // Obter tarefas do usuário
+      const userTasks = await this.getUserHouseholdTasks(userId);
+      const result: {task: HouseholdTask, missedDates: Date[]}[] = [];
+      
+      // Para cada tarefa, buscar histórico de não conclusões no período
+      for (const task of userTasks) {
+        const history = await this.getTaskCompletionHistoryForPeriod(task.id, startDate, endDate);
+        
+        // Filtrar por registros marcados como não concluídos
+        const missedRecords = history.filter(record => !record.isCompleted);
+        if (missedRecords.length > 0) {
+          const missedDates = missedRecords.map(record => new Date(record.completedDate));
+          result.push({
+            task,
+            missedDates
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Erro ao obter tarefas não concluídas:", error);
+      return [];
+    }
+  }
   sessionStore: SessionStore;
 
   constructor() {
@@ -2196,7 +2304,8 @@ export class DatabaseStorage implements IStorage {
 
   async markHouseholdTaskAsCompleted(
     id: number,
-    completed: boolean
+    completed: boolean,
+    userId?: number
   ): Promise<HouseholdTask | undefined> {
     try {
       // Obter a tarefa atual
@@ -2215,27 +2324,43 @@ export class DatabaseStorage implements IStorage {
         const completionDate = new Date();
         updateData.completedAt = completionDate;
         
+        // Registrar no histórico de conclusão se tiver userId
+        if (userId) {
+          try {
+            const completionRecord: InsertTaskCompletionHistory = {
+              taskId: id,
+              userId: userId,
+              completedDate: completionDate,
+              expectedDate: task.dueDate,
+              isCompleted: true
+            };
+            await this.addTaskCompletionRecord(completionRecord);
+            console.log("Registro de conclusão adicionado:", completionRecord);
+          } catch (error) {
+            console.error("Erro ao registrar histórico de conclusão:", error);
+            // Continuar mesmo se falhar o registro no histórico
+          }
+        }
+        
         // Caso seja uma tarefa recorrente
         if (task.frequency && task.frequency !== "once" && task.frequency !== "never") {
-          // Se a tarefa tinha uma data de vencimento, usamos ela como base para o cálculo
-          // da próxima data de vencimento, caso contrário usamos a data atual
-          const baseDate = task.dueDate || completionDate;
-          
-          // Atualiza o campo dueDate com a data atual de conclusão antes de calcular a próxima
-          const taskWithUpdatedDueDate = {
-            ...task,
-            dueDate: baseDate
+          // Criar as opções de recorrência para usar o serviço unificado
+          const options: RecurrenceOptions = {
+            frequency: task.frequency as RecurrenceFrequency,
+            startDate: completionDate,
+            weekdays: task.weekdays ? task.weekdays.split(',').map(day => parseInt(day)) : undefined,
+            monthDay: task.monthDay || undefined
           };
           
-          // Usar o serviço unificado para calcular a próxima data de vencimento
-          const nextDueDate = UnifiedRecurrenceService.calculateNextDueDateForTask(taskWithUpdatedDueDate);
+          // Usar o UnifiedRecurrenceService para calcular a próxima data de vencimento
+          const nextDueDate = UnifiedRecurrenceService.calculateNextDate(completionDate, options);
           
           if (nextDueDate) {
             updateData.nextDueDate = nextDueDate;
             console.log("Próxima data de vencimento calculada:", {
               taskId: id,
               frequency: task.frequency,
-              baseDate: baseDate.toISOString(),
+              options,
               nextDueDate: nextDueDate.toISOString()
             });
           }
@@ -2248,6 +2373,24 @@ export class DatabaseStorage implements IStorage {
         updateData.nextDueDate = null;
         // Limpar a data de conclusão
         updateData.completedAt = null;
+        
+        // Registrar desmarcação no histórico se tiver userId
+        if (userId && task.completed) {
+          try {
+            const completionRecord: InsertTaskCompletionHistory = {
+              taskId: id,
+              userId: userId,
+              completedDate: new Date(),
+              expectedDate: task.dueDate,
+              isCompleted: false
+            };
+            await this.addTaskCompletionRecord(completionRecord);
+            console.log("Registro de desmarcação adicionado:", completionRecord);
+          } catch (error) {
+            console.error("Erro ao registrar histórico de desmarcação:", error);
+            // Continuar mesmo se falhar o registro no histórico
+          }
+        }
       }
 
       console.log("Atualizando status da tarefa:", {
