@@ -91,6 +91,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configurar rotas para o sistema de insights de relacionamento
   setupRelationshipInsightsRoutes(app, storage);
 
+  // Rota de teste para a funcionalidade do histórico de conclusão
+  app.get("/api/test/task-history/:id", async (req: Request, res: Response) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      
+      // Obter a tarefa
+      const task = await storage.getHouseholdTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+      
+      // Obter o histórico de conclusão
+      const history = await storage.getTaskCompletionHistory(taskId);
+      
+      return res.json({
+        task,
+        history,
+        message: `Histórico de conclusão recuperado para a tarefa ${taskId}`,
+        count: history.length
+      });
+    } catch (error) {
+      console.error("Erro ao obter histórico de conclusão:", error);
+      return res.status(500).json({ message: "Erro ao obter histórico de conclusão de tarefa" });
+    }
+  });
+
   // Rota de teste para a funcionalidade de marcar tarefas como concluídas
   app.get("/api/test/task-complete/:id", async (req: Request, res: Response) => {
     try {
@@ -105,7 +131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completed = req.query.completed === 'false' ? false : true;
       console.log(`Marcando tarefa ${taskId} como ${completed ? 'concluída' : 'não concluída'}`);
       
-      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, completed);
+      // Usar userId padrão para testes (1 é geralmente o primeiro usuário do sistema)
+      const testUserId = parseInt(req.query.userId as string) || 1;
+      console.log(`Usando userId ${testUserId} para registro de conclusão`);
+      
+      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, completed, testUserId);
       
       // Verificar o status da tarefa
       if (updatedTask) {
@@ -1414,7 +1444,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedTask = await storage.markHouseholdTaskAsCompleted(
         taskId,
-        completed
+        completed,
+        userId
       );
 
       // If the task was completed by someone else, notify the creator
@@ -1478,6 +1509,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // POST - Enviar lembrete de tarefa por e-mail para o parceiro
+  // GET - Obter histórico de conclusão de uma tarefa
+  app.get("/api/tasks/:id/completion-history", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getHouseholdTask(taskId);
+
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Verificar se o usuário tem permissão para visualizar
+      const userId = req.user?.id as number;
+      if (task.createdBy !== userId && task.assignedTo !== userId) {
+        const user = await storage.getUser(userId);
+        if (
+          !user?.partnerId ||
+          (task.createdBy !== user.partnerId &&
+            task.assignedTo !== user.partnerId)
+        ) {
+          return res
+            .status(403)
+            .json({ message: "You don't have permission to view this task history" });
+        }
+      }
+
+      // Obter parâmetros de filtro opcional
+      const startDateParam = req.query.startDate as string;
+      const endDateParam = req.query.endDate as string;
+
+      let history;
+      if (startDateParam && endDateParam) {
+        // Se foram fornecidas datas de início e fim, filtrar por período
+        const startDate = new Date(startDateParam);
+        const endDate = new Date(endDateParam);
+        history = await storage.getTaskCompletionHistoryForPeriod(taskId, startDate, endDate);
+      } else {
+        // Caso contrário, retornar todo o histórico
+        history = await storage.getTaskCompletionHistory(taskId);
+      }
+
+      res.json({
+        task,
+        history
+      });
+    } catch (error) {
+      console.error("Erro ao obter histórico de conclusão:", error);
+      res.status(500).json({ message: "Failed to get task completion history" });
+    }
+  });
+
   app.post("/api/tasks/:id/remind", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
