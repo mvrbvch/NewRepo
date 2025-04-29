@@ -32,8 +32,14 @@ export function InsightList({ type, isPartner = false }: InsightListProps) {
 
   if (insightsQuery.isLoading) {
     return (
-      <div className="w-full flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="w-full flex flex-col items-center justify-center py-16">
+        <div className="relative">
+          <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full"></div>
+          <div className="relative bg-white p-4 rounded-full shadow-md">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        </div>
+        <p className="mt-6 text-gray-600 font-medium animate-pulse">Carregando insights...</p>
       </div>
     );
   }
