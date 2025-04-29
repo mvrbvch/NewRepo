@@ -154,3 +154,13 @@ export interface ProjectTaskType {
   createdAt: string | Date;
   completedAt: string | Date | null;
 }
+
+export interface TaskCompletionHistoryType {
+  id: number;
+  userId: number;
+  taskId: number;
+  completedDate: string | Date;
+  expectedDate: string | Date | null;
+  isCompleted: boolean;
+  createdAt: string | Date | null;
+}

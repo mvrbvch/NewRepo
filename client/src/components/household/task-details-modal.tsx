@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -27,6 +28,8 @@ import {
   Send,
   User,
   Calendar,
+  History,
+  ClipboardList,
 } from "lucide-react";
 import { Star } from "lucide-react";
 import { useState } from "react";
@@ -42,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Pencil } from "lucide-react";
 import EditTaskModal from "./edit-task-modal";
+import TaskCompletionHistory from "./task-completion-history";
 
 interface TaskDetailsModalProps {
   task: HouseholdTaskType;
@@ -340,6 +344,52 @@ export default function TaskDetailsModal({
                   <Loader2 className="h-4 w-4 animate-spin ml-2 text-primary flex-shrink-0" />
                 )}
               </div>
+            </div>
+            
+            {/* Tabs para detalhes e histórico */}
+            <div className="mt-6 border-t pt-6">
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="details" className="flex items-center gap-1.5">
+                    <ClipboardList className="h-4 w-4" />
+                    <span>Detalhes</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="flex items-center gap-1.5">
+                    <History className="h-4 w-4" />
+                    <span>Histórico</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="space-y-4">
+                  {/* Conteúdo já existente sobre os detalhes */}
+                  <div className="bg-primary-light/5 p-3 rounded-lg border border-primary-light/20">
+                    <p className="text-sm text-muted-foreground">
+                      Esta tarefa foi criada por {isCreatedByUser ? "você" : "seu parceiro"}.
+                      {task.assignedTo && (
+                        <span className="block mt-1">
+                          Atribuída a {task.assignedTo === user?.id ? "você" : "seu parceiro"}.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  
+                  {task.nextDueDate && task.frequency !== "once" && (
+                    <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                      <p className="text-sm flex items-center gap-1.5">
+                        <CalendarIcon className="h-4 w-4 text-amber-500" />
+                        <span>
+                          Próximo vencimento: {format(new Date(task.nextDueDate), "PPP", { locale: ptBR })}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="history" className="space-y-4">
+                  {/* Componente de histórico de conclusão */}
+                  <TaskCompletionHistory taskId={task.id} userId={user?.id} />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
 
