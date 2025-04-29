@@ -17,11 +17,13 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
    */
   app.get("/api/relationship-insights", async (req: Request, res: Response) => {
     try {
-      if (!req.session.userId) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const insights = await storage.getUserRelationshipInsights(req.session.userId);
+      const userId = (req.user as any).id;
+      console.log("Buscando insights para usuário:", userId);
+      const insights = await storage.getUserRelationshipInsights(userId);
       
       return res.json(insights);
     } catch (error) {
@@ -35,18 +37,19 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
    */
   app.get("/api/relationship-insights/partner", async (req: Request, res: Response) => {
     try {
-      if (!req.session.userId) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const user = await storage.getUser(req.session.userId);
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
       
       if (!user || !user.partnerId) {
         return res.status(400).json({ error: "Usuário não tem um parceiro" });
       }
 
       const insights = await storage.getPartnerRelationshipInsights(
-        req.session.userId,
+        userId,
         user.partnerId
       );
       
@@ -62,10 +65,11 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
    */
   app.get("/api/relationship-insights/:id", async (req: Request, res: Response) => {
     try {
-      if (!req.session.userId) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
+      const userId = (req.user as any).id;
       const insightId = parseInt(req.params.id);
       
       if (isNaN(insightId)) {
@@ -79,7 +83,7 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
       }
 
       // Verificar se o usuário tem permissão para ver este insight
-      if (insight.userId !== req.session.userId && insight.partnerId !== req.session.userId) {
+      if (insight.userId !== userId && insight.partnerId !== userId) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -95,10 +99,11 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
    */
   app.post("/api/relationship-insights/:id/read", async (req: Request, res: Response) => {
     try {
-      if (!req.session.userId) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
+      const userId = (req.user as any).id;
       const insightId = parseInt(req.params.id);
       
       if (isNaN(insightId)) {
@@ -112,8 +117,8 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
       }
 
       // Verificar se o usuário tem permissão para marcar este insight como lido
-      const isUser = insight.userId === req.session.userId;
-      const isPartner = insight.partnerId === req.session.userId;
+      const isUser = insight.userId === userId;
+      const isPartner = insight.partnerId === userId;
       
       if (!isUser && !isPartner) {
         return res.status(403).json({ error: "Acesso negado" });
@@ -134,10 +139,11 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
    */
   app.delete("/api/relationship-insights/:id", async (req: Request, res: Response) => {
     try {
-      if (!req.session.userId) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
+      const userId = (req.user as any).id;
       const insightId = parseInt(req.params.id);
       
       if (isNaN(insightId)) {
@@ -151,7 +157,7 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
       }
 
       // Verificar se o usuário tem permissão para excluir este insight
-      if (insight.userId !== req.session.userId && insight.partnerId !== req.session.userId) {
+      if (insight.userId !== userId && insight.partnerId !== userId) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -174,11 +180,12 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
    */
   app.post("/api/relationship-insights/generate", async (req: Request, res: Response) => {
     try {
-      if (!req.session.userId) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const user = await storage.getUser(req.session.userId);
+      const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
       
       if (!user || !user.partnerId) {
         return res.status(400).json({ error: "Usuário não tem um parceiro" });
@@ -212,11 +219,11 @@ export function setupRelationshipInsightsRoutes(app: express.Express, storage: I
         return res.status(500).json({ error: "Método de geração não disponível" });
       }
 
-      await generateMethod.call(insightsService, req.session.userId, user.partnerId);
+      await generateMethod.call(insightsService, userId, user.partnerId);
       
       // Buscar insights atualizados
       const insights = await storage.getPartnerRelationshipInsights(
-        req.session.userId,
+        userId,
         user.partnerId
       );
       
