@@ -188,7 +188,7 @@ export class RelationshipInsightsService {
   ): Promise<boolean> {
     try {
       // Buscar todos os insights ativos para esse casal
-      const existingInsights = await this.storage.getRelationshipInsights(userId, partnerId);
+      const existingInsights = await this.storage.getPartnerRelationshipInsights(userId, partnerId);
       if (!existingInsights || existingInsights.length === 0) return false;
 
       // Primeiro verificar por títulos idênticos para o mesmo tipo
