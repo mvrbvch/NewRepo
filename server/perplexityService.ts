@@ -62,6 +62,11 @@ Com base nesses dados, crie um insight útil e construtivo sobre a dinâmica de 
 1. Personalizado e específico para este casal
 2. Respeitoso e construtivo, sem culpar nenhum dos parceiros
 3. Focado em identificar padrões e sugerir melhorias para o equilíbrio das tarefas
+4. Destacar as vantagens de uma rotina bem organizada em casal, como:
+   - Maior tempo de qualidade juntos
+   - Redução do estresse e conflitos
+   - Sensação de parceria e equidade
+   - Melhoria da comunicação e satisfação no relacionamento
 
 Retorne sua análise em formato JSON com os seguintes campos:
 - title: um título curto e impactante para o insight (máximo 50 caracteres)

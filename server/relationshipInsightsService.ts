@@ -437,6 +437,11 @@ Com base nesses dados, crie um insight útil e construtivo sobre a dinâmica de 
 1. Personalizado e específico para este casal
 2. Respeitoso e construtivo, sem culpar nenhum dos parceiros
 3. Focado em identificar padrões e sugerir melhorias para o equilíbrio das tarefas
+4. Destacar as vantagens de uma rotina bem organizada em casal, como:
+   - Maior tempo de qualidade juntos
+   - Redução do estresse e conflitos
+   - Sensação de parceria e equidade
+   - Melhoria da comunicação e satisfação no relacionamento
 
 Retorne sua análise em formato JSON com os seguintes campos:
 - title: um título curto e impactante para o insight (máximo 50 caracteres)
@@ -529,12 +534,12 @@ Não inclua explicações, apenas o objeto JSON.
       const personWithMoreTasks = userTaskPercent > partnerTaskPercent ? data.user.name : data.partner.name;
       const personWithFewerTasks = userTaskPercent > partnerTaskPercent ? data.partner.name : data.user.name;
       
-      title = "Desequilíbrio na Distribuição de Tarefas";
+      title = "Equilibrando Tarefas para um Relacionamento Harmonioso";
       content = `A análise mostra um desequilíbrio significativo na distribuição de tarefas entre ${data.user.name} e ${data.partner.name}. Atualmente, ${personWithMoreTasks} está responsável por cerca de ${Math.max(userTaskPercent, partnerTaskPercent)}% das tarefas, enquanto ${personWithFewerTasks} cuida de aproximadamente ${Math.min(userTaskPercent, partnerTaskPercent)}%. 
       
-Este desequilíbrio pode levar a sentimentos de sobrecarga e ressentimento ao longo do tempo. Uma distribuição mais equilibrada de responsabilidades não apenas alivia a pressão sobre ${personWithMoreTasks}, mas também fortalece o senso de parceria e colaboração no relacionamento.
+Este desequilíbrio pode levar a sentimentos de sobrecarga e ressentimento ao longo do tempo. Estudos mostram que casais com distribuição mais equilibrada de responsabilidades domésticas reportam maior satisfação no relacionamento e melhor qualidade de vida.
 
-Considere revisar juntos a lista de tarefas e discutir como redistribuí-las de forma mais equitativa, levando em consideração as preferências, habilidades e disponibilidade de tempo de cada um.`;
+Equilibrar as tarefas trará benefícios significativos: mais tempo de qualidade juntos, redução do estresse diário, maior sensação de parceria e equidade, além de melhorar a comunicação entre vocês. Considere revisar juntos a lista de tarefas e discutir como redistribuí-las de forma mais equitativa, transformando este aspecto em um fortalecedor do relacionamento.`;
       
       actions = [
         `Realizar uma revisão semanal das tarefas domésticas para garantir uma distribuição mais equilibrada`,
@@ -550,12 +555,12 @@ Considere revisar juntos a lista de tarefas e discutir como redistribuí-las de 
       const personWithLowerCompletion = userCompletionPercent > partnerCompletionPercent ? data.partner.name : data.user.name;
       const lowerCompletionRate = Math.min(userCompletionPercent, partnerCompletionPercent);
       
-      title = "Diferença na Taxa de Conclusão de Tarefas";
+      title = "Sincronizando o Ritmo do Casal";
       content = `Existe uma diferença significativa entre vocês na conclusão das tarefas agendadas. Enquanto ${personWithHigherCompletion} completa a maioria das suas tarefas, ${personWithLowerCompletion} está concluindo apenas cerca de ${lowerCompletionRate}% das responsabilidades atribuídas.
 
-Esta disparidade pode criar frustração e afetar a dinâmica do relacionamento. Pode ser útil entender se há obstáculos específicos que estão dificultando a conclusão das tarefas por parte de ${personWithLowerCompletion}, como tempo disponível, complexidade das tarefas ou outros fatores.
+Esta disparidade pode criar frustração e afetar a dinâmica do relacionamento. Casais que conseguem sincronizar seu ritmo de conclusão de tarefas tendem a ter mais tempo livre juntos e menos conflitos sobre responsabilidades.
 
-Considere uma conversa aberta e sem julgamentos para identificar possíveis soluções e ajustes que possam ajudar a melhorar esta situação.`;
+Melhorar este aspecto pode trazer mais harmonia para a rotina, reduzir o estresse e aumentar o tempo de qualidade disponível para vocês. Considere uma conversa aberta e sem julgamentos para identificar possíveis soluções que transformarão esta situação em uma oportunidade de fortalecer a parceria.`;
       
       actions = [
         `Identificar e discutir os obstáculos que estão dificultando a conclusão das tarefas`,
@@ -570,12 +575,12 @@ Considere uma conversa aberta e sem julgamentos para identificar possíveis solu
       const personWithMoreOverdue = data.user.overdue > data.partner.overdue ? data.user.name : data.partner.name;
       const overdueCount = Math.max(data.user.overdue, data.partner.overdue);
       
-      title = "Atenção às Tarefas Pendentes";
+      title = "Transformando Pendências em Oportunidades";
       content = `Notamos que há várias tarefas atrasadas se acumulando, com ${personWithMoreOverdue} tendo atualmente ${overdueCount} tarefas que ultrapassaram o prazo previsto.
 
-O acúmulo de tarefas pendentes pode criar estresse adicional e afetar o bem-estar do lar. É importante verificar se estas tarefas continuam sendo relevantes e, em caso positivo, criar um plano realista para colocá-las em dia.
+O acúmulo de tarefas pendentes pode criar estresse adicional e afetar a qualidade do tempo que vocês passam juntos. Resolver estas pendências pode liberar energia mental e emocional para investir no relacionamento.
 
-Lembrem-se de que é normal ocasionalmente não conseguir cumprir todos os prazos, e a compreensão mútua é fundamental para manter um ambiente saudável.`;
+Casais que mantêm uma rotina organizada e em dia relatam maior satisfação no relacionamento, melhor comunicação e mais tempo de qualidade juntos. Trabalhar em equipe para resolver estas pendências pode fortalecer o senso de parceria e criar um ambiente mais leve e harmonioso para ambos.`;
       
       actions = [
         `Revisar a lista de tarefas atrasadas e eliminar as que não são mais necessárias`,
@@ -587,34 +592,34 @@ Lembrem-se de que é normal ocasionalmente não conseguir cumprir todos os prazo
       sentiment = "positive";
       score = 3;
       
-      title = "Equilíbrio e Eficiência nas Tarefas Domésticas";
+      title = "Equilíbrio e Harmonia na Rotina do Casal";
       content = `Parabéns! A análise mostra que vocês têm conseguido manter um excelente equilíbrio na distribuição das tarefas domésticas, com ${data.user.name} cuidando de ${userTaskPercent}% e ${data.partner.name} responsável por ${partnerTaskPercent}% das tarefas.
 
 Além disso, ambos estão mantendo altas taxas de conclusão: ${data.user.name} com ${userCompletionPercent}% e ${data.partner.name} com ${partnerCompletionPercent}%, o que demonstra comprometimento e organização.
 
-Esta colaboração equilibrada contribui significativamente para um ambiente doméstico harmonioso e reduz possíveis fontes de estresse no relacionamento. Continuem com este excelente trabalho!`;
+Esta colaboração equilibrada traz benefícios significativos para o relacionamento: mais tempo de qualidade juntos, redução do estresse diário, maior sensação de parceria e equidade, além de melhorar a comunicação entre vocês. Uma rotina bem estruturada e compartilhada como a que vocês mantêm é um dos pilares de relacionamentos duradouros e felizes. Continuem com este excelente trabalho!`;
       
       actions = [
-        `Celebrar juntos o bom funcionamento da parceria nas tarefas domésticas`,
-        `Considerar pequenos ajustes para tornar o sistema ainda mais eficiente`,
-        `Compartilhar estratégias que funcionam bem para manter a organização`
+        `Celebrar juntos o bom funcionamento da parceria e aproveitar o tempo extra de qualidade`,
+        `Reservar momentos específicos para atividades a dois aproveitando a boa organização`,
+        `Compartilhar entre amigos as estratégias que fazem a rotina de vocês funcionar tão bem`
       ];
     } else {
       // Situação neutra - nem muito positiva nem muito negativa
       sentiment = "neutral";
       score = 5;
       
-      title = "Análise da Distribuição de Tarefas";
+      title = "Potencial para Aprimorar a Rotina do Casal";
       content = `A análise da distribuição de tarefas entre ${data.user.name} e ${data.partner.name} mostra que vocês têm um sistema que funciona razoavelmente bem, com ${data.user.name} gerenciando ${userTaskPercent}% das tarefas e ${data.partner.name} cuidando de ${partnerTaskPercent}%.
 
 As taxas de conclusão são de ${userCompletionPercent}% para ${data.user.name} e ${partnerCompletionPercent}% para ${data.partner.name}, o que indica um nível moderado de eficiência.
 
-Há espaço para pequenos ajustes que podem melhorar ainda mais o sistema e garantir que ambos estejam confortáveis com suas responsabilidades. Uma revisão periódica da distribuição pode ajudar a identificar oportunidades de otimização.`;
+Com alguns ajustes, vocês podem transformar esta rotina em uma fonte de maior harmonia no relacionamento. Casais que mantêm uma rotina bem organizada relatam menor estresse diário, mais tempo de qualidade juntos e melhor comunicação. Uma distribuição equilibrada de tarefas também fortalece o senso de parceria e equidade, criando um ambiente onde ambos se sentem valorizados e respeitados.`;
       
       actions = [
-        `Fazer uma verificação mensal rápida sobre como o sistema está funcionando para ambos`,
-        `Discutir se há tarefas específicas que poderiam ser redistribuídas para maior eficiência`,
-        `Considerar a adoção de ferramentas ou métodos para facilitar o gerenciamento das tarefas`
+        `Realizar uma conversa sincera sobre como a divisão atual de tarefas está impactando o tempo livre de vocês`,
+        `Identificar juntos quais tarefas poderiam ser redistribuídas para liberar mais tempo de qualidade`,
+        `Criar rituais semanais para celebrar o progresso e aproveitar os momentos livres como casal`
       ];
     }
     
