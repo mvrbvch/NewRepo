@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lightbulb, Star, Check, Clock, Sparkles, Shapes, HandHeart } from "lucide-react";
+import { Lightbulb, Star, Check, Clock, Sparkles, Shapes, HandHeart, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -76,15 +76,21 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
 
   return (
     <Card className={cn(
-      "w-full transition-all duration-300",
-      !isRead ? "border-blue-300 shadow-md" : "border-gray-200"
+      "w-full transition-all duration-300 overflow-hidden",
+      !isRead 
+        ? "border-primary/30 shadow-lg shadow-primary/10" 
+        : "border-gray-200 hover:border-primary/20 hover:shadow-sm"
     )}>
-      <CardHeader className="pb-2">
+      {!isRead && (
+        <div className="absolute top-0 right-0 w-0 h-0 border-t-[40px] border-r-[40px] border-t-primary/20 border-r-transparent z-10"></div>
+      )}
+      
+      <CardHeader className="pb-2 relative">
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge 
               variant="secondary" 
-              className={typeConfig.color}
+              className={cn(typeConfig.color, "font-medium shadow-sm")}
             >
               <span className="flex items-center gap-1">
                 {typeConfig.icon}
@@ -97,44 +103,48 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
             {insight.sentiment && (
               <Badge 
                 variant="secondary" 
-                className={sentimentColors[insight.sentiment.toLowerCase()]}
+                className={cn(sentimentColors[insight.sentiment.toLowerCase()], "font-medium shadow-sm")}
               >
                 {insight.sentiment.charAt(0).toUpperCase() + insight.sentiment.slice(1)}
               </Badge>
             )}
 
             {!isRead && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Badge variant="secondary" className="bg-primary/10 text-primary font-medium shadow-sm">
                 Novo
               </Badge>
             )}
           </div>
           
           {insight.score && (
-            <Badge variant="outline" className="flex items-center gap-1">
+            <Badge variant="outline" className="flex items-center gap-1 bg-amber-50 font-semibold">
               <Star className="h-3 w-3 fill-current text-amber-500" />
               {insight.score}/10
             </Badge>
           )}
         </div>
         
-        <CardTitle className="text-xl mt-2">{insight.title}</CardTitle>
-        <CardDescription className="text-sm text-gray-500">
+        <CardTitle className="text-xl mt-3 font-bold text-primary/90">{insight.title}</CardTitle>
+        <CardDescription className="text-sm text-gray-500 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
           {timeAgo}
         </CardDescription>
       </CardHeader>
       
       <CardContent>
-        <div className="whitespace-pre-line text-gray-700">
+        <div className="whitespace-pre-line text-gray-700 leading-relaxed">
           {insight.content}
         </div>
         
         {insight.actions && Array.isArray(insight.actions) && insight.actions.length > 0 && (
-          <div className="mt-4">
-            <h4 className="font-medium text-sm mb-2">Ações sugeridas:</h4>
-            <ul className="space-y-1">
+          <div className="mt-6 bg-slate-50 p-4 rounded-md border border-slate-100">
+            <h4 className="font-semibold text-sm mb-3 text-slate-700 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Ações sugeridas
+            </h4>
+            <ul className="space-y-2">
               {(insight.actions as string[]).map((action: string, index: number) => (
-                <li key={index} className="flex items-start gap-2 text-sm">
+                <li key={index} className="flex items-start gap-2 text-sm bg-white p-2 rounded border border-slate-100 shadow-sm">
                   <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>{action}</span>
                 </li>
@@ -144,15 +154,35 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-end pt-2">
-        {!isRead && (
+      <CardFooter className="flex justify-end pt-3 pb-4">
+        {!isRead ? (
           <Button 
-            variant="ghost" 
+            variant="default" 
             size="sm" 
             onClick={handleMarkAsRead}
             disabled={markAsRead.isPending}
+            className="transition-all duration-300 hover:shadow-md"
           >
-            {markAsRead.isPending ? "Marcando..." : "Marcar como lido"}
+            {markAsRead.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Marcando...
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Marcar como lido
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {/* Futuramente: Implementar ação para ver detalhes */}}
+            className="text-gray-500 hover:text-primary"
+          >
+            Ver detalhes
           </Button>
         )}
       </CardFooter>
