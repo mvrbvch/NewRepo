@@ -101,18 +101,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Tarefa não encontrada" });
       }
       
-      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, true);
+      // Verificar se o parâmetro completed foi fornecido na query, padrão é true
+      const completed = req.query.completed === 'false' ? false : true;
+      console.log(`Marcando tarefa ${taskId} como ${completed ? 'concluída' : 'não concluída'}`);
       
-      // Verificar se a data de conclusão foi registrada
-      if (updatedTask && updatedTask.completedAt) {
+      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, completed);
+      
+      // Verificar o status da tarefa
+      if (updatedTask) {
+        // Se a tarefa foi marcada como concluída, verificar se a data de conclusão foi registrada
+        if (completed && !updatedTask.completedAt) {
+          return res.status(500).json({ 
+            message: "Falha ao marcar data de conclusão", 
+            task: updatedTask 
+          });
+        }
+        
+        // Se a tarefa foi desmarcada, verificar se a data de conclusão foi limpa
+        if (!completed && updatedTask.completedAt) {
+          return res.status(500).json({ 
+            message: "Falha ao limpar data de conclusão", 
+            task: updatedTask 
+          });
+        }
+        
+        // Sucesso
+        const status = completed ? "concluída" : "não concluída";
         return res.json({
-          message: "Tarefa marcada como concluída com sucesso",
+          message: `Tarefa marcada como ${status} com sucesso`,
           task: updatedTask
         });
       } else {
         return res.status(500).json({ 
-          message: "Falha ao marcar data de conclusão", 
-          task: updatedTask 
+          message: "Falha ao atualizar tarefa", 
+          task: null
         });
       }
     } catch (error) {

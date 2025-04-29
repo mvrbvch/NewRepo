@@ -508,21 +508,31 @@ export class MemStorage implements IStorage {
 
     // Se a tarefa for recorrente, atualizar a próxima data de vencimento
     let nextDueDate = task.nextDueDate;
-    if (completed && task.frequency !== "once") {
+    let completedAt = null;
+    
+    if (completed) {
       const currentDate = new Date();
-
-      if (task.frequency === "daily") {
-        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
-      } else if (task.frequency === "weekly") {
-        nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
-      } else if (task.frequency === "monthly") {
-        nextDueDate = new Date(
-          currentDate.setMonth(currentDate.getMonth() + 1)
-        );
+      completedAt = currentDate;
+      
+      if (task.frequency !== "once" && task.frequency !== "never") {
+        if (task.frequency === "daily") {
+          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+        } else if (task.frequency === "weekly") {
+          nextDueDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
+        } else if (task.frequency === "monthly") {
+          nextDueDate = new Date(
+            currentDate.setMonth(currentDate.getMonth() + 1)
+          );
+        }
       }
     }
 
-    const updatedTask = { ...task, completed, nextDueDate };
+    const updatedTask = { 
+      ...task, 
+      completed, 
+      nextDueDate,
+      completedAt 
+    };
     this.householdTasksMap.set(id, updatedTask);
     return updatedTask;
   }
@@ -2146,6 +2156,7 @@ export class DatabaseStorage implements IStorage {
         dueDate: formatDateSafely(updatedTask.dueDate),
         nextDueDate: formatDateSafely(updatedTask.nextDueDate),
         createdAt: formatDateSafely(updatedTask.createdAt),
+        completedAt: formatDateSafely(updatedTask.completedAt),
       } as HouseholdTask;
     } catch (error) {
       console.error("Erro ao marcar tarefa como concluída:", error);

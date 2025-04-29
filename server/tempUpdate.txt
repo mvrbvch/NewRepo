@@ -1,0 +1,84 @@
+  async markHouseholdTaskAsCompleted(
+    id: number,
+    completed: boolean
+  ): Promise<HouseholdTask | undefined> {
+    try {
+      // Obter a tarefa atual
+      const [task] = await db
+        .select()
+        .from(householdTasks)
+        .where(eq(householdTasks.id, id));
+      if (!task) return undefined;
+
+      // Objeto com os campos a serem atualizados
+      const updateData: any = { completed };
+      
+      // Registrar data de conclusão
+      if (completed) {
+        // Registra a data atual como momento da conclusão
+        const completionDate = new Date();
+        updateData.completedAt = completionDate;
+        
+        // Caso seja uma tarefa recorrente
+        if (task.frequency && task.frequency !== "once" && task.frequency !== "never") {
+          // Se a tarefa tinha uma data de vencimento, usamos ela como base para o cálculo
+          // da próxima data de vencimento, caso contrário usamos a data atual
+          const baseDate = task.dueDate || completionDate;
+          
+          // Atualiza o campo dueDate com a data atual de conclusão antes de calcular a próxima
+          const taskWithUpdatedDueDate = {
+            ...task,
+            dueDate: baseDate
+          };
+          
+          // Usar o serviço unificado para calcular a próxima data de vencimento
+          const nextDueDate = UnifiedRecurrenceService.calculateNextDueDateForTask(taskWithUpdatedDueDate);
+          
+          if (nextDueDate) {
+            updateData.nextDueDate = nextDueDate;
+            console.log("Próxima data de vencimento calculada:", {
+              taskId: id,
+              frequency: task.frequency,
+              baseDate: baseDate.toISOString(),
+              nextDueDate: nextDueDate.toISOString()
+            });
+          }
+        }
+      }
+      // Caso esteja desmarcando (voltando a incompleta)
+      else if (!completed) {
+        // Se a tarefa tiver uma próxima data programada, reseta-a para null
+        // isso evita que tarefas recorrentes gerem múltiplas instâncias quando desmarcadas
+        updateData.nextDueDate = null;
+        // Limpar a data de conclusão
+        updateData.completedAt = null;
+      }
+
+      console.log("Atualizando status da tarefa:", {
+        id,
+        completed,
+        updateData,
+      });
+
+      // Atualizar a tarefa
+      const [updatedTask] = await db
+        .update(householdTasks)
+        .set(updateData)
+        .where(eq(householdTasks.id, id))
+        .returning();
+
+      if (!updatedTask) return undefined;
+
+      // Formatar datas de forma segura usando a função utilitária
+      return {
+        ...updatedTask,
+        dueDate: formatDateSafely(updatedTask.dueDate),
+        nextDueDate: formatDateSafely(updatedTask.nextDueDate),
+        createdAt: formatDateSafely(updatedTask.createdAt),
+        completedAt: formatDateSafely(updatedTask.completedAt),  // Incluímos a formatação da data de conclusão
+      } as HouseholdTask;
+    } catch (error) {
+      console.error("Erro ao marcar tarefa como concluída:", error);
+      return undefined;
+    }
+  }
