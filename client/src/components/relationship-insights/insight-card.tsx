@@ -12,36 +12,36 @@ import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
 // Mapeia tipos de insight para ícones e cores
 const insightTypeConfig: Record<string, { icon: React.ReactNode; color: string }> = {
   task_balance: { 
-    icon: <Shapes className="h-5 w-5" />, 
-    color: "bg-blue-100 text-blue-800" 
+    icon: <Shapes className="h-4 w-4" />, 
+    color: "bg-[#F27474]/10 text-[#F27474]" 
   },
   communication: { 
-    icon: <Sparkles className="h-5 w-5" />, 
-    color: "bg-purple-100 text-purple-800" 
+    icon: <Sparkles className="h-4 w-4" />, 
+    color: "bg-[#F27474]/10 text-[#F27474]" 
   },
   quality_time: { 
-    icon: <Clock className="h-5 w-5" />, 
-    color: "bg-green-100 text-green-800" 
+    icon: <Clock className="h-4 w-4" />, 
+    color: "bg-[#F27474]/10 text-[#F27474]" 
   },
   relationship_goals: { 
-    icon: <Star className="h-5 w-5" />, 
-    color: "bg-amber-100 text-amber-800" 
+    icon: <Star className="h-4 w-4" />, 
+    color: "bg-[#F27474]/10 text-[#F27474]" 
   },
   special_dates: { 
-    icon: <HandHeart className="h-5 w-5" />, 
-    color: "bg-red-100 text-red-800" 
+    icon: <HandHeart className="h-4 w-4" />, 
+    color: "bg-[#F27474]/10 text-[#F27474]" 
   },
   general: { 
-    icon: <Lightbulb className="h-5 w-5" />, 
-    color: "bg-gray-100 text-gray-800" 
+    icon: <Lightbulb className="h-4 w-4" />, 
+    color: "bg-[#F27474]/10 text-[#F27474]" 
   },
 };
 
 // Mapeia sentimentos para cores
 const sentimentColors: Record<string, string> = {
-  positive: "bg-green-100 text-green-800",
-  negative: "bg-red-100 text-red-800",
-  neutral: "bg-gray-100 text-gray-800",
+  positive: "bg-[#F27474]/10 text-[#F27474]",
+  negative: "bg-[#F27474]/10 text-[#F27474]",
+  neutral: "bg-[#F27474]/10 text-[#F27474]",
 };
 
 interface InsightCardProps {
@@ -78,19 +78,19 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
     <Card className={cn(
       "w-full transition-all duration-300 overflow-hidden",
       !isRead 
-        ? "border-primary/30 shadow-lg shadow-primary/10" 
-        : "border-gray-200 hover:border-primary/20 hover:shadow-sm"
+        ? "border-[#F27474]/30 shadow-sm" 
+        : "border-gray-200"
     )}>
       {!isRead && (
-        <div className="absolute top-0 right-0 w-0 h-0 border-t-[40px] border-r-[40px] border-t-primary/20 border-r-transparent z-10"></div>
+        <div className="absolute top-0 right-0 w-0 h-0 border-t-[30px] border-r-[30px] border-t-[#F27474]/20 border-r-transparent z-10"></div>
       )}
       
-      <CardHeader className="pb-2 relative">
+      <CardHeader className="pb-1 pt-3 px-3 relative">
         <div className="flex justify-between items-start">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1">
             <Badge 
               variant="secondary" 
-              className={cn(typeConfig.color, "font-medium shadow-sm")}
+              className={cn(typeConfig.color, "text-xs font-normal")}
             >
               <span className="flex items-center gap-1">
                 {typeConfig.icon}
@@ -103,49 +103,49 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
             {insight.sentiment && (
               <Badge 
                 variant="secondary" 
-                className={cn(sentimentColors[insight.sentiment.toLowerCase()], "font-medium shadow-sm")}
+                className={cn(sentimentColors[insight.sentiment.toLowerCase()], "text-xs font-normal")}
               >
                 {insight.sentiment.charAt(0).toUpperCase() + insight.sentiment.slice(1)}
               </Badge>
             )}
 
             {!isRead && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary font-medium shadow-sm">
+              <Badge variant="secondary" className="bg-[#F27474]/10 text-[#F27474] text-xs font-normal">
                 Novo
               </Badge>
             )}
           </div>
           
           {insight.score && (
-            <Badge variant="outline" className="flex items-center gap-1 bg-amber-50 font-semibold">
-              <Star className="h-3 w-3 fill-current text-amber-500" />
+            <Badge variant="outline" className="flex items-center gap-1 bg-[#F27474]/5 text-[#F27474] text-xs font-normal border-[#F27474]/20">
+              <Star className="h-3 w-3" />
               {insight.score}/10
             </Badge>
           )}
         </div>
         
-        <CardTitle className="text-xl mt-3 font-bold text-primary/90">{insight.title}</CardTitle>
-        <CardDescription className="text-sm text-gray-500 flex items-center gap-1">
+        <CardTitle className="text-lg mt-2 font-medium text-[#F27474]">{insight.title}</CardTitle>
+        <CardDescription className="text-xs text-gray-500 flex items-center gap-1">
           <Clock className="h-3 w-3" />
           {timeAgo}
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
-        <div className="whitespace-pre-line text-gray-700 leading-relaxed">
+      <CardContent className="px-3 py-2">
+        <div className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">
           {insight.content}
         </div>
         
         {insight.actions && Array.isArray(insight.actions) && insight.actions.length > 0 && (
-          <div className="mt-6 bg-slate-50 p-4 rounded-md border border-slate-100">
-            <h4 className="font-semibold text-sm mb-3 text-slate-700 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
+          <div className="mt-4 bg-[#F27474]/5 p-3 rounded-md border border-[#F27474]/10">
+            <h4 className="font-medium text-xs mb-2 text-gray-700 flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5 text-[#F27474]" />
               Ações sugeridas
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {(insight.actions as string[]).map((action: string, index: number) => (
-                <li key={index} className="flex items-start gap-2 text-sm bg-white p-2 rounded border border-slate-100 shadow-sm">
-                  <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <li key={index} className="flex items-start gap-1.5 text-xs bg-white p-2 rounded border border-gray-100">
+                  <Check className="h-3.5 w-3.5 text-[#F27474] mt-0.5 flex-shrink-0" />
                   <span>{action}</span>
                 </li>
               ))}
@@ -154,23 +154,23 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-end pt-3 pb-4">
+      <CardFooter className="flex justify-end pt-1 pb-3 px-3">
         {!isRead ? (
           <Button 
             variant="default" 
             size="sm" 
             onClick={handleMarkAsRead}
             disabled={markAsRead.isPending}
-            className="transition-all duration-300 hover:shadow-md"
+            className="h-8 px-3 text-xs font-normal bg-[#F27474] hover:bg-[#F27474]/90"
           >
             {markAsRead.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                 Marcando...
               </>
             ) : (
               <>
-                <Check className="mr-2 h-4 w-4" />
+                <Check className="mr-1 h-3.5 w-3.5" />
                 Marcar como lido
               </>
             )}
@@ -180,7 +180,7 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
             variant="outline"
             size="sm"
             onClick={() => {/* Futuramente: Implementar ação para ver detalhes */}}
-            className="text-gray-500 hover:text-primary"
+            className="h-8 px-3 text-xs font-normal text-gray-500 hover:text-[#F27474] hover:border-[#F27474]/30"
           >
             Ver detalhes
           </Button>

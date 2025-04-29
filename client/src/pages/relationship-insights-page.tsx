@@ -37,64 +37,57 @@ export function RelationshipInsightsPage() {
       <Route path="/insights">
         {() => (
           <>
-            <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-8 mb-10 shadow-sm">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="bg-[#F27474] bg-opacity-10 rounded-md p-4 mb-6 border border-[#F27474] border-opacity-20">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-3">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Lightbulb className="h-6 w-6 text-primary" />
-                    <h1 className="text-3xl font-bold text-primary/90">Insights de Relacionamento</h1>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Lightbulb className="h-5 w-5 text-[#F27474]" />
+                    <h1 className="text-xl font-bold text-[#F27474]">Insights de Relacionamento</h1>
                   </div>
-                  <p className="text-gray-600 max-w-2xl">
-                    Nossos algoritmos analisam seus dados e interações com seu parceiro para 
-                    fornecer insights personalizados que ajudam a fortalecer seu relacionamento.
+                  <p className="text-gray-600 text-sm">
+                    Insights personalizados baseados nas interações com seu parceiro para fortalecer seu relacionamento.
                   </p>
                 </div>
-                <div className="p-4 bg-white rounded-full shadow-lg">
-                  <Brain className="h-12 w-12 md:h-16 md:w-16 text-primary" />
+                <div className="p-2 bg-white rounded-full border border-[#F27474] border-opacity-20">
+                  <Brain className="h-8 w-8 text-[#F27474]" />
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <Card className="bg-blue-50/50 border-blue-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-blue-100 rounded-full mb-3">
-                      <Brain className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <h3 className="font-semibold mb-2">Análise Inteligente</h3>
-                    <p className="text-sm text-gray-600">
-                      Nosso sistema aprende e melhora com cada interação, oferecendo insights cada vez mais relevantes.
-                    </p>
+            <div className="flex overflow-x-auto gap-3 pb-2 mb-6 md:grid md:grid-cols-3 md:overflow-visible">
+              <div className="min-w-[230px] md:min-w-0 bg-white rounded-md border border-gray-200 p-3">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-2 bg-[#F27474] bg-opacity-10 rounded-full mb-2">
+                    <Brain className="h-5 w-5 text-[#F27474]" />
                   </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-green-50/50 border-green-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-green-100 rounded-full mb-3">
-                      <HeartHandshake className="h-6 w-6 text-green-600" />
-                    </div>
-                    <h3 className="font-semibold mb-2">Conexão Mais Forte</h3>
-                    <p className="text-sm text-gray-600">
-                      Recomendações personalizadas para ajudar a fortalecer a conexão entre você e seu parceiro.
-                    </p>
+                  <h3 className="font-medium text-sm mb-1">Análise Inteligente</h3>
+                  <p className="text-xs text-gray-600">
+                    Nossa análise aprende e melhora com cada interação do casal.
+                  </p>
+                </div>
+              </div>
+              <div className="min-w-[230px] md:min-w-0 bg-white rounded-md border border-gray-200 p-3">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-2 bg-[#F27474] bg-opacity-10 rounded-full mb-2">
+                    <HeartHandshake className="h-5 w-5 text-[#F27474]" />
                   </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-purple-50/50 border-purple-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-purple-100 rounded-full mb-3">
-                      <Sparkles className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <h3 className="font-semibold mb-2">Sugestões Práticas</h3>
-                    <p className="text-sm text-gray-600">
-                      Ações concretas que você pode tomar para melhorar seu relacionamento com base nos insights.
-                    </p>
+                  <h3 className="font-medium text-sm mb-1">Conexão Mais Forte</h3>
+                  <p className="text-xs text-gray-600">
+                    Recomendações personalizadas para fortalecer seu relacionamento.
+                  </p>
+                </div>
+              </div>
+              <div className="min-w-[230px] md:min-w-0 bg-white rounded-md border border-gray-200 p-3">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-2 bg-[#F27474] bg-opacity-10 rounded-full mb-2">
+                    <Sparkles className="h-5 w-5 text-[#F27474]" />
                   </div>
-                </CardContent>
-              </Card>
+                  <h3 className="font-medium text-sm mb-1">Sugestões Práticas</h3>
+                  <p className="text-xs text-gray-600">
+                    Ações práticas para melhorar seu relacionamento.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <Tabs 

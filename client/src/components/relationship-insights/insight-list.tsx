@@ -32,23 +32,20 @@ export function InsightList({ type, isPartner = false }: InsightListProps) {
 
   if (insightsQuery.isLoading) {
     return (
-      <div className="w-full flex flex-col items-center justify-center py-16">
-        <div className="relative">
-          <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full"></div>
-          <div className="relative bg-white p-4 rounded-full shadow-md">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
+      <div className="w-full flex justify-center items-center py-6">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[#F27474]" />
+          <p className="mt-2 text-sm text-gray-500">Carregando insights...</p>
         </div>
-        <p className="mt-6 text-gray-600 font-medium animate-pulse">Carregando insights...</p>
       </div>
     );
   }
 
   if (insightsQuery.isError) {
     return (
-      <div className="w-full flex flex-col items-center py-12 gap-4">
-        <p className="text-red-500">Erro ao carregar insights</p>
-        <Button onClick={handleRefresh} variant="outline">
+      <div className="w-full flex flex-col items-center py-6 gap-3">
+        <p className="text-red-500 text-sm">Erro ao carregar insights</p>
+        <Button onClick={handleRefresh} variant="outline" size="sm" className="text-xs">
           Tentar novamente
         </Button>
       </div>
@@ -59,36 +56,36 @@ export function InsightList({ type, isPartner = false }: InsightListProps) {
 
   if (insights.length === 0) {
     return (
-      <div className="bg-primary/5 rounded-xl p-8 text-center">
+      <div className="bg-white rounded-md border border-gray-200 p-4 text-center">
         <div className="flex flex-col items-center max-w-lg mx-auto">
-          <div className="p-4 bg-white rounded-full shadow-md mb-4">
+          <div className="p-3 bg-[#F27474] bg-opacity-10 rounded-full mb-3">
             {type === "all" ? (
-              <Lightbulb className="h-12 w-12 text-primary/60" />
+              <Lightbulb className="h-6 w-6 text-[#F27474]" />
             ) : (
-              <HeartHandshake className="h-12 w-12 text-primary/60" />
+              <HeartHandshake className="h-6 w-6 text-[#F27474]" />
             )}
           </div>
-          <h3 className="text-xl font-bold mb-2">Nenhum insight encontrado</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-base font-medium mb-1">Nenhum insight encontrado</h3>
+          <p className="text-sm text-gray-600 mb-4">
             {type === "all" 
-              ? "Não há insights disponíveis para mostrar. Gere novos insights para obter recomendações personalizadas." 
-              : "Ainda não há insights de casal disponíveis. Gere novos insights para obter recomendações sobre seu relacionamento."}
+              ? "Gere novos insights para obter recomendações personalizadas." 
+              : "Ainda não há insights para você e seu parceiro."}
           </p>
           <Button 
             onClick={handleGenerateInsights}
             disabled={generateInsights.isPending}
-            className="gap-2 px-6 py-2 shadow-sm"
-            size="lg"
+            className="gap-1"
+            size="sm"
           >
             {generateInsights.isPending ? (
               <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Gerando insights...
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-xs">Gerando...</span>
               </>
             ) : (
               <>
-                <Sparkles className="h-5 w-5" />
-                Gerar Insights Agora
+                <Sparkles className="h-4 w-4" />
+                <span className="text-xs">Gerar Insights</span>
               </>
             )}
           </Button>
@@ -99,54 +96,53 @@ export function InsightList({ type, isPartner = false }: InsightListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <div className="mr-3 p-2 bg-primary/10 rounded-full">
+          <div className="mr-2 p-1.5 rounded-full">
             {type === "all" ? (
-              <Lightbulb className="h-5 w-5 text-primary" />
+              <Lightbulb className="h-4 w-4 text-[#F27474]" />
             ) : (
-              <HeartHandshake className="h-5 w-5 text-primary" />
+              <HeartHandshake className="h-4 w-4 text-[#F27474]" />
             )}
           </div>
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-base font-medium text-gray-800">
             {type === "all" ? "Todos os Insights" : "Insights do Casal"}
           </h2>
           {insightsQuery.data && insightsQuery.data.length > 0 && (
-            <span className="ml-2 bg-primary/20 text-primary text-xs font-semibold px-2 py-1 rounded-full">
+            <span className="ml-2 bg-[#F27474] bg-opacity-10 text-[#F27474] text-xs font-medium px-1.5 py-0.5 rounded-full">
               {insightsQuery.data.length}
             </span>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
             disabled={insightsQuery.isRefetching}
-            className="border-gray-200 hover:border-primary/30 hover:bg-primary/5"
+            className="h-8 px-2 border-gray-200 text-xs"
           >
             {insightsQuery.isRefetching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-3.5 w-3.5" />
             )}
-            <span className="ml-2">Atualizar</span>
           </Button>
           <Button 
             size="sm" 
             onClick={handleGenerateInsights}
             disabled={generateInsights.isPending}
-            className="gap-1 font-medium"
+            className="h-8 px-3 text-xs font-normal bg-[#F27474] hover:bg-[#F27474]/90"
           >
             {generateInsights.isPending ? (
               <>
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                 Gerando...
               </>
             ) : (
               <>
-                <Sparkles className="mr-1 h-4 w-4" />
-                Gerar Insights
+                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                Gerar
               </>
             )}
           </Button>
