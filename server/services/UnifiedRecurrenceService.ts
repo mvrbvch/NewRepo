@@ -5,12 +5,22 @@ import {
   addYears,
   setHours,
   setMinutes,
+  setDate,
   parseISO,
   isBefore,
   isAfter,
   isValid,
   format,
   addQuarters,
+  getDay,
+  getDate,
+  getDaysInMonth,
+  lastDayOfMonth,
+  differenceInDays,
+  startOfWeek,
+  endOfDay,
+  isSameDay,
+  eachDayOfInterval
 } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { Event, HouseholdTask } from "@shared/schema";
@@ -246,24 +256,67 @@ export class UnifiedRecurrenceService {
         case "daily":
           nextDate = addDays(startDate, options.interval || 1);
           break;
+          
         case "weekly":
-          nextDate = addWeeks(startDate, options.interval || 1);
+          // Se tiver dias da semana específicos, use-os
+          if (options.weekdays && options.weekdays.length > 0) {
+            nextDate = this.findNextWeekdayOccurrence(startDate, options.weekdays, options.interval || 1);
+          } else {
+            // Se não, simplesmente adiciona uma semana
+            nextDate = addWeeks(startDate, options.interval || 1);
+          }
           break;
+          
         case "biweekly":
-          nextDate = addWeeks(startDate, 2);
+          // Se tiver dias da semana específicos, use-os
+          if (options.weekdays && options.weekdays.length > 0) {
+            nextDate = this.findNextWeekdayOccurrence(startDate, options.weekdays, 2);
+          } else {
+            // Se não, simplesmente adiciona duas semanas
+            nextDate = addWeeks(startDate, 2);
+          }
           break;
+          
         case "monthly":
-          nextDate = addMonths(startDate, options.interval || 1);
+          // Se tiver dia do mês específico, use-o
+          if (options.monthDay && options.monthDay > 0) {
+            // Adiciona um mês e depois ajusta para o dia específico
+            const nextMonth = addMonths(startDate, options.interval || 1);
+            // Verificar se o dia é válido no próximo mês (ex: 31 não é válido em todos os meses)
+            const daysInNextMonth = getDaysInMonth(nextMonth);
+            const dayToUse = Math.min(options.monthDay, daysInNextMonth);
+            
+            nextDate = setDate(nextMonth, dayToUse);
+          } else {
+            // Se não, mantém o mesmo dia do mês
+            nextDate = addMonths(startDate, options.interval || 1);
+          }
           break;
+          
         case "quarterly":
-          nextDate = addQuarters(startDate, options.interval || 1);
+          // Se tiver dia do mês específico, use-o
+          if (options.monthDay && options.monthDay > 0) {
+            // Adiciona três meses e depois ajusta para o dia específico
+            const nextQuarter = addQuarters(startDate, options.interval || 1);
+            // Verificar se o dia é válido no próximo mês (ex: 31 não é válido em todos os meses)
+            const daysInNextMonth = getDaysInMonth(nextQuarter);
+            const dayToUse = Math.min(options.monthDay, daysInNextMonth);
+            
+            nextDate = setDate(nextQuarter, dayToUse);
+          } else {
+            // Se não, mantém o mesmo dia do mês
+            nextDate = addQuarters(startDate, options.interval || 1);
+          }
           break;
+          
         case "yearly":
           nextDate = addYears(startDate, options.interval || 1);
           break;
+          
         case "custom":
           nextDate = this.handleCustomRecurrence(startDate, options);
           break;
+          
         default:
           throw new Error(
             `Unsupported recurrence frequency: ${options.frequency}`
@@ -276,6 +329,50 @@ export class UnifiedRecurrenceService {
       console.error("Erro ao calcular próxima data:", error);
       return null;
     }
+  }
+  
+  /**
+   * Encontra a próxima ocorrência de um dia da semana específico
+   * @param baseDate Data base para iniciar a busca
+   * @param weekdays Array de dias da semana (0-6, onde 0 é domingo)
+   * @param intervalWeeks Número de semanas a avançar antes de procurar o próximo dia
+   */
+  private static findNextWeekdayOccurrence(
+    baseDate: Date, 
+    weekdays: number[], 
+    intervalWeeks: number = 1
+  ): Date {
+    // Começamos a partir do dia seguinte
+    const startDate = addDays(baseDate, 1);
+    
+    // Se o intervalWeeks for maior que 1, avançamos para a semana correta
+    const targetWeekStart = intervalWeeks > 1
+      ? addWeeks(startDate, intervalWeeks - 1)
+      : startDate;
+    
+    // Obter o início da semana correspondente
+    const weekStart = startOfWeek(targetWeekStart, { weekStartsOn: 0 }); // 0 = domingo
+    
+    // Ordenar os dias da semana
+    const sortedWeekdays = [...weekdays].sort((a, b) => a - b);
+    
+    // Dia atual da semana (0-6)
+    const currentDayOfWeek = getDay(targetWeekStart);
+    
+    // Encontrar o próximo dia da semana após o dia atual
+    for (const day of sortedWeekdays) {
+      if (day >= currentDayOfWeek) {
+        // Se o dia da semana for maior ou igual ao atual, basta calcular a diferença
+        const daysToAdd = day - currentDayOfWeek;
+        return addDays(targetWeekStart, daysToAdd);
+      }
+    }
+    
+    // Se chegamos aqui, significa que precisamos ir para a próxima semana
+    // e pegar o primeiro dia da semana da lista
+    const firstDayNextWeek = sortedWeekdays[0];
+    const daysToAdd = 7 - currentDayOfWeek + firstDayNextWeek;
+    return addDays(targetWeekStart, daysToAdd);
   }
 
   /**
