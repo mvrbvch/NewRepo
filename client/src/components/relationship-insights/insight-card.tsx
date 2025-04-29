@@ -133,7 +133,7 @@ export function InsightCard({ insight, isPartner = false }: InsightCardProps) {
           <div className="mt-4">
             <h4 className="font-medium text-sm mb-2">Ações sugeridas:</h4>
             <ul className="space-y-1">
-              {insight.actions.map((action: string, index: number) => (
+              {(insight.actions as string[]).map((action: string, index: number) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                   <span>{action}</span>

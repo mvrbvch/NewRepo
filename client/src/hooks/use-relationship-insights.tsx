@@ -98,7 +98,8 @@ export function useRelationshipInsights() {
     return useMutation({
       mutationFn: async (insightId: number) => {
         const response = await fetch(`/api/relationship-insights/${insightId}`, {
-          method: "DELETE"
+          method: "DELETE",
+          credentials: "include"
         });
         
         if (!response.ok) {
@@ -125,7 +126,8 @@ export function useRelationshipInsights() {
           body: type ? JSON.stringify({ type }) : JSON.stringify({}),
           headers: {
             "Content-Type": "application/json"
-          }
+          },
+          credentials: "include"
         });
         
         if (!response.ok) {

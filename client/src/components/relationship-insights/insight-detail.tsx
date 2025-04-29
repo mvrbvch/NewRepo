@@ -165,7 +165,7 @@ export function InsightDetail() {
             <div className="mt-6 bg-gray-50 p-4 rounded-lg">
               <h4 className="font-medium text-base mb-3">Ações sugeridas:</h4>
               <ul className="space-y-2">
-                {insight.actions.map((action: string, index: number) => (
+                {(insight.actions as string[]).map((action: string, index: number) => (
                   <li key={index} className="flex items-start gap-2">
                     <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <span>{action}</span>

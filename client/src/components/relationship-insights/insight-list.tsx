@@ -20,11 +20,14 @@ export function InsightList({ type, isPartner = false }: InsightListProps) {
   const generateInsights = useGenerateInsights();
 
   const handleRefresh = () => {
-    insightsQuery.refetch();
+    insightsQuery.refetch().catch(error => {
+      console.error("Erro ao atualizar insights:", error);
+    });
   };
 
   const handleGenerateInsights = () => {
-    generateInsights.mutate();
+    // Using tanstack/react-query v5 syntax
+    generateInsights.mutate(undefined);
   };
 
   if (insightsQuery.isLoading) {
