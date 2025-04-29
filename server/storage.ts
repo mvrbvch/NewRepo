@@ -606,6 +606,151 @@ export class MemStorage implements IStorage {
   async deleteNotification(id: number): Promise<boolean> {
     return this.notificationsMap.delete(id);
   }
+
+  // Métodos para lembretes de eventos
+  async createEventReminder(
+    insertReminder: InsertEventReminder
+  ): Promise<EventReminder> {
+    const id = this.eventReminderIdCounter++;
+    const reminder: EventReminder = {
+      ...insertReminder,
+      id,
+      sent: false,
+      createdAt: new Date(),
+      reminderTime: insertReminder.reminderTime,
+    };
+    this.eventRemindersMap.set(id, reminder);
+    return reminder;
+  }
+
+  async getEventReminders(eventId: number): Promise<EventReminder[]> {
+    return Array.from(this.eventRemindersMap.values())
+      .filter((reminder) => reminder.eventId === eventId)
+      .sort((a, b) => {
+        // Ordenar por tempo do lembrete, mais próximos primeiro
+        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
+        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
+        return timeA - timeB;
+      });
+  }
+
+  async getUserEventReminders(userId: number): Promise<EventReminder[]> {
+    return Array.from(this.eventRemindersMap.values())
+      .filter((reminder) => reminder.userId === userId)
+      .sort((a, b) => {
+        // Ordenar por tempo do lembrete, mais próximos primeiro
+        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
+        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
+        return timeA - timeB;
+      });
+  }
+
+  async getPendingEventReminders(): Promise<EventReminder[]> {
+    const now = new Date();
+    return Array.from(this.eventRemindersMap.values())
+      .filter((reminder) => {
+        // Filtrar lembretes não enviados e que já passaram do tempo programado
+        return (
+          !reminder.sent &&
+          reminder.reminderTime &&
+          new Date(reminder.reminderTime) <= now
+        );
+      })
+      .sort((a, b) => {
+        // Ordenar por tempo do lembrete, mais antigos primeiro
+        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
+        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
+        return timeA - timeB;
+      });
+  }
+
+  async markEventReminderAsSent(
+    id: number
+  ): Promise<EventReminder | undefined> {
+    const reminder = this.eventRemindersMap.get(id);
+    if (!reminder) return undefined;
+
+    const updatedReminder = { ...reminder, sent: true };
+    this.eventRemindersMap.set(id, updatedReminder);
+    return updatedReminder;
+  }
+
+  async deleteEventReminder(id: number): Promise<boolean> {
+    return this.eventRemindersMap.delete(id);
+  }
+
+  // Métodos para lembretes de tarefas
+  async createTaskReminder(
+    insertReminder: InsertTaskReminder
+  ): Promise<TaskReminder> {
+    const id = this.taskReminderIdCounter++;
+    const reminder: TaskReminder = {
+      ...insertReminder,
+      id,
+      sent: false,
+      createdAt: new Date(),
+      reminderTime: insertReminder.reminderTime,
+      message: insertReminder.message || null,
+    };
+    this.taskRemindersMap.set(id, reminder);
+    return reminder;
+  }
+
+  async getTaskReminders(taskId: number): Promise<TaskReminder[]> {
+    return Array.from(this.taskRemindersMap.values())
+      .filter((reminder) => reminder.taskId === taskId)
+      .sort((a, b) => {
+        // Ordenar por tempo do lembrete, mais próximos primeiro
+        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
+        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
+        return timeA - timeB;
+      });
+  }
+
+  async getUserTaskReminders(userId: number): Promise<TaskReminder[]> {
+    return Array.from(this.taskRemindersMap.values())
+      .filter((reminder) => reminder.userId === userId)
+      .sort((a, b) => {
+        // Ordenar por tempo do lembrete, mais próximos primeiro
+        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
+        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
+        return timeA - timeB;
+      });
+  }
+
+  async getPendingTaskReminders(): Promise<TaskReminder[]> {
+    const now = new Date();
+    return Array.from(this.taskRemindersMap.values())
+      .filter((reminder) => {
+        // Filtrar lembretes não enviados e que já passaram do tempo programado
+        return (
+          !reminder.sent &&
+          reminder.reminderTime &&
+          new Date(reminder.reminderTime) <= now
+        );
+      })
+      .sort((a, b) => {
+        // Ordenar por tempo do lembrete, mais antigos primeiro
+        const timeA = a.reminderTime ? new Date(a.reminderTime).getTime() : 0;
+        const timeB = b.reminderTime ? new Date(b.reminderTime).getTime() : 0;
+        return timeA - timeB;
+      });
+  }
+
+  async markTaskReminderAsSent(
+    id: number
+  ): Promise<TaskReminder | undefined> {
+    const reminder = this.taskRemindersMap.get(id);
+    if (!reminder) return undefined;
+
+    const updatedReminder = { ...reminder, sent: true };
+    this.taskRemindersMap.set(id, updatedReminder);
+    return updatedReminder;
+  }
+
+  async deleteTaskReminder(id: number): Promise<boolean> {
+    return this.taskRemindersMap.delete(id);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -782,6 +927,188 @@ export class DatabaseStorage implements IStorage {
       .delete(notifications)
       .where(eq(notifications.id, id));
     return true; // Drizzle não retorna informação fácil sobre se algo foi deletado
+  }
+
+  // Métodos para lembretes de eventos
+  async createEventReminder(
+    reminder: InsertEventReminder
+  ): Promise<EventReminder> {
+    const [newReminder] = await db
+      .insert(eventReminders)
+      .values({
+        ...reminder,
+        sent: false,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return {
+      ...newReminder,
+      reminderTime: newReminder.reminderTime.toISOString(),
+      createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
+    };
+  }
+
+  async getEventReminders(eventId: number): Promise<EventReminder[]> {
+    const results = await db
+      .select()
+      .from(eventReminders)
+      .where(eq(eventReminders.eventId, eventId))
+      .orderBy(eventReminders.reminderTime);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
+  }
+
+  async getUserEventReminders(userId: number): Promise<EventReminder[]> {
+    const results = await db
+      .select()
+      .from(eventReminders)
+      .where(eq(eventReminders.userId, userId))
+      .orderBy(eventReminders.reminderTime);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
+  }
+
+  async getPendingEventReminders(): Promise<EventReminder[]> {
+    const now = new Date();
+    const results = await db
+      .select()
+      .from(eventReminders)
+      .where(
+        and(
+          eq(eventReminders.sent, false),
+          sql`${eventReminders.reminderTime} <= ${now}`
+        )
+      )
+      .orderBy(eventReminders.reminderTime);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
+  }
+
+  async markEventReminderAsSent(
+    id: number
+  ): Promise<EventReminder | undefined> {
+    const [reminder] = await db
+      .update(eventReminders)
+      .set({ sent: true })
+      .where(eq(eventReminders.id, id))
+      .returning();
+
+    if (!reminder) return undefined;
+
+    return {
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    };
+  }
+
+  async deleteEventReminder(id: number): Promise<boolean> {
+    await db.delete(eventReminders).where(eq(eventReminders.id, id));
+    return true;
+  }
+
+  // Métodos para lembretes de tarefas
+  async createTaskReminder(
+    reminder: InsertTaskReminder
+  ): Promise<TaskReminder> {
+    const [newReminder] = await db
+      .insert(taskReminders)
+      .values({
+        ...reminder,
+        sent: false,
+        createdAt: new Date(),
+      })
+      .returning();
+
+    return {
+      ...newReminder,
+      reminderTime: newReminder.reminderTime.toISOString(),
+      createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
+    };
+  }
+
+  async getTaskReminders(taskId: number): Promise<TaskReminder[]> {
+    const results = await db
+      .select()
+      .from(taskReminders)
+      .where(eq(taskReminders.taskId, taskId))
+      .orderBy(taskReminders.reminderTime);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
+  }
+
+  async getUserTaskReminders(userId: number): Promise<TaskReminder[]> {
+    const results = await db
+      .select()
+      .from(taskReminders)
+      .where(eq(taskReminders.userId, userId))
+      .orderBy(taskReminders.reminderTime);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
+  }
+
+  async getPendingTaskReminders(): Promise<TaskReminder[]> {
+    const now = new Date();
+    const results = await db
+      .select()
+      .from(taskReminders)
+      .where(
+        and(
+          eq(taskReminders.sent, false),
+          sql`${taskReminders.reminderTime} <= ${now}`
+        )
+      )
+      .orderBy(taskReminders.reminderTime);
+
+    return results.map((reminder) => ({
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    }));
+  }
+
+  async markTaskReminderAsSent(
+    id: number
+  ): Promise<TaskReminder | undefined> {
+    const [reminder] = await db
+      .update(taskReminders)
+      .set({ sent: true })
+      .where(eq(taskReminders.id, id))
+      .returning();
+
+    if (!reminder) return undefined;
+
+    return {
+      ...reminder,
+      reminderTime: reminder.reminderTime.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    };
+  }
+
+  async deleteTaskReminder(id: number): Promise<boolean> {
+    await db.delete(taskReminders).where(eq(taskReminders.id, id));
+    return true;
   }
 
   // User methods

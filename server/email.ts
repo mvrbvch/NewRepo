@@ -1,12 +1,31 @@
 import { Resend } from "resend";
+import { MailService } from '@sendgrid/mail';
 
+// Configuração Resend
 if (!process.env.RESEND_API_KEY) {
   console.warn(
-    "RESEND_API_KEY não está definida. Não será possível enviar e-mails."
+    "RESEND_API_KEY não está definida. Usando SendGrid como alternativa para enviar e-mails."
   );
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Configuração SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  console.log("Configurando SendGrid para envio de emails");
+} else {
+  console.warn(
+    "SENDGRID_API_KEY não está definida. O sistema tentará usar Resend para envio de emails."
+  );
+}
+
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY) 
+  : null;
+
+// Configurar SendGrid se a API key estiver disponível
+const mailService = new MailService();
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 interface EmailOptions {
   to: string;
@@ -19,25 +38,43 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const { to, subject, html, text } = options;
-    const from = "💜 Nós Juntos <rotina@no-reply.murbach.work>";
+    const from = options.from || "💜 Nós Juntos <rotina@no-reply.murbach.work>";
 
     console.log(`Enviando e-mail para ${to} com assunto "${subject}"`);
 
-    const { data, error } = await resend.emails.send({
-      from,
-      to,
-      subject,
-      html,
-      text,
-    });
+    // Tenta primeiro com Resend e cai para SendGrid se não estiver disponível
+    if (resend && process.env.RESEND_API_KEY) {
+      const { data, error } = await resend.emails.send({
+        from,
+        to,
+        subject,
+        html,
+        text,
+      });
 
-    if (error) {
-      console.error("Erro ao enviar e-mail:", error);
-      return false;
+      if (error) {
+        console.warn("Erro ao enviar e-mail com Resend, tentando SendGrid:", error);
+      } else {
+        console.log("E-mail enviado com sucesso via Resend, ID:", data?.id);
+        return true;
+      }
     }
 
-    console.log("E-mail enviado com sucesso, ID:", data?.id);
-    return true;
+    // Usar SendGrid como alternativa ou se Resend falhar
+    if (process.env.SENDGRID_API_KEY) {
+      await mailService.send({
+        to,
+        from,
+        subject,
+        text,
+        html,
+      });
+      console.log("E-mail enviado com sucesso via SendGrid");
+      return true;
+    }
+
+    console.error("Não foi possível enviar o email. Nenhum serviço de email está configurado.");
+    return false;
   } catch (error) {
     console.error("Erro ao enviar e-mail:", error);
     return false;
