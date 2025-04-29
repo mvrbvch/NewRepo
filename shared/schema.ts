@@ -186,7 +186,10 @@ export const taskReminders = pgTable("task_reminders", {
   userId: integer("user_id")
     .notNull()
     .references(() => users.id),
-  reminderTime: timestamp("reminder_time").notNull(),
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id),
+  reminderDate: timestamp("reminder_date").notNull(),
   reminderType: text("reminder_type").notNull(), // push, email, sms, etc.
   message: text("message"), // Mensagem personalizada opcional
   sent: boolean("sent").default(false),
@@ -450,7 +453,8 @@ export const insertTaskReminderSchema = createInsertSchema(
 ).pick({
   taskId: true,
   userId: true,
-  reminderTime: true,
+  createdBy: true,
+  reminderDate: true,
   reminderType: true,
   message: true,
 });
@@ -534,8 +538,8 @@ export type EventReminder = Omit<
 export type InsertTaskReminder = z.infer<typeof insertTaskReminderSchema>;
 export type TaskReminder = Omit<
   typeof taskReminders.$inferSelect,
-  "reminderTime" | "createdAt"
+  "reminderDate" | "createdAt"
 > & {
-  reminderTime: Date | string;
+  reminderDate: Date | string;
   createdAt: Date | string | null;
 };

@@ -683,17 +683,24 @@ export class MemStorage implements IStorage {
   async createTaskReminder(
     insertReminder: InsertTaskReminder
   ): Promise<TaskReminder> {
-    const id = this.taskReminderIdCounter++;
-    const reminder: TaskReminder = {
-      ...insertReminder,
-      id,
-      sent: false,
-      createdAt: new Date(),
-      reminderTime: insertReminder.reminderTime,
-      message: insertReminder.message || null,
+    const [newReminder] = await db
+      .insert(taskReminders)
+      .values({
+        taskId: insertReminder.taskId,
+        userId: insertReminder.userId,
+        createdBy: insertReminder.createdBy,
+        reminderDate: insertReminder.reminderDate,
+        reminderType: insertReminder.reminderType,
+        message: insertReminder.message || null,
+        sent: false,
+      })
+      .returning();
+
+    return {
+      ...newReminder,
+      reminderDate: newReminder.reminderDate.toISOString(),
+      createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
     };
-    this.taskRemindersMap.set(id, reminder);
-    return reminder;
   }
 
   async getTaskReminders(taskId: number): Promise<TaskReminder[]> {
@@ -1076,14 +1083,14 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(taskReminders.sent, false),
-          sql`${taskReminders.reminderTime} <= ${now}`
+          sql`${taskReminders.reminderDate} <= ${now}`
         )
       )
-      .orderBy(taskReminders.reminderTime);
+      .orderBy(taskReminders.reminderDate);
 
     return results.map((reminder) => ({
       ...reminder,
-      reminderTime: reminder.reminderTime.toISOString(),
+      reminderDate: reminder.reminderDate.toISOString(),
       createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
     }));
   }
@@ -1101,7 +1108,7 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...reminder,
-      reminderTime: reminder.reminderTime.toISOString(),
+      reminderDate: reminder.reminderDate.toISOString(),
       createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
     };
   }
