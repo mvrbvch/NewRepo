@@ -2,10 +2,14 @@ import OpenAI from "openai";
 import { IStorage } from "./storage";
 import { HouseholdTask, Event, InsertRelationshipInsight } from "@shared/schema";
 import { formatDateSafely } from "./utils";
+import { PerplexityService } from "./perplexityService";
 
 // Inicializar o cliente OpenAI
 // O modelo mais recente da OpenAI é "gpt-4o" que foi lançado em 13 de maio de 2024. Não altere isso a menos que explicitamente solicitado pelo usuário
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Inicializar o serviço Perplexity (alternativa gratuita)
+const perplexityService = new PerplexityService();
 
 // Tipos de insight que podem ser gerados
 export enum InsightType {
@@ -18,7 +22,7 @@ export enum InsightType {
   GENERAL = "general", // Insight geral
 }
 
-interface TaskDistributionData {
+export interface TaskDistributionData {
   user: {
     id: number;
     name: string;
@@ -373,13 +377,29 @@ export class RelationshipInsightsService {
   }
 
   /**
-   * Gera um insight sobre distribuição de tarefas usando a API OpenAI, com fallback para geração local
-   * quando a API não está disponível
+   * Gera um insight sobre distribuição de tarefas usando a API OpenAI ou Perplexity,
+   * com fallback para geração local quando as APIs não estão disponíveis
    */
   private async generateTaskDistributionInsight(
     data: TaskDistributionData
   ): Promise<InsightGenerationResult | null> {
     try {
+      // Primeiro tentar usar o Perplexity se estiver configurado
+      if (perplexityService.isConfigured()) {
+        try {
+          console.log("Tentando gerar insight com Perplexity API...");
+          const perplexityResult = await perplexityService.generateTaskDistributionInsight(data);
+          if (perplexityResult) {
+            console.log("Insight gerado com sucesso usando Perplexity API");
+            return perplexityResult;
+          }
+        } catch (perplexityError) {
+          console.warn("Erro na API Perplexity, tentando OpenAI como alternativa:", 
+            perplexityError instanceof Error ? perplexityError.message : String(perplexityError));
+        }
+      }
+      
+      // Se Perplexity falhou ou não está configurado, tentar OpenAI
       // Preparar os dados para o prompt
       const userCompletionPercent = Math.round(data.user.completionRate * 100);
       const partnerCompletionPercent = Math.round(data.partner.completionRate * 100);
@@ -394,7 +414,13 @@ export class RelationshipInsightsService {
         .join("\n");
       
       try {
-        // Tentar usar a API OpenAI primeiro
+        // Verificar se a API Key da OpenAI está configurada
+        if (!process.env.OPENAI_API_KEY) {
+          console.warn("API key da OpenAI não configurada, usando geração local de insights");
+          return this.generateTaskDistributionInsightLocally(data);
+        }
+        
+        // Tentar usar a API OpenAI
         // Construir o prompt para a API OpenAI
         const prompt = `
 Você é um consultor de relacionamentos especializado em analisar dinâmicas entre casais.
@@ -456,13 +482,15 @@ Não inclua explicações, apenas o objeto JSON.
           rawData: data
         };
       } catch (apiError) {
-        console.warn("Erro na API OpenAI, usando geração local de insights:", apiError.message);
+        const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
+        console.warn("Erro na API OpenAI, usando geração local de insights:", errorMessage);
         
         // Fallback: Gerar insights localmente quando a API não está disponível
         return this.generateTaskDistributionInsightLocally(data);
       }
     } catch (error) {
-      console.error("Erro ao gerar insight de distribuição de tarefas:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Erro ao gerar insight de distribuição de tarefas:", errorMessage);
       return null;
     }
   }
