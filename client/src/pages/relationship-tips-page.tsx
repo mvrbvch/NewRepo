@@ -6,12 +6,12 @@ import { MessageCircle, BookHeart, Lightbulb } from "lucide-react";
 export default function RelationshipTipsPage() {
   const [tab, setTab] = useState("all");
   
+  useEffect(() => {
+    document.title = "Dicas de Relacionamento | CouplesApp";
+  }, []);
+
   return (
     <>
-      <Helmet>
-        <title>Dicas de Relacionamento | CouplesApp</title>
-      </Helmet>
-      
       <div className="container mx-auto p-4 max-w-5xl">
         <header className="mb-8">
           <div className="flex items-center gap-3">
