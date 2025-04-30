@@ -168,3 +168,25 @@ export interface TaskCompletionHistoryType {
   isCompleted: boolean;
   createdAt: string | Date | null;
 }
+
+export enum TipCategory {
+  COMMUNICATION = "communication",
+  QUALITY_TIME = "quality_time",
+  CONFLICT_RESOLUTION = "conflict_resolution", 
+  RELATIONSHIP_GROWTH = "relationship_growth",
+  SHARED_GOALS = "shared_goals",
+  DAILY_HABITS = "daily_habits"
+}
+
+export interface RelationshipTipType {
+  id: number;
+  userId: number;
+  partnerId: number;
+  category: TipCategory;
+  title: string;
+  content: string;
+  actionItems: string[];
+  createdAt: Date | string;
+  saved: boolean;
+  customData?: any;
+}
