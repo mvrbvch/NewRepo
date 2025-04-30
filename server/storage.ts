@@ -1012,6 +1012,158 @@ export class MemStorage implements IStorage {
   async deleteRelationshipInsight(id: number): Promise<boolean> {
     return this.relationshipInsightsMap.delete(id);
   }
+
+  // Relationship Tips methods
+  async createRelationshipTip(tip: InsertRelationshipTip): Promise<RelationshipTip> {
+    const id = ++this.relationshipTipIdCounter;
+    const now = new Date();
+    
+    const newTip: RelationshipTip = {
+      id,
+      userId: tip.userId,
+      partnerId: tip.partnerId,
+      category: tip.category,
+      title: tip.title,
+      content: tip.content,
+      actionItems: tip.actionItems,
+      saved: tip.saved || false,
+      customData: tip.customData || null,
+      createdAt: now
+    };
+    
+    this.relationshipTipsMap.set(id, newTip);
+    return newTip;
+  }
+
+  async getRelationshipTip(id: number): Promise<RelationshipTip | undefined> {
+    return this.relationshipTipsMap.get(id);
+  }
+
+  async getUserRelationshipTips(userId: number): Promise<RelationshipTip[]> {
+    return Array.from(this.relationshipTipsMap.values())
+      .filter(tip => tip.userId === userId)
+      .sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+  }
+
+  async getPartnerRelationshipTips(userId: number, partnerId: number): Promise<RelationshipTip[]> {
+    return Array.from(this.relationshipTipsMap.values())
+      .filter(tip => 
+        (tip.userId === userId && tip.partnerId === partnerId) || 
+        (tip.userId === partnerId && tip.partnerId === userId)
+      )
+      .sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+  }
+
+  async getSavedRelationshipTips(userId: number): Promise<RelationshipTip[]> {
+    return Array.from(this.relationshipTipsMap.values())
+      .filter(tip => 
+        (tip.userId === userId || tip.partnerId === userId) && 
+        tip.saved === true
+      )
+      .sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+  }
+
+  async updateRelationshipTip(id: number, updates: Partial<RelationshipTip>): Promise<RelationshipTip | undefined> {
+    const tip = this.relationshipTipsMap.get(id);
+    if (!tip) return undefined;
+    
+    const updatedTip = { 
+      ...tip,
+      ...updates
+    };
+    
+    this.relationshipTipsMap.set(id, updatedTip);
+    return updatedTip;
+  }
+
+  async deleteRelationshipTip(id: number): Promise<boolean> {
+    return this.relationshipTipsMap.delete(id);
+  }
+
+  // Métodos para obter dados recentes para gerar dicas
+  async getRecentHouseholdTasks(userId: number, partnerId: number, days: number): Promise<HouseholdTask[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    return Array.from(this.householdTasksMap.values())
+      .filter(task => {
+        // Filtrar tarefas do usuário ou do parceiro
+        const isRelevantTask = task.createdBy === userId || task.createdBy === partnerId ||
+                               task.assignedTo === userId || task.assignedTo === partnerId;
+        
+        // Verificar se a tarefa foi criada ou completada nos últimos X dias
+        const taskCreatedAt = task.createdAt ? new Date(task.createdAt) : null;
+        const taskCompletedAt = task.completedAt ? new Date(task.completedAt) : null;
+        
+        const isRecentTask = (taskCreatedAt && taskCreatedAt >= startDate) ||
+                            (taskCompletedAt && taskCompletedAt >= startDate);
+        
+        return isRelevantTask && isRecentTask;
+      })
+      .sort((a, b) => {
+        // Ordenar por data de conclusão ou criação (mais recente primeiro)
+        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 
+                     (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 
+                     (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+        return dateB - dateA;
+      });
+  }
+
+  async getRecentEvents(userId: number, partnerId: number, days: number): Promise<Event[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    // Obter eventos criados pelo usuário ou pelo parceiro
+    const userEvents = Array.from(this.eventsMap.values())
+      .filter(event => {
+        // Filtrar eventos do usuário ou do parceiro
+        const isRelevantEvent = event.createdBy === userId || event.createdBy === partnerId;
+        
+        // Verificar se o evento está nos últimos X dias (data do evento)
+        const eventDate = new Date(event.date);
+        const isRecentEvent = eventDate >= startDate && eventDate <= new Date();
+        
+        return isRelevantEvent && isRecentEvent;
+      });
+    
+    // Obter eventos compartilhados com o usuário ou com o parceiro
+    const sharedEventIds = Array.from(this.eventSharesMap.values())
+      .filter(share => share.userId === userId || share.userId === partnerId)
+      .map(share => share.eventId);
+    
+    const sharedEvents = Array.from(this.eventsMap.values())
+      .filter(event => {
+        // Filtrar eventos compartilhados
+        const isSharedEvent = sharedEventIds.includes(event.id);
+        
+        // Verificar se o evento está nos últimos X dias
+        const eventDate = new Date(event.date);
+        const isRecentEvent = eventDate >= startDate && eventDate <= new Date();
+        
+        return isSharedEvent && isRecentEvent;
+      });
+    
+    // Combinar e ordenar por data (mais recente primeiro)
+    return [...userEvents, ...sharedEvents]
+      .sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateB - dateA;
+      });
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2852,6 +3004,267 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Erro ao excluir insight de relacionamento:", error);
       return false;
+    }
+  }
+
+  // Relationship Tips methods
+  async createRelationshipTip(tip: InsertRelationshipTip): Promise<RelationshipTip> {
+    try {
+      // Use current date for createdAt if not provided
+      const now = new Date();
+      
+      const [newTip] = await db
+        .insert(relationshipTips)
+        .values({
+          userId: tip.userId,
+          partnerId: tip.partnerId,
+          category: tip.category,
+          title: tip.title,
+          content: tip.content,
+          actionItems: tip.actionItems,
+          saved: tip.saved || false,
+          customData: tip.customData || null,
+          createdAt: now
+        })
+        .returning();
+      
+      return {
+        ...newTip,
+        createdAt: newTip.createdAt ? formatDateSafely(newTip.createdAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao criar dica de relacionamento:", error);
+      throw error;
+    }
+  }
+
+  async getRelationshipTip(id: number): Promise<RelationshipTip | undefined> {
+    try {
+      const [tip] = await db
+        .select()
+        .from(relationshipTips)
+        .where(eq(relationshipTips.id, id))
+        .limit(1);
+      
+      if (!tip) return undefined;
+      
+      return {
+        ...tip,
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao buscar dica de relacionamento:", error);
+      return undefined;
+    }
+  }
+
+  async getUserRelationshipTips(userId: number): Promise<RelationshipTip[]> {
+    try {
+      const tips = await db
+        .select()
+        .from(relationshipTips)
+        .where(eq(relationshipTips.userId, userId))
+        .orderBy(desc(relationshipTips.createdAt));
+      
+      return tips.map(tip => ({
+        ...tip,
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar dicas de relacionamento do usuário:", error);
+      return [];
+    }
+  }
+
+  async getPartnerRelationshipTips(userId: number, partnerId: number): Promise<RelationshipTip[]> {
+    try {
+      const tips = await db
+        .select()
+        .from(relationshipTips)
+        .where(
+          or(
+            and(
+              eq(relationshipTips.userId, userId),
+              eq(relationshipTips.partnerId, partnerId)
+            ),
+            and(
+              eq(relationshipTips.userId, partnerId),
+              eq(relationshipTips.partnerId, userId)
+            )
+          )
+        )
+        .orderBy(desc(relationshipTips.createdAt));
+      
+      return tips.map(tip => ({
+        ...tip,
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar dicas de relacionamento do casal:", error);
+      return [];
+    }
+  }
+
+  async getSavedRelationshipTips(userId: number): Promise<RelationshipTip[]> {
+    try {
+      const tips = await db
+        .select()
+        .from(relationshipTips)
+        .where(
+          and(
+            or(
+              eq(relationshipTips.userId, userId),
+              eq(relationshipTips.partnerId, userId)
+            ),
+            eq(relationshipTips.saved, true)
+          )
+        )
+        .orderBy(desc(relationshipTips.createdAt));
+      
+      return tips.map(tip => ({
+        ...tip,
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar dicas de relacionamento salvas:", error);
+      return [];
+    }
+  }
+
+  async updateRelationshipTip(id: number, updates: Partial<RelationshipTip>): Promise<RelationshipTip | undefined> {
+    try {
+      const [updatedTip] = await db
+        .update(relationshipTips)
+        .set(updates)
+        .where(eq(relationshipTips.id, id))
+        .returning();
+      
+      if (!updatedTip) return undefined;
+      
+      return {
+        ...updatedTip,
+        createdAt: updatedTip.createdAt ? formatDateSafely(updatedTip.createdAt) : null
+      };
+    } catch (error) {
+      console.error("Erro ao atualizar dica de relacionamento:", error);
+      return undefined;
+    }
+  }
+
+  async deleteRelationshipTip(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(relationshipTips)
+        .where(eq(relationshipTips.id, id));
+      return true;
+    } catch (error) {
+      console.error("Erro ao excluir dica de relacionamento:", error);
+      return false;
+    }
+  }
+
+  async getRecentHouseholdTasks(userId: number, partnerId: number, days: number): Promise<HouseholdTask[]> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      // Buscar tarefas recentes criadas ou atribuídas ao usuário ou parceiro
+      const tasks = await db
+        .select()
+        .from(householdTasks)
+        .where(
+          and(
+            or(
+              eq(householdTasks.createdBy, userId),
+              eq(householdTasks.createdBy, partnerId),
+              eq(householdTasks.assignedTo, userId),
+              eq(householdTasks.assignedTo, partnerId)
+            ),
+            or(
+              // Tarefas criadas nos últimos dias
+              sql`${householdTasks.createdAt} >= ${startDate}`,
+              // Tarefas concluídas nos últimos dias
+              sql`${householdTasks.completedAt} >= ${startDate}`
+            )
+          )
+        )
+        .orderBy(desc(householdTasks.completedAt), desc(householdTasks.createdAt));
+      
+      return tasks.map(task => ({
+        ...task,
+        dueDate: task.dueDate ? formatDateSafely(task.dueDate) : null,
+        nextDueDate: task.nextDueDate ? formatDateSafely(task.nextDueDate) : null,
+        createdAt: task.createdAt ? formatDateSafely(task.createdAt) : null,
+        completedAt: task.completedAt ? formatDateSafely(task.completedAt) : null
+      }));
+      
+    } catch (error) {
+      console.error("Erro ao buscar tarefas recentes:", error);
+      return [];
+    }
+  }
+
+  async getRecentEvents(userId: number, partnerId: number, days: number): Promise<Event[]> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      // Buscar eventos dos últimos dias do usuário e do parceiro
+      const userEvents = await db
+        .select()
+        .from(events)
+        .where(
+          and(
+            or(
+              eq(events.createdBy, userId),
+              eq(events.createdBy, partnerId)
+            ),
+            sql`${events.date} >= ${startDate}`,
+            sql`${events.date} <= ${new Date()}`
+          )
+        );
+      
+      // Buscar IDs de eventos compartilhados com o usuário ou parceiro
+      const sharedEventsSql = db
+        .select({ eventId: eventShares.eventId })
+        .from(eventShares)
+        .where(
+          or(
+            eq(eventShares.userId, userId),
+            eq(eventShares.userId, partnerId)
+          )
+        );
+      
+      // Buscar eventos compartilhados recentes
+      const sharedEvents = await db
+        .select()
+        .from(events)
+        .where(
+          and(
+            inArray(events.id, sharedEventsSql.map(es => es.eventId)),
+            sql`${events.date} >= ${startDate}`,
+            sql`${events.date} <= ${new Date()}`
+          )
+        );
+      
+      // Combinar resultados
+      const allEvents = [...userEvents, ...sharedEvents];
+      
+      // Formatar e retornar resultados
+      return allEvents
+        .map(event => ({
+          ...event,
+          date: formatDateSafely(event.date)
+        }))
+        .sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA;
+        });
+      
+    } catch (error) {
+      console.error("Erro ao buscar eventos recentes:", error);
+      return [];
     }
   }
 }

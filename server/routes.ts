@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { setupReminderRoutes } from "./reminder-routes";
 import { setupRelationshipInsightsRoutes } from "./relationship-insights-routes";
+import relationshipTipsRoutes from "./relationship-tips-routes";
 import { z } from "zod";
 // Importações e preparações necessárias
 import { sql, eq } from "drizzle-orm";
