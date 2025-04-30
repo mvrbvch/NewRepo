@@ -230,7 +230,7 @@ function TipCard({ tip, onFavorite, onUnfavorite, onDelete }: TipCardProps) {
     <Card className="w-full overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="bg-gray-50 py-3 px-4">
         <div className="flex justify-between items-start mb-1">
-          <CardTitle className="text-base font-semibold line-clamp-1">
+          <CardTitle className="text-base font-semibold">
             {tip.title}
           </CardTitle>
         </div>
@@ -240,7 +240,7 @@ function TipCard({ tip, onFavorite, onUnfavorite, onDelete }: TipCardProps) {
         </div>
       </CardHeader>
       <CardContent className="py-4 px-4">
-        <p className="text-sm text-gray-700 line-clamp-3 mb-4">{tip.content}</p>
+        <p className="text-sm text-gray-700 mb-4">{tip.content}</p>
         {tip.actionItems && tip.actionItems.length > 0 && (
           <div className="mt-2">
             <h4 className="text-xs font-semibold text-gray-700 mb-2">Próximos passos:</h4>
