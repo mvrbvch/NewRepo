@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interface Mockup - Nós Juntos</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      min-height: 100vh;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    header {
+      background: linear-gradient(to right, #7c3aed, #6d28d9);
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .logo img {
+      width: 30px;
+      height: 30px;
+    }
+    
+    .content {
+      padding: 1rem;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .task-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #7c3aed;
+      margin-right: 0.75rem;
+    }
+    
+    .task-info {
+      flex-grow: 1;
+    }
+    
+    .task-title {
+      font-weight: 500;
+    }
+    
+    .task-meta {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+    
+    .badge {
+      background: #e0e7ff;
+      color: #4f46e5;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+    }
+    
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      color: #4b5563;
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .tabs button {
+      padding: 0.75rem 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      color: #6b7280;
+    }
+    
+    .tabs button.active {
+      color: #7c3aed;
+      border-bottom: 2px solid #7c3aed;
+    }
+    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 500px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      background: white;
+      padding: 0.75rem 0;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    
+    .nav-item.active {
+      color: #7c3aed;
+    }
+    
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 0.25rem;
+      background: #e0e7ff;
+      border-radius: 50%;
+    }
+    
+    .floating-button {
+      position: fixed;
+      bottom: 80px;
+      right: calc(50% - 230px);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    @media (max-width: 500px) {
+      .floating-button {
+        right: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="/logo.png" alt="Nós Juntos">
+        <span>Nós Juntos</span>
+      </div>
+      <div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+        </svg>
+      </div>
+    </header>
+    
+    <div class="content">
+      <h2>Tarefas Domésticas</h2>
+      
+      <div class="tabs">
+        <button class="active">Todas</button>
+        <button>Pendentes</button>
+        <button>Concluídas</button>
+      </div>
+      
+      <div class="card">
+        <div class="task-item">
+          <div class="checkbox"></div>
+          <div class="task-info">
+            <div class="task-title">Lavar a louça</div>
+            <div class="task-meta">Diária • Atribuída a você</div>
+          </div>
+          <span class="badge">Hoje</span>
+        </div>
+        
+        <div class="task-item">
+          <div class="checkbox"></div>
+          <div class="task-info">
+            <div class="task-title">Tirar o lixo</div>
+            <div class="task-meta">Diária • Atribuída a você</div>
+          </div>
+          <span class="badge">Hoje</span>
+        </div>
+        
+        <div class="task-item">
+          <div class="checkbox"></div>
+          <div class="task-info">
+            <div class="task-title">Limpar o banheiro</div>
+            <div class="task-meta">Semanal • Atribuída ao parceiro</div>
+          </div>
+          <span class="badge">Amanhã</span>
+        </div>
+      </div>
+      
+      <h2>Próximos Eventos</h2>
+      
+      <div class="card">
+        <div class="task-item">
+          <div class="task-info">
+            <div class="task-title">Jantar Romântico</div>
+            <div class="task-meta">Restaurante Italiano • 19:00</div>
+          </div>
+          <span class="badge">Hoje</span>
+        </div>
+        
+        <div class="task-item">
+          <div class="task-info">
+            <div class="task-title">Aniversário de Casamento</div>
+            <div class="task-meta">O dia todo</div>
+          </div>
+          <span class="badge">Sex</span>
+        </div>
+      </div>
+      
+      <h2>Dicas de Relacionamento</h2>
+      
+      <div class="card">
+        <div class="task-item">
+          <div class="task-info">
+            <div class="task-title">Equilibrar Tarefas Domésticas</div>
+            <div class="task-meta">Distribuir as tarefas pode reduzir o estresse e melhorar a comunicação</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="floating-button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </div>
+    
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon"></div>
+        <span>Calendário</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span>Tarefas</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span>Insights</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon"></div>
+        <span>Perfil</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
