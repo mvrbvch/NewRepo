@@ -11,6 +11,7 @@ import {
   eventReminders,
   taskReminders,
   relationshipInsights,
+  relationshipTips,
   taskCompletionHistory,
 } from "@shared/schema";
 import type {
@@ -32,6 +33,8 @@ import type {
   InsertUserDevice,
   RelationshipInsight,
   InsertRelationshipInsight,
+  RelationshipTip,
+  InsertRelationshipTip,
   Notification,
   InsertNotification,
   EventReminder,
@@ -174,6 +177,17 @@ export interface IStorage {
   markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined>;
   deleteRelationshipInsight(id: number): Promise<boolean>;
 
+  // Relationship Tips
+  createRelationshipTip(tip: InsertRelationshipTip): Promise<RelationshipTip>;
+  getRelationshipTip(id: number): Promise<RelationshipTip | undefined>;
+  getUserRelationshipTips(userId: number): Promise<RelationshipTip[]>;
+  getPartnerRelationshipTips(userId: number, partnerId: number): Promise<RelationshipTip[]>;
+  getSavedRelationshipTips(userId: number): Promise<RelationshipTip[]>;
+  updateRelationshipTip(id: number, updates: Partial<RelationshipTip>): Promise<RelationshipTip | undefined>;
+  deleteRelationshipTip(id: number): Promise<boolean>;
+  getRecentHouseholdTasks(userId: number, partnerId: number, days: number): Promise<HouseholdTask[]>;
+  getRecentEvents(userId: number, partnerId: number, days: number): Promise<Event[]>;
+
   // Session store
   sessionStore: SessionStore;
 }
@@ -191,6 +205,7 @@ export class MemStorage implements IStorage {
   private eventRemindersMap: Map<number, EventReminder>;
   private taskRemindersMap: Map<number, TaskReminder>;
   private relationshipInsightsMap: Map<number, RelationshipInsight>;
+  private relationshipTipsMap: Map<number, RelationshipTip>;
   private taskCompletionHistoryMap: Map<number, TaskCompletionHistory>;
 
   private userIdCounter: number;
@@ -205,6 +220,7 @@ export class MemStorage implements IStorage {
   private eventReminderIdCounter: number;
   private taskReminderIdCounter: number;
   private relationshipInsightIdCounter: number;
+  private relationshipTipIdCounter: number;
   private taskCompletionHistoryIdCounter: number;
 
   sessionStore: SessionStore;
@@ -222,6 +238,7 @@ export class MemStorage implements IStorage {
     this.eventRemindersMap = new Map();
     this.taskRemindersMap = new Map();
     this.relationshipInsightsMap = new Map();
+    this.relationshipTipsMap = new Map();
     this.taskCompletionHistoryMap = new Map();
 
     this.userIdCounter = 1;
@@ -236,6 +253,7 @@ export class MemStorage implements IStorage {
     this.eventReminderIdCounter = 1;
     this.taskReminderIdCounter = 1;
     this.relationshipInsightIdCounter = 1;
+    this.relationshipTipIdCounter = 1;
     this.taskCompletionHistoryIdCounter = 1;
 
     this.sessionStore = new MemoryStore({
