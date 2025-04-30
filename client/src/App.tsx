@@ -49,7 +49,7 @@ function Router() {
         <Route path="/" component={LandingPage} />
 
         {/* Rota principal protegida */}
-        <ProtectedRoute path="/calendar" component={HomePage} />
+        <Route path="/calendar" component={HomePage} />
 
         {/* Rotas de autenticação */}
         <Route path="/auth" component={AuthPage} />
@@ -71,10 +71,13 @@ function Router() {
           path="/tasks/reorder"
           component={HouseholdTasksPageSimple}
         />
-        
+
         {/* Insights de relacionamento */}
-        <ProtectedRoute path="/insights/:id?" component={RelationshipInsightsPage} />
-        
+        <ProtectedRoute
+          path="/insights/:id?"
+          component={RelationshipInsightsPage}
+        />
+
         {/* Dicas de relacionamento */}
         <ProtectedRoute path="/tips" component={RelationshipTipsPage} />
 
