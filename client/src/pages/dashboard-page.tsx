@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +14,14 @@ import { motion } from "framer-motion";
 import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
 import { useRelationshipTips } from "@/hooks/use-relationship-tips";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +47,7 @@ import {
   Home,
   Star,
   AlertCircle,
-  Info
+  Info,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -50,23 +56,28 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { useAllInsights } = useRelationshipInsights();
-  const { useTips } = useRelationshipTips();
+  const { useUserTips } = useRelationshipTips();
 
   // Formatando a data atual
   const formattedToday = format(today, "EEEE, d 'de' MMMM", { locale: ptBR });
-  const formattedTodayCapitalized = formattedToday.charAt(0).toUpperCase() + formattedToday.slice(1);
+  const formattedTodayCapitalized =
+    formattedToday.charAt(0).toUpperCase() + formattedToday.slice(1);
 
   // Queries
-  const { data: events = [], isLoading: isLoadingEvents } = useQuery<EventType[]>({
+  const { data: events = [], isLoading: isLoadingEvents } = useQuery<
+    EventType[]
+  >({
     queryKey: ["/api/events"],
   });
 
-  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<HouseholdTaskType[]>({
+  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<
+    HouseholdTaskType[]
+  >({
     queryKey: ["/api/household/tasks"],
   });
 
   const insightsQuery = useAllInsights();
-  const tipsQuery = useTips();
+  const tipsQuery = useUserTips();
 
   // Filtra eventos apenas para o dia atual
   const todaysEvents = events.filter((event) => {
@@ -76,12 +87,15 @@ export default function DashboardPage() {
 
   // Ordena eventos por hora de início
   const sortedEvents = [...todaysEvents].sort((a, b) => {
-    return new Date(`1970-01-01T${a.startTime}`).getTime() - new Date(`1970-01-01T${b.startTime}`).getTime();
+    return (
+      new Date(`1970-01-01T${a.startTime}`).getTime() -
+      new Date(`1970-01-01T${b.startTime}`).getTime()
+    );
   });
 
   // Filtra tarefas para hoje
-  const pendingTasks = tasks.filter(task => !task.completed);
-  const urgentTasks = pendingTasks.filter(task => {
+  const pendingTasks = tasks.filter((task) => !task.completed);
+  const urgentTasks = pendingTasks.filter((task) => {
     if (task.dueDate) {
       const dueDate = new Date(task.dueDate);
       return isSameDay(dueDate, today) || isBefore(dueDate, today);
@@ -89,7 +103,7 @@ export default function DashboardPage() {
     return false;
   });
 
-  const pendingTasksToday = pendingTasks.filter(task => {
+  const pendingTasksToday = pendingTasks.filter((task) => {
     if (task.dueDate) {
       return isSameDay(new Date(task.dueDate), today);
     }
@@ -101,10 +115,14 @@ export default function DashboardPage() {
   const recentTips = tipsQuery.data?.slice(0, 1) || [];
 
   // Filtra eventos compartilhados para o próximo evento do casal
-  const nextCoupleEvent = sortedEvents.find(event => event.isShared);
+  const nextCoupleEvent = sortedEvents.find((event) => event.isShared);
 
   // Carregando status
-  const isLoading = isLoadingEvents || isLoadingTasks || insightsQuery.isLoading || tipsQuery.isLoading;
+  const isLoading =
+    isLoadingEvents ||
+    isLoadingTasks ||
+    insightsQuery.isLoading ||
+    tipsQuery.isLoading;
 
   // Formata hora do evento
   const formatEventTime = (event: EventType) => {
@@ -115,20 +133,20 @@ export default function DashboardPage() {
   const formatDueDate = (date: string | Date) => {
     if (!date) return "";
     const dueDate = new Date(date);
-    
+
     if (isSameDay(dueDate, today)) {
       return "Hoje";
     }
-    
+
     if (isBefore(dueDate, today)) {
       return `Atrasada (${format(dueDate, "dd/MM")})`;
     }
-    
+
     return format(dueDate, "dd/MM");
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="flex flex-col min-h-screen bg-gray-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -142,14 +160,16 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             Olá, {user?.name?.split(" ")[0] || ""}!
           </h1>
-          <p className="text-muted-foreground">
-            {formattedTodayCapitalized}
-          </p>
+          <p className="text-muted-foreground">{formattedTodayCapitalized}</p>
         </div>
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <CoupleLoadingAnimation text="Carregando seu dashboard..." size="md" type="dashboard" />
+            <CoupleLoadingAnimation
+              text="Carregando seu dashboard..."
+              size="md"
+              type="dashboard"
+            />
           </div>
         ) : (
           <div className="space-y-6">
@@ -172,7 +192,7 @@ export default function DashboardPage() {
                       {todaysEvents.length}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <div className="bg-amber-100 p-1.5 rounded-full">
                       <Home className="h-4 w-4 text-amber-600" />
@@ -182,14 +202,16 @@ export default function DashboardPage() {
                       {pendingTasksToday.length}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <div className="bg-rose-100 p-1.5 rounded-full">
                       <Heart className="h-4 w-4 text-rose-600" />
                     </div>
-                    <span className="ml-2 text-sm font-medium">Compartilhado</span>
+                    <span className="ml-2 text-sm font-medium">
+                      Compartilhado
+                    </span>
                     <Badge variant="outline" className="ml-2">
-                      {todaysEvents.filter(e => e.isShared).length}
+                      {todaysEvents.filter((e) => e.isShared).length}
                     </Badge>
                   </div>
                 </div>
@@ -203,9 +225,11 @@ export default function DashboardPage() {
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center">
                       <Heart className="h-5 w-5 text-rose-500 mr-2" />
-                      <h3 className="font-medium text-primary">Próximo momento a dois</h3>
+                      <h3 className="font-medium text-primary">
+                        Próximo momento a dois
+                      </h3>
                     </div>
-                    <Badge 
+                    <Badge
                       variant="secondary"
                       className="bg-white/80 text-primary text-xs"
                     >
@@ -213,19 +237,25 @@ export default function DashboardPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center mt-2">
-                    <span className="text-2xl mr-2">{nextCoupleEvent.emoji || "❤️"}</span>
+                    <span className="text-2xl mr-2">
+                      {nextCoupleEvent.emoji || "❤️"}
+                    </span>
                     <div>
-                      <h3 className="font-bold text-lg text-gray-800">{nextCoupleEvent.title}</h3>
+                      <h3 className="font-bold text-lg text-gray-800">
+                        {nextCoupleEvent.title}
+                      </h3>
                       {nextCoupleEvent.location && (
-                        <p className="text-sm text-gray-600">{nextCoupleEvent.location}</p>
+                        <p className="text-sm text-gray-600">
+                          {nextCoupleEvent.location}
+                        </p>
                       )}
                     </div>
                   </div>
                 </div>
                 <div className="px-6 py-3 bg-white">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="w-full justify-between hover:bg-primary/5"
                     onClick={() => setLocation("/calendar")}
                   >
@@ -245,7 +275,11 @@ export default function DashboardPage() {
                     Tarefas para hoje
                   </CardTitle>
                   <Link href="/household">
-                    <Button variant="ghost" size="sm" className="h-8 px-2 -mr-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 -mr-2"
+                    >
                       <span className="text-xs">Ver todas</span>
                       <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
@@ -258,8 +292,12 @@ export default function DashboardPage() {
                     <div className="bg-green-100 p-3 rounded-full mb-3">
                       <CheckCircle className="h-6 w-6 text-green-600" />
                     </div>
-                    <h3 className="font-medium text-gray-700">Nenhuma tarefa pendente para hoje</h3>
-                    <p className="text-sm text-gray-500 mt-1">Seu dia está livre de compromissos domésticos!</p>
+                    <h3 className="font-medium text-gray-700">
+                      Nenhuma tarefa pendente para hoje
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Seu dia está livre de compromissos domésticos!
+                    </p>
                   </div>
                 ) : (
                   <AnimatedList
@@ -267,7 +305,12 @@ export default function DashboardPage() {
                     keyExtractor={(task) => task.id}
                     className="space-y-3 mt-3"
                     renderItem={(task) => (
-                      <TactileFeedback key={task.id} onClick={() => setLocation(`/household?task=${task.id}`)}>
+                      <TactileFeedback
+                        key={task.id}
+                        onClick={() =>
+                          setLocation(`/household?task=${task.id}`)
+                        }
+                      >
                         <div className="flex items-start p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
                           <div className="mt-0.5 flex-shrink-0 mr-3">
                             <Checkbox
@@ -277,7 +320,9 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start gap-2">
-                              <h4 className="font-medium text-gray-800">{task.title}</h4>
+                              <h4 className="font-medium text-gray-800">
+                                {task.title}
+                              </h4>
                               {task.dueDate && (
                                 <div className="text-xs flex items-center">
                                   <Clock className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
@@ -317,7 +362,7 @@ export default function DashboardPage() {
                     )}
                   />
                 )}
-                
+
                 {urgentTasks.length > 3 && (
                   <div className="mt-2 text-center">
                     <Link href="/household">
@@ -339,7 +384,11 @@ export default function DashboardPage() {
                     Agenda de hoje
                   </CardTitle>
                   <Link href="/calendar">
-                    <Button variant="ghost" size="sm" className="h-8 px-2 -mr-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 -mr-2"
+                    >
                       <span className="text-xs">Ver calendário</span>
                       <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
@@ -352,8 +401,12 @@ export default function DashboardPage() {
                     <div className="bg-blue-100 p-3 rounded-full mb-3">
                       <Coffee className="h-6 w-6 text-blue-600" />
                     </div>
-                    <h3 className="font-medium text-gray-700">Nenhum evento para hoje</h3>
-                    <p className="text-sm text-gray-500 mt-1">Seu dia está livre de compromissos na agenda!</p>
+                    <h3 className="font-medium text-gray-700">
+                      Nenhum evento para hoje
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Seu dia está livre de compromissos na agenda!
+                    </p>
                   </div>
                 ) : (
                   <AnimatedList
@@ -361,21 +414,30 @@ export default function DashboardPage() {
                     keyExtractor={(event) => event.id}
                     className="space-y-3 mt-3"
                     renderItem={(event) => (
-                      <TactileFeedback key={event.id} onClick={() => setLocation(`/calendar?event=${event.id}`)}>
-                        <div 
+                      <TactileFeedback
+                        key={event.id}
+                        onClick={() =>
+                          setLocation(`/calendar?event=${event.id}`)
+                        }
+                      >
+                        <div
                           className={`p-3 rounded-md border-l-4 ${
-                            event.isShared 
-                              ? "border-l-rose-400 bg-rose-50/50" 
+                            event.isShared
+                              ? "border-l-rose-400 bg-rose-50/50"
                               : "border-l-blue-400 bg-blue-50/30"
                           }`}
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex items-center">
-                              <span className="text-xl mr-2">{event.emoji || "📅"}</span>
+                              <span className="text-xl mr-2">
+                                {event.emoji || "📅"}
+                              </span>
                               <div>
                                 <h4 className="font-medium">{event.title}</h4>
                                 {event.location && (
-                                  <p className="text-xs text-gray-600 mt-0.5">{event.location}</p>
+                                  <p className="text-xs text-gray-600 mt-0.5">
+                                    {event.location}
+                                  </p>
                                 )}
                               </div>
                             </div>
@@ -401,7 +463,7 @@ export default function DashboardPage() {
                     )}
                   />
                 )}
-                
+
                 {sortedEvents.length > 3 && (
                   <div className="mt-2 text-center">
                     <Link href="/calendar">
@@ -426,8 +488,10 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   {recentInsights.length > 0 ? (
-                    <TactileFeedback 
-                      onClick={() => setLocation(`/insights/${recentInsights[0].id}`)}
+                    <TactileFeedback
+                      onClick={() =>
+                        setLocation(`/insights/${recentInsights[0].id}`)
+                      }
                     >
                       <div className="bg-[#F27474]/10 p-4 rounded-md mt-2">
                         <h3 className="font-medium text-gray-800 mb-1">
@@ -457,7 +521,11 @@ export default function DashboardPage() {
                         Nenhum insight disponível ainda
                       </p>
                       <Link href="/insights">
-                        <Button variant="link" size="sm" className="text-xs text-[#F27474] mt-1">
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-xs text-[#F27474] mt-1"
+                        >
                           Gerar insights
                         </Button>
                       </Link>
@@ -476,8 +544,8 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   {recentTips.length > 0 ? (
-                    <TactileFeedback 
-                      onClick={() => setLocation('/relationship-tips')}
+                    <TactileFeedback
+                      onClick={() => setLocation("/relationship-tips")}
                     >
                       <div className="bg-primary/10 p-4 rounded-md mt-2">
                         <h3 className="font-medium text-gray-800 mb-1">
@@ -507,7 +575,11 @@ export default function DashboardPage() {
                         Nenhuma dica disponível ainda
                       </p>
                       <Link href="/relationship-tips">
-                        <Button variant="link" size="sm" className="text-xs text-primary mt-1">
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-xs text-primary mt-1"
+                        >
                           Ver dicas
                         </Button>
                       </Link>
@@ -526,7 +598,11 @@ export default function DashboardPage() {
                     Notificações recentes
                   </CardTitle>
                   <Link href="#">
-                    <Button variant="ghost" size="sm" className="h-8 px-2 -mr-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 -mr-2"
+                    >
                       <span className="text-xs">Ver todas</span>
                       <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
@@ -548,7 +624,7 @@ export default function DashboardPage() {
             {/* Botão de criação rápida */}
             <div className="fixed bottom-24 right-4 z-10">
               <TactileFeedback>
-                <Button 
+                <Button
                   className="rounded-full w-14 h-14 bg-primary shadow-lg hover:bg-primary/90"
                   onClick={() => setLocation("/calendar?create=true")}
                 >
