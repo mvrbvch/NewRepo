@@ -2,52 +2,45 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { useMobile } from "@/hooks/use-mobile";
 import { formatDateSafely, formatTime } from "@/lib/utils";
 import { Link, useLocation } from "wouter";
 import { EventType, HouseholdTaskType } from "@/lib/types";
-import { isSameDay, format, isBefore } from "date-fns";
+import { isSameDay, format, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Header from "@/components/shared/header";
 import BottomNavigation from "@/components/shared/bottom-navigation";
 import { motion } from "framer-motion";
 import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
-import { useRelationshipTips } from "@/hooks/use-relationship-tips";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedList } from "@/components/ui/animated-list";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
-import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Avatar } from "@/components/ui/avatar";
 import {
   Calendar,
   Clock,
   Heart,
-  Lightbulb,
+  Search,
   Plus,
-  ArrowRight,
-  Bell,
-  LayoutDashboard,
-  Check,
-  CheckCircle,
-  Coffee,
-  MessageSquare,
-  Sparkles,
-  CalendarClock,
-  Home,
+  CheckCircle2,
+  Trophy,
+  Crown,
+  Play,
+  Circle,
+  Timer,
   Star,
   AlertCircle,
-  Info,
+  ArrowRight,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -56,28 +49,29 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { useAllInsights } = useRelationshipInsights();
-  const { useUserTips } = useRelationshipTips();
 
-  // Formatando a data atual
-  const formattedToday = format(today, "EEEE, d 'de' MMMM", { locale: ptBR });
-  const formattedTodayCapitalized =
-    formattedToday.charAt(0).toUpperCase() + formattedToday.slice(1);
+  // Dias da semana para exibição no calendário horizontal
+  const nextDays = Array.from({ length: 7 }, (_, i) => addDays(today, i));
 
   // Queries
-  const { data: events = [], isLoading: isLoadingEvents } = useQuery<
-    EventType[]
-  >({
+  const { data: events = [], isLoading: isLoadingEvents } = useQuery<EventType[]>({
     queryKey: ["/api/events"],
   });
 
-  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<
-    HouseholdTaskType[]
-  >({
+  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<HouseholdTaskType[]>({
     queryKey: ["/api/household/tasks"],
   });
 
+  const { data: partnerData, isLoading: isLoadingPartner } = useQuery({
+    queryKey: ["/api/partner"],
+    enabled: !!user?.id,
+  });
+
   const insightsQuery = useAllInsights();
-  const tipsQuery = useUserTips();
+
+  // Formatar a data atual
+  const formattedMonth = format(today, "MMMM", { locale: ptBR });
+  const formattedMonthCapitalized = formattedMonth.charAt(0).toUpperCase() + formattedMonth.slice(1);
 
   // Filtra eventos apenas para o dia atual
   const todaysEvents = events.filter((event) => {
@@ -93,8 +87,10 @@ export default function DashboardPage() {
     );
   });
 
-  // Filtra tarefas para hoje
+  // Filtra tarefas
   const pendingTasks = tasks.filter((task) => !task.completed);
+  const completedTasks = tasks.filter((task) => task.completed);
+
   const urgentTasks = pendingTasks.filter((task) => {
     if (task.dueDate) {
       const dueDate = new Date(task.dueDate);
@@ -103,34 +99,41 @@ export default function DashboardPage() {
     return false;
   });
 
-  const pendingTasksToday = pendingTasks.filter((task) => {
-    if (task.dueDate) {
-      return isSameDay(new Date(task.dueDate), today);
-    }
-    return false;
-  });
+  // Cálculo de progresso para gamificação
+  const userCompletionRate = user && tasks.length > 0 
+    ? Math.round((tasks.filter(t => t.completed && t.assignedTo === user.id).length / 
+       tasks.filter(t => t.assignedTo === user.id).length) * 100) 
+    : 0;
 
-  // Pega os insights mais recentes
-  const recentInsights = insightsQuery.data?.slice(0, 1) || [];
-  const recentTips = tipsQuery.data?.slice(0, 1) || [];
+  const partnerCompletionRate = partnerData && tasks.length > 0 
+    ? Math.round((tasks.filter(t => t.completed && t.assignedTo === partnerData.id).length / 
+       tasks.filter(t => t.assignedTo === partnerData.id).length) * 100) 
+    : 0;
 
-  // Filtra eventos compartilhados para o próximo evento do casal
-  const nextCoupleEvent = sortedEvents.find((event) => event.isShared);
+  // Total de pontos (baseado em tarefas concluídas, cada tarefa vale pontos baseados na prioridade)
+  const calculateScore = (userId) => {
+    return tasks
+      .filter(t => t.completed && t.assignedTo === userId)
+      .reduce((total, task) => {
+        // Base de 100 pontos por tarefa + bônus por prioridade
+        const priorityBonus = task.priority === 2 ? 200 : (task.priority === 1 ? 100 : 0);
+        return total + 100 + priorityBonus;
+      }, 0);
+  };
+
+  const userScore = calculateScore(user?.id);
+  const partnerScore = calculateScore(partnerData?.id);
 
   // Carregando status
-  const isLoading =
-    isLoadingEvents ||
-    isLoadingTasks ||
-    insightsQuery.isLoading ||
-    tipsQuery.isLoading;
+  const isLoading = isLoadingEvents || isLoadingTasks || insightsQuery.isLoading || isLoadingPartner;
 
   // Formata hora do evento
-  const formatEventTime = (event: EventType) => {
+  const formatEventTime = (event) => {
     return `${formatTime(event.startTime)} - ${formatTime(event.endTime)}`;
   };
 
-  // Formata a data de vencimento da tarefa
-  const formatDueDate = (date: string | Date) => {
+  // Formata a data
+  const formatDueDate = (date) => {
     if (!date) return "";
     const dueDate = new Date(date);
 
@@ -145,24 +148,19 @@ export default function DashboardPage() {
     return format(dueDate, "dd/MM");
   };
 
+  // Determina quem está na liderança para mostrar a coroa
+  const userIsLeading = userScore >= partnerScore;
+
   return (
     <motion.div
-      className="flex flex-col min-h-screen bg-gray-50"
+      className="flex flex-col min-h-screen bg-slate-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       <Header />
 
-      <main className="flex-1 container px-4 pb-24" style={{ paddingTop: 98 }}>
-        {/* Cabeçalho com saudação e data */}
-        <div className="mb-6 mt-4">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Olá, {user?.name?.split(" ")[0] || ""}!
-          </h1>
-          <p className="text-muted-foreground">{formattedTodayCapitalized}</p>
-        </div>
-
+      <main className="flex-1 container max-w-md mx-auto px-4 pb-24" style={{ paddingTop: 88 }}>
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <CoupleLoadingAnimation
@@ -172,170 +170,251 @@ export default function DashboardPage() {
             />
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Resumo do dia */}
-            <Card className="border-primary/20">
-              <CardHeader className="pb-2">
+          <div className="space-y-5">
+            {/* Search Bar */}
+            <div className="relative mb-2">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <Input 
+                type="text" 
+                placeholder="Buscar tarefas, eventos..." 
+                className="pl-10 bg-white border-none shadow-sm"
+              />
+            </div>
+
+            {/* Calendário Horizontal */}
+            <Card className="border-0 shadow-sm bg-white overflow-hidden">
+              <CardHeader className="pb-0 pt-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg font-semibold">
+                    {formattedMonthCapitalized}
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pb-4 pt-2">
+                <div className="flex space-x-3 overflow-x-auto py-2 scrollbar-hide">
+                  {nextDays.map((date, index) => {
+                    const isToday = isSameDay(date, today);
+                    const hasEvent = events.some(event => 
+                      isSameDay(new Date(event.date), date)
+                    );
+
+                    return (
+                      <TactileFeedback key={index}>
+                        <div 
+                          className={`flex flex-col items-center justify-center min-w-[60px] rounded-xl p-3 
+                            ${isToday ? 'bg-primary text-white' : 'bg-gray-100 text-gray-900'}`}
+                        >
+                          <span className="text-xs font-medium">
+                            {format(date, 'EEE', { locale: ptBR }).toUpperCase()}
+                          </span>
+                          <span className="text-lg font-bold mt-1">
+                            {format(date, 'd')}
+                          </span>
+                          {hasEvent && (
+                            <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isToday ? 'bg-white' : 'bg-primary'}`} />
+                          )}
+                        </div>
+                      </TactileFeedback>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Próximo evento compartilhado */}
+            {sortedEvents.find(e => e.isShared) && (
+              <Card className="border-0 shadow-sm bg-gradient-to-r from-rose-50 to-primary/5 overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-3 bg-rose-100 rounded-xl">
+                      <Heart className="h-5 w-5 text-rose-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">{sortedEvents.find(e => e.isShared).title}</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatEventTime(sortedEvents.find(e => e.isShared))}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 ml-2 bg-white"
+                          onClick={() => setLocation(`/calendar?event=${sortedEvents.find(e => e.isShared).id}`)}
+                        >
+                          <Play className="h-4 w-4 text-primary" />
+                        </Button>
+                      </div>
+
+                      {sortedEvents.find(e => e.isShared).location && (
+                        <div className="mt-2 text-xs flex items-center text-gray-600">
+                          <Circle className="h-3 w-3 mr-1 fill-gray-400 stroke-0" />
+                          {sortedEvents.find(e => e.isShared).location}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Nosso Placar */}
+            <Card className="border-0 shadow-sm bg-gradient-to-r from-gray-900 to-gray-800 text-white overflow-hidden">
+              <CardHeader className="pb-2 pt-4">
                 <CardTitle className="flex items-center text-lg">
-                  <LayoutDashboard className="h-5 w-5 mr-2 text-primary" />
-                  Resumo do seu dia
+                  <Trophy className="h-5 w-5 mr-2 text-yellow-400" />
+                  Nosso Placar
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pb-3 pt-0">
-                <div className="flex items-center justify-between flex-wrap gap-2 mt-2 mb-1">
-                  <div className="flex items-center">
-                    <div className="bg-blue-100 p-1.5 rounded-full">
-                      <Calendar className="h-4 w-4 text-blue-600" />
+              <CardContent className="pb-4 pt-2">
+                <div className="space-y-4">
+                  {/* Primeiro lugar */}
+                  <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded-xl">
+                    <div className="flex items-center">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12 border-2 border-yellow-400">
+                          <div className="bg-primary rounded-full h-full w-full flex items-center justify-center text-white font-bold">
+                            {userIsLeading ? user?.name?.charAt(0) : partnerData?.name?.charAt(0)}
+                          </div>
+                        </Avatar>
+                        <div className="absolute -top-1 -right-1">
+                          <Crown className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                        </div>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="font-semibold">
+                          {userIsLeading ? user?.name?.split(' ')[0] : partnerData?.name?.split(' ')[0]}
+                        </h3>
+                        <div className="flex items-center mt-1">
+                          <div className="h-1.5 w-16 bg-gray-700 rounded-full">
+                            <div 
+                              className="h-1.5 bg-green-400 rounded-full" 
+                              style={{ width: `${userIsLeading ? userCompletionRate : partnerCompletionRate}%` }}
+                            />
+                          </div>
+                          <span className="text-xs ml-2 text-green-400">
+                            {userIsLeading ? userCompletionRate : partnerCompletionRate}% concluído
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="ml-2 text-sm font-medium">Eventos</span>
-                    <Badge variant="outline" className="ml-2">
-                      {todaysEvents.length}
-                    </Badge>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">{userIsLeading ? userScore : partnerScore}</div>
+                      <div className="text-xs text-gray-400">pontos</div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <div className="bg-amber-100 p-1.5 rounded-full">
-                      <Home className="h-4 w-4 text-amber-600" />
+                  {/* Segundo lugar */}
+                  <div className="flex items-center justify-between bg-gray-800/30 p-3 rounded-xl">
+                    <div className="flex items-center">
+                      <Avatar className="h-10 w-10">
+                        <div className="bg-gray-600 rounded-full h-full w-full flex items-center justify-center text-white font-bold">
+                          {!userIsLeading ? user?.name?.charAt(0) : partnerData?.name?.charAt(0)}
+                        </div>
+                      </Avatar>
+                      <div className="ml-3">
+                        <h3 className="font-medium text-sm">
+                          {!userIsLeading ? user?.name?.split(' ')[0] : partnerData?.name?.split(' ')[0]}
+                        </h3>
+                        <div className="flex items-center mt-1">
+                          <div className="h-1.5 w-16 bg-gray-700 rounded-full">
+                            <div 
+                              className="h-1.5 bg-blue-400 rounded-full" 
+                              style={{ width: `${!userIsLeading ? userCompletionRate : partnerCompletionRate}%` }}
+                            />
+                          </div>
+                          <span className="text-xs ml-2 text-blue-400">
+                            {!userIsLeading ? userCompletionRate : partnerCompletionRate}% concluído
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="ml-2 text-sm font-medium">Tarefas</span>
-                    <Badge variant="outline" className="ml-2">
-                      {pendingTasksToday.length}
-                    </Badge>
+                    <div className="text-right">
+                      <div className="text-xl font-bold">{!userIsLeading ? userScore : partnerScore}</div>
+                      <div className="text-xs text-gray-400">pontos</div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center">
-                    <div className="bg-rose-100 p-1.5 rounded-full">
-                      <Heart className="h-4 w-4 text-rose-600" />
+                  {/* Estatísticas do casal */}
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div className="bg-gray-800/40 p-3 rounded-xl text-center">
+                      <div className="text-xs text-gray-400 mb-1">Tempo Juntos</div>
+                      <div className="text-lg font-bold">
+                        {events.filter(e => e.isShared).length * 2}h
+                      </div>
                     </div>
-                    <span className="ml-2 text-sm font-medium">
-                      Compartilhado
-                    </span>
-                    <Badge variant="outline" className="ml-2">
-                      {todaysEvents.filter((e) => e.isShared).length}
-                    </Badge>
+                    <div className="bg-gray-800/40 p-3 rounded-xl text-center">
+                      <div className="text-xs text-gray-400 mb-1">Tarefas Concluídas</div>
+                      <div className="text-lg font-bold">
+                        {completedTasks.length}/{tasks.length}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Próximo evento importante */}
-            {nextCoupleEvent && (
-              <Card className="overflow-hidden border-primary/30 shadow-sm">
-                <div className="bg-gradient-to-r from-primary/10 to-rose-500/10 px-6 py-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center">
-                      <Heart className="h-5 w-5 text-rose-500 mr-2" />
-                      <h3 className="font-medium text-primary">
-                        Próximo momento a dois
-                      </h3>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="bg-white/80 text-primary text-xs"
-                    >
-                      {formatEventTime(nextCoupleEvent)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center mt-2">
-                    <span className="text-2xl mr-2">
-                      {nextCoupleEvent.emoji || "❤️"}
-                    </span>
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-800">
-                        {nextCoupleEvent.title}
-                      </h3>
-                      {nextCoupleEvent.location && (
-                        <p className="text-sm text-gray-600">
-                          {nextCoupleEvent.location}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="px-6 py-3 bg-white">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-between hover:bg-primary/5"
-                    onClick={() => setLocation("/calendar")}
-                  >
-                    <span>Ver agenda completa</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            {/* Tarefas para hoje */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center text-lg">
-                    <Home className="h-5 w-5 mr-2 text-amber-600" />
-                    Tarefas para hoje
-                  </CardTitle>
-                  <Link href="/household">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 -mr-2"
-                    >
-                      <span className="text-xs">Ver todas</span>
+            {/* Próximas Tarefas */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2 pt-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg font-medium">Tarefas Pendentes</CardTitle>
+                  <Link href="/tasks">
+                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                      Ver todas
                       <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
                   </Link>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-2 pb-3">
                 {urgentTasks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center text-center py-6">
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
                     <div className="bg-green-100 p-3 rounded-full mb-3">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
+                      <CheckCircle2 className="h-6 w-6 text-green-600" />
                     </div>
-                    <h3 className="font-medium text-gray-700">
-                      Nenhuma tarefa pendente para hoje
-                    </h3>
+                    <h3 className="font-medium text-gray-700">Tudo em dia!</h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      Seu dia está livre de compromissos domésticos!
+                      Nenhuma tarefa pendente para hoje
                     </p>
                   </div>
                 ) : (
                   <AnimatedList
                     items={urgentTasks.slice(0, 3)}
                     keyExtractor={(task) => task.id}
-                    className="space-y-3 mt-3"
+                    className="space-y-3 mt-2"
                     renderItem={(task) => (
                       <TactileFeedback
                         key={task.id}
-                        onClick={() =>
-                          setLocation(`/household?task=${task.id}`)
-                        }
+                        onClick={() => setLocation(`/tasks?task=${task.id}`)}
                       >
-                        <div className="flex items-start p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-                          <div className="mt-0.5 flex-shrink-0 mr-3">
-                            <Checkbox
-                              checked={task.completed}
-                              className="h-5 w-5 rounded-sm"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start gap-2">
-                              <h4 className="font-medium text-gray-800">
-                                {task.title}
-                              </h4>
+                        <div className="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                          <Checkbox
+                            checked={task.completed}
+                            className="h-5 w-5 rounded-full"
+                          />
+                          <div className="ml-3 flex-1">
+                            <div className="flex justify-between">
+                              <h4 className="font-medium">{task.title}</h4>
                               {task.dueDate && (
-                                <div className="text-xs flex items-center">
-                                  <Clock className="h-3 w-3 mr-1 text-gray-500 flex-shrink-0" />
+                                <div className="flex items-center">
+                                  <Timer className="h-3 w-3 mr-1 text-gray-500" />
                                   {isBefore(new Date(task.dueDate), today) ? (
                                     <Badge
                                       variant="destructive"
-                                      className="px-2 py-0 h-4 text-[10px]"
+                                      className="text-[10px] px-1.5 py-0"
                                     >
-                                      <AlertCircle size={10} className="mr-1" />
+                                      <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
                                       {formatDueDate(task.dueDate)}
                                     </Badge>
                                   ) : (
-                                    <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                                    <span className="text-xs">
                                       {formatDueDate(task.dueDate)}
                                     </span>
                                   )}
@@ -345,7 +424,7 @@ export default function DashboardPage() {
                             {task.priority > 0 && (
                               <div className="mt-1">
                                 <Badge
-                                  className={`text-[10px] px-2 py-0 ${
+                                  className={`text-[10px] px-1.5 py-0 ${
                                     task.priority === 2
                                       ? "bg-red-100 text-red-800"
                                       : "bg-yellow-100 text-yellow-800"
@@ -362,262 +441,6 @@ export default function DashboardPage() {
                     )}
                   />
                 )}
-
-                {urgentTasks.length > 3 && (
-                  <div className="mt-2 text-center">
-                    <Link href="/household">
-                      <Button variant="link" size="sm" className="text-xs">
-                        Ver mais {urgentTasks.length - 3} tarefas pendentes
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Agenda do dia */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center text-lg">
-                    <Calendar className="h-5 w-5 mr-2 text-purple-600" />
-                    Agenda de hoje
-                  </CardTitle>
-                  <Link href="/calendar">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 -mr-2"
-                    >
-                      <span className="text-xs">Ver calendário</span>
-                      <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {sortedEvents.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center text-center py-6">
-                    <div className="bg-blue-100 p-3 rounded-full mb-3">
-                      <Coffee className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <h3 className="font-medium text-gray-700">
-                      Nenhum evento para hoje
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Seu dia está livre de compromissos na agenda!
-                    </p>
-                  </div>
-                ) : (
-                  <AnimatedList
-                    items={sortedEvents.slice(0, 3)}
-                    keyExtractor={(event) => event.id}
-                    className="space-y-3 mt-3"
-                    renderItem={(event) => (
-                      <TactileFeedback
-                        key={event.id}
-                        onClick={() =>
-                          setLocation(`/calendar?event=${event.id}`)
-                        }
-                      >
-                        <div
-                          className={`p-3 rounded-md border-l-4 ${
-                            event.isShared
-                              ? "border-l-rose-400 bg-rose-50/50"
-                              : "border-l-blue-400 bg-blue-50/30"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center">
-                              <span className="text-xl mr-2">
-                                {event.emoji || "📅"}
-                              </span>
-                              <div>
-                                <h4 className="font-medium">{event.title}</h4>
-                                {event.location && (
-                                  <p className="text-xs text-gray-600 mt-0.5">
-                                    {event.location}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-xs font-medium bg-white px-2 py-1 rounded-full shadow-sm">
-                              {formatTime(event.startTime)}
-                            </div>
-                          </div>
-                          <div className="flex items-center mt-2 text-xs">
-                            {event.isShared ? (
-                              <div className="flex items-center text-rose-600">
-                                <Heart className="h-3 w-3 mr-1" />
-                                <span>Compartilhado</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center text-gray-500">
-                                <CalendarClock className="h-3 w-3 mr-1" />
-                                <span>Evento pessoal</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </TactileFeedback>
-                    )}
-                  />
-                )}
-
-                {sortedEvents.length > 3 && (
-                  <div className="mt-2 text-center">
-                    <Link href="/calendar">
-                      <Button variant="link" size="sm" className="text-xs">
-                        Ver mais {sortedEvents.length - 3} eventos hoje
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Insights e dicas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Insight mais recente */}
-              <Card className="border-[#F27474]/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-lg">
-                    <Lightbulb className="h-5 w-5 mr-2 text-[#F27474]" />
-                    Insight recente
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {recentInsights.length > 0 ? (
-                    <TactileFeedback
-                      onClick={() =>
-                        setLocation(`/insights/${recentInsights[0].id}`)
-                      }
-                    >
-                      <div className="bg-[#F27474]/10 p-4 rounded-md mt-2">
-                        <h3 className="font-medium text-gray-800 mb-1">
-                          {recentInsights[0].title}
-                        </h3>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {recentInsights[0].content.substring(0, 100)}...
-                        </p>
-                        <div className="flex justify-end mt-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-[#F27474] hover:text-[#F27474]/80 hover:bg-[#F27474]/10 p-0 h-6"
-                          >
-                            Ler mais
-                            <ArrowRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </TactileFeedback>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-center py-4 mt-2">
-                      <div className="bg-[#F27474]/20 p-2 rounded-full mb-2">
-                        <Sparkles className="h-4 w-4 text-[#F27474]" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Nenhum insight disponível ainda
-                      </p>
-                      <Link href="/insights">
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="text-xs text-[#F27474] mt-1"
-                        >
-                          Gerar insights
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Dica de relacionamento */}
-              <Card className="border-primary/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-lg">
-                    <MessageSquare className="h-5 w-5 mr-2 text-primary" />
-                    Dica para o casal
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {recentTips.length > 0 ? (
-                    <TactileFeedback
-                      onClick={() => setLocation("/relationship-tips")}
-                    >
-                      <div className="bg-primary/10 p-4 rounded-md mt-2">
-                        <h3 className="font-medium text-gray-800 mb-1">
-                          {recentTips[0].title}
-                        </h3>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {recentTips[0].content.substring(0, 100)}...
-                        </p>
-                        <div className="flex justify-end mt-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-primary hover:text-primary/80 hover:bg-primary/10 p-0 h-6"
-                          >
-                            Ver mais dicas
-                            <ArrowRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </TactileFeedback>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-center py-4 mt-2">
-                      <div className="bg-primary/20 p-2 rounded-full mb-2">
-                        <Heart className="h-4 w-4 text-primary" />
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Nenhuma dica disponível ainda
-                      </p>
-                      <Link href="/relationship-tips">
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="text-xs text-primary mt-1"
-                        >
-                          Ver dicas
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Seção de notificações recentes */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center text-lg">
-                    <Bell className="h-5 w-5 mr-2 text-orange-500" />
-                    Notificações recentes
-                  </CardTitle>
-                  <Link href="#">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 -mr-2"
-                    >
-                      <span className="text-xs">Ver todas</span>
-                      <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex flex-col items-center justify-center text-center py-4 mt-2">
-                  <div className="bg-orange-100 p-2 rounded-full mb-2">
-                    <Bell className="h-4 w-4 text-orange-500" />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Todas as notificações foram visualizadas
-                  </p>
-                </div>
               </CardContent>
             </Card>
 
