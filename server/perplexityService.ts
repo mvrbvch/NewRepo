@@ -5,12 +5,33 @@ import { InsightGenerationResult, InsightType, TaskDistributionData } from "./re
  * Uma alternativa gratuita à OpenAI (com limites)
  */
 export class PerplexityService {
-  private apiKey: string | undefined;
-  private baseUrl = "https://api.perplexity.ai/chat/completions";
-  private defaultModel = "llama-3.1-sonar-small-128k-online";
+  private _apiKey: string | undefined;
+  private _baseUrl = "https://api.perplexity.ai/chat/completions";
+  private _defaultModel = "llama-3.1-sonar-small-128k-online";
 
   constructor() {
-    this.apiKey = process.env.PERPLEXITY_API_KEY;
+    this._apiKey = process.env.PERPLEXITY_API_KEY;
+  }
+  
+  /**
+   * Retorna a chave da API Perplexity
+   */
+  public get apiKey(): string | undefined {
+    return this._apiKey;
+  }
+  
+  /**
+   * Retorna a URL base da API Perplexity
+   */
+  public get baseUrl(): string {
+    return this._baseUrl;
+  }
+  
+  /**
+   * Retorna o modelo padrão da API Perplexity
+   */
+  public get defaultModel(): string {
+    return this._defaultModel;
   }
 
   /**

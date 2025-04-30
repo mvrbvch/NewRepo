@@ -1,11 +1,13 @@
 import OpenAI from "openai";
 import { IStorage } from "./storage";
 import { PerplexityService } from "./perplexityService";
+import { RelationshipTip as SchemaRelationshipTip } from "@shared/schema";
 
 // O modelo mais recente da OpenAI é "gpt-4o" que foi lançado em 13 de maio de 2024. Não altere isso a menos que explicitamente solicitado pelo usuário
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const perplexityService = new PerplexityService();
 
+// Definição das categorias de dicas
 export enum TipCategory {
   COMMUNICATION = "communication",
   QUALITY_TIME = "quality_time",
@@ -15,6 +17,7 @@ export enum TipCategory {
   DAILY_HABITS = "daily_habits"
 }
 
+// Interface para uso interno no serviço
 export interface RelationshipTip {
   id: number;
   userId: number;
@@ -23,7 +26,7 @@ export interface RelationshipTip {
   title: string;
   content: string;
   actionItems: string[];
-  createdAt: Date;
+  createdAt: Date | string;
   saved: boolean;
   customData?: any;
 }
@@ -420,8 +423,44 @@ Retorne sua dica em formato JSON com os seguintes campos:
    */
   private async saveTip(tip: Omit<RelationshipTip, 'id'>): Promise<RelationshipTip | null> {
     try {
-      const savedTip = await this.storage.createRelationshipTip(tip);
-      return savedTip;
+      // Converter a categoria e actionItems para os tipos esperados pelo storage
+      const schemaCompatibleTip = {
+        userId: tip.userId,
+        partnerId: tip.partnerId,
+        category: tip.category.toString(),
+        title: tip.title,
+        content: tip.content,
+        actionItems: JSON.stringify(tip.actionItems), // Converter array para JSON
+        saved: tip.saved,
+        customData: tip.customData ? JSON.stringify(tip.customData) : null
+      };
+      
+      // Salvar no banco de dados
+      const savedTip = await this.storage.createRelationshipTip(schemaCompatibleTip);
+      
+      if (!savedTip) return null;
+      
+      // Converter de volta para o tipo RelationshipTip do serviço
+      return {
+        id: savedTip.id,
+        userId: savedTip.userId,
+        partnerId: savedTip.partnerId,
+        category: savedTip.category as TipCategory,
+        title: savedTip.title,
+        content: savedTip.content,
+        actionItems: Array.isArray(savedTip.actionItems) 
+                      ? savedTip.actionItems 
+                      : (typeof savedTip.actionItems === 'string' 
+                         ? JSON.parse(savedTip.actionItems)
+                         : []),
+        createdAt: savedTip.createdAt ? new Date(savedTip.createdAt) : new Date(),
+        saved: savedTip.saved || false,
+        customData: savedTip.customData ? 
+                   (typeof savedTip.customData === 'string' 
+                    ? JSON.parse(savedTip.customData) 
+                    : savedTip.customData) 
+                   : null
+      };
     } catch (error) {
       console.error("Erro ao salvar dica:", error);
       return null;

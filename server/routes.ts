@@ -91,6 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Configurar rotas para o sistema de insights de relacionamento
   setupRelationshipInsightsRoutes(app, storage);
+  
+  // Configurar rotas para o sistema de dicas de relacionamento
+  app.use(relationshipTipsRoutes);
 
   // Rota de teste para a funcionalidade do histórico de conclusão
   app.get("/api/test/task-history/:id", async (req: Request, res: Response) => {
