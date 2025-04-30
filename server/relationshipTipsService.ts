@@ -210,7 +210,11 @@ export class RelationshipTipsService {
     customPrompt?: string,
     contextData?: any
   ): Promise<Omit<RelationshipTip, 'id' | 'userId' | 'partnerId' | 'createdAt' | 'saved'> | null> {
-    const systemMessage = "Você é um assistente especializado em relacionamentos, oferecendo dicas construtivas e práticas para casais.";
+    // Criar apelidos carinhosos para o casal
+    const userNickname = user.name ? `${user.name.split(' ')[0]}zinho` : "Mozão";
+    const partnerNickname = partner.name ? `${partner.name.split(' ')[0]}zinha` : "Mozinha";
+    
+    const systemMessage = "Você é um amigo próximo do casal que dá conselhos práticos e divertidos de forma super informal e descontraída.";
     
     // Preparar dados para o prompt
     const tasksData = this.formatTasksForPrompt(recentTasks);
@@ -219,10 +223,10 @@ export class RelationshipTipsService {
     const categoryInfo = this.getCategoryPrompt(category);
     
     const userMessage = customPrompt || `
-Você é um especialista em relacionamentos que oferece conselhos construtivos e práticos para casais.
+Crie uma dica personalizada SUPER INFORMAL na categoria "${categoryInfo.title}" para este casal.
 
 Casal:
-- ${user.name} e ${partner.name}
+- ${userNickname} e ${partnerNickname} (use esses apelidos carinhosos na sua resposta!)
 
 Dados recentes de tarefas:
 ${tasksData}
@@ -232,18 +236,17 @@ ${eventsData}
 
 ${contextData ? `Contexto adicional:\n${JSON.stringify(contextData)}\n` : ''}
 
-Crie uma dica personalizada na categoria "${categoryInfo.title}" para este casal.
 A dica deve ser:
-1. Específica para eles, considerando suas atividades recentes
-2. Positiva e construtiva, focando em fortalecer o relacionamento
-3. Prática e acionável, com sugestões claras
-4. Respeitosa e não julgadora
+1. Bem informal e descontraída, como uma conversa entre amigos íntimos
+2. Específica para eles, USANDO OS APELIDOS (${userNickname} e ${partnerNickname}) na sua resposta
+3. Com linguagem casual, divertida e até gírias (como você falaria com amigos próximos)
+4. Positiva e motivadora, mas com tom de amigo e não de especialista
+5. Prática e direta, com sugestões simples que eles podem implementar facilmente
 
 Retorne sua dica em formato JSON com os seguintes campos:
-- title: um título curto e atrativo para a dica (máximo 50 caracteres)
-- content: o texto principal da dica (cerca de 200 palavras)
-- category: "${category}" (não altere a categoria)
-- actionItems: um array com 2-3 ações práticas que o casal pode implementar
+- title: um título curto, atrativo e informal (máximo 50 caracteres)
+- content: o texto principal da dica em tom descontraído, usando os apelidos dos dois
+- actionItems: um array com 2-3 ações práticas escritas em linguagem casual e divertida
 
 Não inclua explicações, apenas o objeto JSON.
 `;
