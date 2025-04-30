@@ -123,7 +123,7 @@ export default function AuthPage() {
       // Se veio de um convite, redirecionar para a página de aceitação do convite
       navigate(`/partner-invite?token=${inviteToken}`);
     } else {
-      navigate("/calendar");
+      navigate("/dashboard");
     }
     // Don't return null here, it causes the hooks error
   }

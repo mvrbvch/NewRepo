@@ -8,6 +8,7 @@ import {
   User,
   MessageSquare,
   Sparkles,
+  LayoutDashboard,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { NotificationIndicator } from "./notification-indicator";
@@ -37,6 +38,15 @@ export default function BottomNavigation({
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-5">
       <div className="flex items-center justify-around h-16 px-4">
+        <Link
+          to="/dashboard"
+          className={`flex flex-col items-center justify-center w-12 h-12 ${
+            isActive("/dashboard") ? "text-primary" : "text-gray-600"
+          }`}
+        >
+          <LayoutDashboard className="h-6 w-6" />
+          <span className="text-xs mt-1">Dashboard</span>
+        </Link>
         <Link
           to="/calendar"
           className={`flex flex-col items-center justify-center w-12 h-12 ${

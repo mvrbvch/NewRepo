@@ -23,6 +23,8 @@ import { SplashScreenProvider } from "./hooks/use-splash-screen";
 import { SplashScreen } from "./components/pwa/splash-screen";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import DashboardPage from "./pages/dashboard-page"; //Import added for the new dashboard page
+
 
 function ScrollToTop() {
   const [pathname] = useLocation();
@@ -50,6 +52,7 @@ function Router() {
 
         {/* Rota principal protegida */}
         <Route path="/calendar" component={HomePage} />
+        <ProtectedRoute path="/dashboard" component={DashboardPage} /> {/* New route added */}
 
         {/* Rotas de autenticação */}
         <Route path="/auth" component={AuthPage} />
