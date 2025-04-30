@@ -14,6 +14,7 @@ import HouseholdTasksPageSimple from "./pages/household-tasks-page-simple";
 import LandingPage from "./pages/landing-page";
 import WelcomePage from "./pages/welcome-page";
 import { RelationshipInsightsPage } from "./pages/relationship-insights-page";
+import RelationshipTipsPage from "./pages/relationship-tips-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { PushNotificationsProvider } from "./hooks/use-push-notifications";
@@ -73,6 +74,9 @@ function Router() {
         
         {/* Insights de relacionamento */}
         <ProtectedRoute path="/insights/:id?" component={RelationshipInsightsPage} />
+        
+        {/* Dicas de relacionamento */}
+        <ProtectedRoute path="/tips" component={RelationshipTipsPage} />
 
         {/* Rota de não encontrado */}
         <Route component={NotFound} />

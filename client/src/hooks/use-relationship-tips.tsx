@@ -21,7 +21,7 @@ export function useRelationshipTips() {
           throw new Error("Erro ao buscar dicas de relacionamento");
         }
         
-        return response.json() as Promise<RelationshipTip[]>;
+        return response.json() as Promise<RelationshipTipType[]>;
       }
     });
   };
@@ -34,7 +34,7 @@ export function useRelationshipTips() {
       queryKey: ["relationshipTips", "couple", partnerId],
       queryFn: async () => {
         if (!partnerId) {
-          return [] as RelationshipTip[];
+          return [] as RelationshipTipType[];
         }
         
         const response = await fetch(`/api/tips/couple/${partnerId}`, {
@@ -45,7 +45,7 @@ export function useRelationshipTips() {
           throw new Error("Erro ao buscar dicas do casal");
         }
         
-        return response.json() as Promise<RelationshipTip[]>;
+        return response.json() as Promise<RelationshipTipType[]>;
       },
       enabled: !!partnerId // Só executa se tiver um parceiro ID válido
     });
@@ -66,7 +66,7 @@ export function useRelationshipTips() {
           throw new Error("Erro ao buscar dicas favoritas");
         }
         
-        return response.json() as Promise<RelationshipTip[]>;
+        return response.json() as Promise<RelationshipTipType[]>;
       }
     });
   };
@@ -90,7 +90,7 @@ export function useRelationshipTips() {
           throw new Error(`Erro ao buscar dica ${id}`);
         }
         
-        return response.json() as Promise<RelationshipTip>;
+        return response.json() as Promise<RelationshipTipType>;
       },
       enabled: !!id // Só executa se tiver um ID válido
     });
@@ -124,7 +124,7 @@ export function useRelationshipTips() {
           throw new Error("Erro ao gerar nova dica");
         }
         
-        return response.json() as Promise<RelationshipTip>;
+        return response.json() as Promise<RelationshipTipType>;
       },
       onSuccess: () => {
         // Invalida as queries para forçar uma atualização
