@@ -163,8 +163,8 @@ export class RelationshipTipsService {
         return false;
       }
       
+      // Atualizamos apenas o campo saved sem modificar outros campos
       const updated = await this.storage.updateRelationshipTip(tipId, {
-        ...tip,
         saved: true
       });
       
@@ -186,8 +186,8 @@ export class RelationshipTipsService {
         return false;
       }
       
+      // Atualizamos apenas o campo saved sem modificar outros campos
       const updated = await this.storage.updateRelationshipTip(tipId, {
-        ...tip,
         saved: false
       });
       
