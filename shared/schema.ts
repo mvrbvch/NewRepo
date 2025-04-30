@@ -592,6 +592,24 @@ export type TaskReminder = Omit<
 };
 
 // Tabela para armazenar insights de relacionamento gerados pela IA
+// Tabela para dicas de relacionamento geradas por IA
+export const relationshipTips = pgTable("relationship_tips", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  partnerId: integer("partner_id")
+    .notNull()
+    .references(() => users.id),
+  category: text("category").notNull(), // communication, quality_time, conflict_resolution, etc.
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  actionItems: jsonb("action_items"), // Sugestões de ações práticas
+  saved: boolean("saved").default(false), // Se o usuário salvou a dica como favorita
+  customData: jsonb("custom_data"), // Dados adicionais específicos da categoria
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const relationshipInsights = pgTable("relationship_insights", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
@@ -629,6 +647,27 @@ export const insertRelationshipInsightSchema = createInsertSchema(
   actions: true,
   expiresAt: true,
 });
+
+export const insertRelationshipTipSchema = createInsertSchema(
+  relationshipTips
+).pick({
+  userId: true,
+  partnerId: true,
+  category: true,
+  title: true,
+  content: true,
+  actionItems: true,
+  saved: true,
+  customData: true,
+});
+
+export type InsertRelationshipTip = z.infer<typeof insertRelationshipTipSchema>;
+export type RelationshipTip = Omit<
+  typeof relationshipTips.$inferSelect,
+  "createdAt"
+> & {
+  createdAt: Date | string | null;
+};
 
 export type InsertRelationshipInsight = z.infer<typeof insertRelationshipInsightSchema>;
 export type RelationshipInsight = Omit<
