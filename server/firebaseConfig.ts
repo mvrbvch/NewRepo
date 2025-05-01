@@ -121,7 +121,7 @@ export async function sendFirebaseMessageToMultipleDevices(
           click_action:
             process.env.NODE_ENV === "production"
               ? "https://por-nos.murbach.work/"
-              : "http://localhost:5000/",
+              : "http://localhost:5001/",
           ...notification,
         },
         fcmOptions: {

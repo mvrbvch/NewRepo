@@ -63,7 +63,7 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error("Erro ao inicializar Firebase:", error);
   }
-  
+
   // Inicializar o serviço de lembretes
   try {
     const reminderService = new ReminderService(storage);
@@ -72,14 +72,19 @@ app.use((req, res, next) => {
   } catch (error) {
     console.error("Erro ao inicializar serviço de lembretes:", error);
   }
-  
+
   // Inicializar o serviço de insights de relacionamento
   try {
     const insightsService = new RelationshipInsightsService(storage);
     insightsService.start();
-    console.log("Serviço de insights de relacionamento inicializado com sucesso");
+    console.log(
+      "Serviço de insights de relacionamento inicializado com sucesso"
+    );
   } catch (error) {
-    console.error("Erro ao inicializar serviço de insights de relacionamento:", error);
+    console.error(
+      "Erro ao inicializar serviço de insights de relacionamento:",
+      error
+    );
   }
 
   const server = await registerRoutes(app);
@@ -104,7 +109,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = 5001;
   server.listen(
     {
       port,
