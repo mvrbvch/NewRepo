@@ -25,16 +25,17 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import DashboardPage from "./pages/dashboard-page"; //Import added for the new dashboard page
 
-
 function ScrollToTop() {
   const [pathname] = useLocation();
   console.log(pathname);
   useEffect(() => {
-    setTimeout(() => {
-      window.document
-        .getElementsByClassName("scroll-id")[0]
-        .scrollIntoView({ behavior: "smooth" });
-    }, 0);
+    if (pathname !== "/auth") {
+      setTimeout(() => {
+        window.document
+          .getElementsByClassName("scroll-id")[0]
+          .scrollIntoView({ behavior: "smooth" });
+      }, 0);
+    }
   }, [pathname]);
 
   return null;
@@ -49,20 +50,17 @@ function Router() {
       <Switch>
         {/* Landing page pública */}
         <Route path="/" component={LandingPage} />
-
         {/* Rota principal protegida */}
-        <Route path="/calendar" component={HomePage} />
-        <ProtectedRoute path="/dashboard" component={DashboardPage} /> {/* New route added */}
-
+        <ProtectedRoute path="/calendar" component={HomePage} />
+        <ProtectedRoute path="/dashboard" component={DashboardPage} />{" "}
+        {/* New route added */}
         {/* Rotas de autenticação */}
         <Route path="/auth" component={AuthPage} />
         <Route path="/accept-invite/:token" component={PartnerInvitePage} />
         <Route path="/partner-invite" component={PartnerInvitePage} />
-
         {/* Experiência unificada de onboarding e boas-vindas */}
         <Route path="/onboarding">{() => <Redirect to="/welcome" />}</Route>
         <ProtectedRoute path="/welcome" component={WelcomePage} />
-
         {/* Outras rotas protegidas */}
         <ProtectedRoute path="/invite-partner" component={PartnerInvitePage} />
         <ProtectedRoute
@@ -74,16 +72,13 @@ function Router() {
           path="/tasks/reorder"
           component={HouseholdTasksPageSimple}
         />
-
         {/* Insights de relacionamento */}
         <ProtectedRoute
           path="/insights/:id?"
           component={RelationshipInsightsPage}
         />
-
         {/* Dicas de relacionamento */}
         <ProtectedRoute path="/tips" component={RelationshipTipsPage} />
-
         {/* Rota de não encontrado */}
         <Route component={NotFound} />
       </Switch>

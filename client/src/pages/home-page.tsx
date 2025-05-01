@@ -101,8 +101,6 @@ export default function HomePage() {
     // Este efeito assegura que a consulta de eventos seja recarregada
     // quando o usuário mudar entre visualizações de dia/semana/mês
     if (events.length > 0) {
-      // Podemos adicionar lógica aqui se precisarmos recarregar eventos
-      // baseados na visualização ou intervalo de datas
     }
   }, [view, selectedDate]);
 
@@ -113,9 +111,8 @@ export default function HomePage() {
       return events.filter((event) => {
         const eventDate = new Date(event.date);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
-        const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate),
-        )?.split("T")[0];
+        const formattedSelectedDate =
+          formatDateSafely(selectedDate)?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
           return false;
@@ -154,9 +151,7 @@ export default function HomePage() {
   const dailyEvents = events.filter((event) => {
     const eventDate = new Date(event.date);
     const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
-    const formattedSelectedDate = formatDateSafely(
-      new Date(selectedDate),
-    )?.split("T")[0];
+    const formattedSelectedDate = formatDateSafely(selectedDate)?.split("T")[0];
 
     if (!formattedEventDate || !formattedSelectedDate) {
       return false;
