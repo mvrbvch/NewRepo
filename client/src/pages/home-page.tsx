@@ -93,7 +93,7 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    if (!eventIsLoading && event) {
+    if (!eventIsLoading && event && eventId) {
       setSelectedEvent(event.event);
     }
   }, [eventId, event]);

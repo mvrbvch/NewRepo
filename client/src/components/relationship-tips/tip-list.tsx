@@ -185,9 +185,9 @@ export function TipList({ type }: TipListProps) {
       <Tabs defaultValue="all" className="w-full text-sm">
         <TabsList className="mb-4">
           <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="communication">Comunicação</TabsTrigger>
+          {/* <TabsTrigger value="communication">Comunicação</TabsTrigger>
           <TabsTrigger value="quality_time">Tempo de Qualidade</TabsTrigger>
-          <TabsTrigger value="daily_habits">Hábitos</TabsTrigger>
+          <TabsTrigger value="daily_habits">Hábitos</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="all" className="mt-0">

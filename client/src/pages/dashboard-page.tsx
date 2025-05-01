@@ -28,7 +28,7 @@ import {
   HeartPulse,
   Heart,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
@@ -158,7 +158,7 @@ export default function DashboardPage() {
     isLoadingEvents || isLoadingTasks || insightsQuery.isLoading;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 mb-10">
       <Header />
 
       <main
@@ -176,8 +176,19 @@ export default function DashboardPage() {
                 locale: ptBR,
               })}{" "}
               <br />
-              <b>{partnerName?.split(" ")[0] || ""}</b> e você já se escolheram
-              hoje?{" "}
+              <b>
+                {partnerName?.split(" ")[0] || (
+                  <Link href="/invite-partner">
+                    <a>
+                      <span className="material-icons mr-2 text-primary/80 text-sm">
+                        people
+                      </span>
+                      <span>Convida logo seu parceiro...</span>
+                    </a>
+                  </Link>
+                )}
+              </b>{" "}
+              e você já se escolheram hoje?{" "}
             </p>
           </div>
           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -185,18 +196,27 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-      <header className=" bg-secondary p-4 rounded-lg">
-        <div className="block">
-          <div className="text-center">
-            <Heart className="h-12 w-12 text-pink-600 inline-block" />
+      <header className="bg-white border border-gray-200 p-4 rounded-md shadow-sm my-3">
+        <div className="flex items-center space-x-4">
+          <div className="flex-shrink-0">
+            <Heart className="h-10 w-10 text-pink-500" />
           </div>
-          <h2 className="text-sm font-bold text-gray-800">
-            Tá precisando de uma forcinha?{" "}
-            <span className="text-primary">
-              Nós Juntos podemos nos ajudar a ir a cada dia ajustando, desde
-              rotina até aquela palavrinha mal colocada!
-            </span>
-          </h2>
+          <div className="flex-1">
+            <h2 className="text-base font-medium text-gray-800">
+              Construindo juntos
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Pequenos ajustes diários fortalecem nossa parceria. Da rotina à
+              comunicação.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/tips")}
+            className="px-4 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 
+                     rounded-md transition-colors duration-200 flex-shrink-0 font-medium"
+          >
+            Explorar dicas
+          </button>
         </div>
       </header>
       <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-20 pt-2">
@@ -325,7 +345,7 @@ export default function DashboardPage() {
                         </div>
                         {event.location && (
                           <p className="text-xs text-gray-500 mb-1">
-                            {event.location}
+                            Onde? {event.location}
                           </p>
                         )}
                       </div>

@@ -40,7 +40,7 @@ export default function Header() {
       style={{ zIndex: 50, paddingTop: 50 }}
     >
       <div className="flex items-center">
-        <Link href="/calendar">
+        <Link href="/dashboard">
           <a className="flex items-center">
             <img
               src="/logo-white.png"
@@ -85,7 +85,7 @@ export default function Header() {
                   </a>
                 </DropdownMenuItem>
               </Link>
-              
+
               {!user?.partnerId && (
                 <Link href="/invite-partner">
                   <DropdownMenuItem className="cursor-pointer" asChild>

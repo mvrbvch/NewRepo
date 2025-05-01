@@ -2,6 +2,7 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
+import { z } from "zod";
 
 export default function FloatingActionButtons({
   onCreateEvent,
@@ -17,7 +18,10 @@ export default function FloatingActionButtons({
         position: "absolute",
         right: 0,
         left: 0,
-        top: -36,
+        bottom: 50,
+        zIndex: 42,
+        margin: "0 auto",
+        width: 74,
       }}
     >
       <Fab
