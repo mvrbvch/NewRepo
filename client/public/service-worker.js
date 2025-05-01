@@ -26,7 +26,7 @@ self.addEventListener("install", (event) => {
       .then(() => {
         // Force o service worker a ativar imediatamente
         return self.skipWaiting();
-      }),
+      })
   );
 });
 
@@ -46,16 +46,16 @@ self.addEventListener("activate", (event) => {
             .map((cacheName) => {
               console.log(
                 "[Service Worker] Removendo cache antigo:",
-                cacheName,
+                cacheName
               );
               return caches.delete(cacheName);
-            }),
+            })
         );
       })
       .then(() => {
         // Tome controle de todas as páginas imediatamente
         return self.clients.claim();
-      }),
+      })
   );
 });
 
@@ -82,7 +82,7 @@ self.addEventListener("fetch", (event) => {
       fetch(event.request).catch(() => {
         // Se não conseguir acessar a rede, tente o cache
         return caches.match("/index.html");
-      }),
+      })
     );
     return;
   }
@@ -122,7 +122,7 @@ self.addEventListener("fetch", (event) => {
             } catch (error) {
               console.error(
                 "[Service Worker] Erro ao armazenar em cache:",
-                error,
+                error
               );
             }
           });
@@ -143,7 +143,7 @@ self.addEventListener("fetch", (event) => {
             statusText: "Serviço indisponível",
           });
         });
-    }),
+    })
   );
 });
 
@@ -151,14 +151,14 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   console.log(
     "[Service Worker] Notificação push recebida",
-    new Date().toISOString(),
+    new Date().toISOString()
   );
 
   // Logs detalhados do evento
   try {
     console.log(
       "[Service Worker] Dados brutos:",
-      event.data ? event.data.text() : "Sem dados",
+      event.data ? event.data.text() : "Sem dados"
     );
 
     if (event.data) {
@@ -166,7 +166,7 @@ self.addEventListener("push", (event) => {
       console.log("[Service Worker] Comprimento dos dados:", rawText.length);
       console.log(
         "[Service Worker] Primeiros 100 caracteres:",
-        rawText.substring(0, 100),
+        rawText.substring(0, 100)
       );
     }
   } catch (logError) {
@@ -179,7 +179,7 @@ self.addEventListener("push", (event) => {
     payload = event.data ? event.data.json() : null;
     console.log(
       "[Service Worker] Payload JSON extraído com sucesso:",
-      JSON.stringify(payload),
+      JSON.stringify(payload)
     );
   } catch (jsonError) {
     console.error("[Service Worker] Erro ao extrair payload JSON:", jsonError);
@@ -196,12 +196,12 @@ self.addEventListener("push", (event) => {
         payload = JSON.parse(textData);
         console.log(
           "[Service Worker] Payload convertido de texto para JSON:",
-          payload,
+          payload
         );
       } catch (parseError) {
         console.error(
           "[Service Worker] Não foi possível converter texto para JSON:",
-          parseError,
+          parseError
         );
         // Usar o texto como corpo da notificação
         payload = {
@@ -236,7 +236,7 @@ self.addEventListener("push", (event) => {
   const debugId = Math.random().toString(36).substring(2, 8);
 
   console.log(
-    `[Service Worker] [${debugId}] Processando notificação às ${timestamp}`,
+    `[Service Worker] [${debugId}] Processando notificação às ${timestamp}`
   );
   console.log(`[Service Worker] [${debugId}] Título: ${payload.title}`);
   console.log(`[Service Worker] [${debugId}] Corpo: ${payload.body}`);
@@ -244,14 +244,14 @@ self.addEventListener("push", (event) => {
   if (payload.data) {
     console.log(
       `[Service Worker] [${debugId}] Dados adicionais:`,
-      JSON.stringify(payload.data),
+      JSON.stringify(payload.data)
     );
   }
 
   if (payload.actions && payload.actions.length > 0) {
     console.log(
       `[Service Worker] [${debugId}] Ações:`,
-      JSON.stringify(payload.actions),
+      JSON.stringify(payload.actions)
     );
   }
 
@@ -273,7 +273,7 @@ self.addEventListener("push", (event) => {
   console.log("[Service Worker] Opções de notificação configuradas:", options);
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || "Nós Juntos", options),
+    self.registration.showNotification(payload.title || "Nós Juntos", options)
   );
 });
 
@@ -286,15 +286,15 @@ self.addEventListener("notificationclick", (event) => {
   const payload = event.notification.data;
   const action = event.action;
 
-  let url = "/";
+  let url = "/dashboard";
 
   // Se for uma notificação de tarefa, redirecionar para a página de tarefas
   if (payload && payload.referenceType === "task") {
-    url = "/tasks";
+    url = `/calendar?${payload.referenceId ? `taskId=${payload.referenceId}` : ""}`;
   }
   // Se for uma notificação de evento, redirecionar para a página do calendário
   else if (payload && payload.referenceType === "event") {
-    url = "/calendar";
+    url = `/calendar?${payload.referenceId ? `eventId=${payload.referenceId}` : ""}`;
   }
 
   // Verificar se já temos uma janela aberta e navegar para a URL
@@ -310,6 +310,6 @@ self.addEventListener("notificationclick", (event) => {
       if (clients.openWindow) {
         return clients.openWindow(url);
       }
-    }),
+    })
   );
 });

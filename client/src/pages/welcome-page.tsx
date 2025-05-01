@@ -63,7 +63,7 @@ const WelcomePage = (): JSX.Element => {
     if (inviteFound && inviteData) {
       setIsFromInvite(true);
       setInviterName(inviteData.inviterName || "seu parceiro");
-      
+
       // Se o usuário atual for o convidador (não o convidado)
       if (inviteData.inviterEmail === user?.email) {
         toast({
@@ -71,13 +71,13 @@ const WelcomePage = (): JSX.Element => {
           description: "Você não pode aceitar seu próprio convite.",
           variant: "destructive",
         });
-        
+
         // Redirecionar para o calendário após mostrar a mensagem
         setTimeout(() => {
           setLocation("/calendar");
         }, 1500);
       }
-      
+
       // Se houver um e-mail do convidado, atualizar o estado
       if (inviteData.inviteeEmail) {
         setPartnerEmail(inviteData.inviteeEmail);
@@ -128,15 +128,15 @@ const WelcomePage = (): JSX.Element => {
     },
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(["/api/user"], updatedUser);
-      
+
       // Marcar que o onboarding foi completado recentemente para evitar redirecionamento circular
       sessionStorage.setItem("onboardingCompleted", "true");
-      
+
       setTimeout(() => {
         // Força a navegação direta, ignorando as proteções de rota que poderiam redirecionar de volta
-        window.location.href = "/calendar";
+        window.location.href = "/dashboard";
       }, 1000);
-      
+
       if (isFromInvite) {
         toast({
           title: "Conexão realizada!",

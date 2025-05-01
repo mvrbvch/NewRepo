@@ -61,7 +61,7 @@ router.get("/api/tips/user", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Usuário não autenticado" });
     }
-    
+
     const userId = parseInt((req.user as any).id);
 
     if (isNaN(userId)) {
@@ -75,7 +75,27 @@ router.get("/api/tips/user", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar dicas de relacionamento" });
   }
 });
+// Obter dicas favoritas de um usuário
+router.get("/api/tips/favorites", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+    const userId = (req.user as any).id;
 
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "ID de usuário inválido" });
+    }
+
+    const tips = await storage.getSavedRelationshipTips(userId);
+    res.json(tips);
+  } catch (error) {
+    console.error("Erro ao buscar dicas favoritas:", error);
+    res
+      .status(500)
+      .json({ error: "Erro ao buscar dicas de relacionamento favoritas" });
+  }
+});
 // Obter dicas de um casal
 router.get("/api/tips/couple/:userId/:partnerId", async (req, res) => {
   try {
@@ -161,25 +181,6 @@ router.post("/api/tips/:id/unfavorite", async (req, res) => {
   } catch (error) {
     console.error("Erro ao remover dica dos favoritos:", error);
     res.status(500).json({ error: "Erro ao atualizar dica de relacionamento" });
-  }
-});
-
-// Obter dicas favoritas de um usuário
-router.get("/api/tips/favorites/:userId", async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: "ID de usuário inválido" });
-    }
-
-    const tips = await storage.getSavedRelationshipTips(userId);
-    res.json(tips);
-  } catch (error) {
-    console.error("Erro ao buscar dicas favoritas:", error);
-    res
-      .status(500)
-      .json({ error: "Erro ao buscar dicas de relacionamento favoritas" });
   }
 });
 

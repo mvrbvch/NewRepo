@@ -35,6 +35,7 @@ import {
   Star,
   GripVertical,
 } from "lucide-react";
+import { useSearchParam } from "react-use";
 
 // Components
 import Header from "@/components/shared/header";
@@ -111,7 +112,7 @@ function PullToRefresh({
     currentY.current = e.touches[0].clientY;
     const pullDistance = Math.max(
       0,
-      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE),
+      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
     );
 
     if (pullDistance > 0) {
@@ -180,6 +181,7 @@ export default function HouseholdTasksPage() {
   // Hooks
   const { toast } = useToast();
   const { user } = useAuth();
+  const taskId = useSearchParam("taskId");
 
   // State
   const [activeTab, setActiveTab] = useState("pending");
@@ -188,7 +190,7 @@ export default function HouseholdTasksPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<HouseholdTaskType | null>(null);
   const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
-    null,
+    null
   );
   const [groupByFrequency, setGroupByFrequency] = useState(true);
   const [viewPartner, setViewPartner] = useState(false);
@@ -200,7 +202,7 @@ export default function HouseholdTasksPage() {
       weekly: true,
       monthly: true,
       once: true,
-    },
+    }
   );
 
   // Celebration animation state
@@ -221,6 +223,30 @@ export default function HouseholdTasksPage() {
   } = useQuery<HouseholdTaskType[]>({
     queryKey: ["/api/tasks"],
   });
+
+  const { data: task = {}, isLoading: taskIsLoading } = useQuery<
+    HouseholdTaskType[]
+  >({
+    queryKey: ["task", taskId],
+    queryFn: async () => {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar evento ${taskId}`);
+      }
+
+      return response.json();
+    },
+    enabled: !!taskId, // Só executa se tiver um ID válido
+  });
+
+  useEffect(() => {
+    if (!taskIsLoading && task && taskId) {
+      setSelectedTask(task);
+    }
+  }, [taskId, task]);
 
   const { data: partnerTasks = [], refetch: refetchPartnerTasks } = useQuery<
     HouseholdTaskType[]
@@ -339,7 +365,7 @@ export default function HouseholdTasksPage() {
 
     if (viewMyTasks) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.assignedTo === user?.id,
+        (task) => task.assignedTo === user?.id
       );
     }
 
@@ -351,7 +377,7 @@ export default function HouseholdTasksPage() {
         const eventDate = new Date(task.dueDate);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
         const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate),
+          new Date(selectedDate)
         )?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
@@ -419,7 +445,7 @@ export default function HouseholdTasksPage() {
         const eventDate = new Date(task.dueDate);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
         const formattedSelectedDate = formatDateSafely(
-          new Date(selectedDate),
+          new Date(selectedDate)
         )?.split("T")[0];
 
         if (!formattedEventDate || !formattedSelectedDate) {
@@ -547,7 +573,7 @@ export default function HouseholdTasksPage() {
         acc[frequency].push(task);
         return acc;
       },
-      {} as Record<string, HouseholdTaskType[]>,
+      {} as Record<string, HouseholdTaskType[]>
     );
   }, [
     tasks,
@@ -595,7 +621,7 @@ export default function HouseholdTasksPage() {
 
   const handleToggleTaskComplete = (
     task: HouseholdTaskType,
-    isModal: boolean,
+    isModal: boolean
   ) => {
     // Only trigger celebration if marking as completed
     if (!task.completed) {
@@ -665,7 +691,7 @@ export default function HouseholdTasksPage() {
 
       const frequency = activeTask.frequency;
       activeTasks = tasks.filter(
-        (task) => task.frequency === frequency && !task.completed,
+        (task) => task.frequency === frequency && !task.completed
       );
     } else {
       // In non-grouped view, use all active tasks
@@ -688,10 +714,10 @@ export default function HouseholdTasksPage() {
 
     // Find the indices of the tasks
     const oldIndex = activeTasks.findIndex(
-      (task) => Number(task.id) === activeId,
+      (task) => Number(task.id) === activeId
     );
     const newIndex = activeTasks.findIndex(
-      (task) => Number(task.id) === overId,
+      (task) => Number(task.id) === overId
     );
 
     if (oldIndex < 0 || newIndex < 0) {
@@ -765,9 +791,23 @@ export default function HouseholdTasksPage() {
                       {getFrequencyText(task.frequency)}
                       {task.weekdays && task.frequency === "weekly" && (
                         <span className="ml-1 text-primary-dark/70">
-                          ({task.weekdays.split(",").map(day => 
-                            ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][parseInt(day)]
-                          ).join(", ")})
+                          (
+                          {task.weekdays
+                            .split(",")
+                            .map(
+                              (day) =>
+                                [
+                                  "Dom",
+                                  "Seg",
+                                  "Ter",
+                                  "Qua",
+                                  "Qui",
+                                  "Sex",
+                                  "Sáb",
+                                ][parseInt(day)]
+                            )
+                            .join(", ")}
+                          )
                         </span>
                       )}
                       {task.monthDay && task.frequency === "monthly" && (

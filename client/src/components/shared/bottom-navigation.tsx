@@ -13,6 +13,7 @@ import {
 import { motion } from "framer-motion";
 import { NotificationIndicator } from "./notification-indicator";
 import { Badge } from "@/components/ui/badge";
+import FloatingActionButtons from "../ui/fab-button";
 
 interface BottomNavigationProps {
   onCreateEvent?: () => void;
@@ -23,7 +24,7 @@ export default function BottomNavigation({
 }: BottomNavigationProps) {
   const [location] = useLocation();
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-
+  const [pathname] = useLocation();
   const isActive = (path: string) => {
     return location === path;
   };
@@ -37,6 +38,9 @@ export default function BottomNavigation({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-5">
+      {(pathname.includes("calendar") || pathname.includes("tasks")) && (
+        <FloatingActionButtons onCreateEvent={handleCreateClick} />
+      )}
       <div className="flex items-center justify-around h-16 px-4">
         <Link
           to="/dashboard"
@@ -67,34 +71,25 @@ export default function BottomNavigation({
           <span className="text-xs mt-1">Insights</span>
         </Link>
 
-        <div className="relative">
-          <Button
-            onClick={handleCreateClick}
-            className="h-14 w-14 rounded-full bg-primary hover:bg-primary-dark text-white shadow-lg flex items-center justify-center"
-          >
-            <Plus className="h-8 w-8" />
-          </Button>
-        </div>
-
         <Link
           to="/tasks"
           className={`flex flex-col items-center justify-center w-12 h-12 ${
             isActive("/tasks") ? "text-primary" : "text-gray-600"
           }`}
         >
-          <span className="material-icons text-[22px]">task_alt</span>
+          <span className="material-icons text-[20px]">task_alt</span>
           <span className="text-xs mt-1">Tarefas</span>
         </Link>
 
-        <Link
+        {/* <Link
           to="#"
           className={`flex flex-col items-center justify-center w-25 h-12 disabled pointer-events-none text-gray-300`}
         >
-          <span className="material-icons text-[22px]">book</span>
+          <span className="material-icons text-[22px]">Dicas</span>
           <Badge variant="secondary" className={"text-xs font-normal"}>
             Notas
           </Badge>
-        </Link>
+        </Link> */}
       </div>
     </div>
   );

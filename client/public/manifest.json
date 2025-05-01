@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/calendar",
+  "start_url": "/dashboard",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

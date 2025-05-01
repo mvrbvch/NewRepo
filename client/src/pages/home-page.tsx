@@ -50,10 +50,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useLocation } from "wouter";
+import { useSearchParam } from "react-use";
 
 export default function HomePage() {
   const [view, setView] = useState<"day" | "week" | "month" | "timeline">(
-    "day",
+    "day"
   );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -65,11 +67,36 @@ export default function HomePage() {
   const { pushStatus } = usePushNotifications();
   const { user } = useAuth();
   const { isSupported, registerBiometric, isPending } = useBiometricAuth();
+  const eventId = useSearchParam("eventId");
 
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
     queryKey: ["/api/events"],
   });
+
+  const { data: event = {}, isLoading: eventIsLoading } = useQuery<EventType[]>(
+    {
+      queryKey: ["event", eventId],
+      queryFn: async () => {
+        const response = await fetch(`/api/events/${eventId}`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar evento ${eventId}`);
+        }
+
+        return response.json();
+      },
+      enabled: !!eventId, // Só executa se tiver um ID válido
+    }
+  );
+
+  useEffect(() => {
+    if (!eventIsLoading && event) {
+      setSelectedEvent(event.event);
+    }
+  }, [eventId, event]);
 
   // Mutação para enviar notificação de teste
   const testNotificationMutation = useMutation({
@@ -162,10 +189,10 @@ export default function HomePage() {
   });
   // Group events by period for day view
   const morningEvents = dailyEvents.filter(
-    (event) => event.period === "morning",
+    (event) => event.period === "morning"
   );
   const afternoonEvents = dailyEvents.filter(
-    (event) => event.period === "afternoon",
+    (event) => event.period === "afternoon"
   );
   const nightEvents = dailyEvents.filter((event) => event.period === "night");
 
@@ -266,7 +293,7 @@ export default function HomePage() {
 
   // Calcular quantos eventos são compartilhados no período atual
   const sharedEventsCount = filteredEvents.filter(
-    (event) => event.isShared,
+    (event) => event.isShared
   ).length;
 
   return (

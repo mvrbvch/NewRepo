@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, addDays, subDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
+import {
+  format,
+  addDays,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  isSameDay,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,7 +18,16 @@ import BottomNavigation from "@/components/shared/bottom-navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Book, CheckCircle, ArrowRight } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Book,
+  CheckCircle,
+  ArrowRight,
+  BookHeart,
+  HeartPulse,
+  Heart,
+} from "lucide-react";
 import { useLocation } from "wouter";
 import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
 import { TactileFeedback } from "@/components/ui/tactile-feedback";
@@ -23,7 +39,7 @@ import { Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AnimatedList } from "@/components/ui/animated-list";
 import { AlertCircle, Timer, Star } from "lucide-react";
-
+import { apiRequest } from "@/lib/queryClient";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -33,15 +49,19 @@ export default function DashboardPage() {
   const { useAllInsights } = useRelationshipInsights();
   const insightsQuery = useAllInsights();
   const today = new Date();
-
+  const [partnerName, setPartnerName] = useState<string | null>("");
   // Fetch events data
-  const { data: events = [], isLoading: isLoadingEvents } = useQuery<EventType[]>({
+  const { data: events = [], isLoading: isLoadingEvents } = useQuery<
+    EventType[]
+  >({
     queryKey: ["/api/events"],
   });
 
   // Fetch household tasks
-  const { data: householdTasks = [], isLoading: isLoadingTasks } = useQuery<HouseholdTaskType[]>({
-    queryKey: ["/api/household/tasks"],
+  const { data: householdTasks = [], isLoading: isLoadingTasks } = useQuery<
+    HouseholdTaskType[]
+  >({
+    queryKey: ["/api/tasks"],
   });
 
   // Calculate week days on component mount or when selected date changes
@@ -52,25 +72,37 @@ export default function DashboardPage() {
   }, [selectedDate]);
 
   // Filter events for the selected date
-  const todayEvents = events.filter((event) => {
-    const eventDate = new Date(event.date);
-    return isSameDay(eventDate, selectedDate);
-  }).sort((a, b) => {
-    return a.startTime.localeCompare(b.startTime);
-  });
+  const todayEvents = events
+    .filter((event) => {
+      const eventDate = new Date(event.date);
+      const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
+      const formattedSelectedDate =
+        formatDateSafely(selectedDate)?.split("T")[0];
+
+      if (!formattedEventDate || !formattedSelectedDate) {
+        return false;
+      }
+
+      return isSameDay(formattedEventDate, formattedSelectedDate);
+    })
+    .sort((a, b) => {
+      return a.startTime.localeCompare(b.startTime);
+    });
 
   // Filter events for tomorrow
   const tomorrow = addDays(new Date(), 1);
-  const tomorrowEvents = events.filter((event) => {
-    const eventDate = new Date(event.date);
-    return isSameDay(eventDate, tomorrow);
-  }).sort((a, b) => {
-    return a.startTime.localeCompare(b.startTime);
-  });
+  const tomorrowEvents = events
+    .filter((event) => {
+      const eventDate = new Date(event.date);
+      return isSameDay(eventDate, tomorrow);
+    })
+    .sort((a, b) => {
+      return a.startTime.localeCompare(b.startTime);
+    });
 
   // Filter upcoming tasks
   const upcomingTasks = householdTasks
-    .filter(task => !task.isCompleted)
+    .filter((task) => !task.completed)
     .sort((a, b) => {
       const dateA = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
       const dateB = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
@@ -89,23 +121,50 @@ export default function DashboardPage() {
 
   // Navigate to event details
   const handleEventClick = (event: EventType) => {
-    navigate(`/calendar?date=${formatDateSafely(new Date(event.date))}`);
+    if (event) {
+      navigate(`/calendar?eventId=${event.id}`);
+    } else {
+      navigate(`/calendar`);
+    }
   };
 
   // Navigate to task details
-  const handleTaskClick = () => {
-    navigate("/household");
+  const handleTaskClick = (taskId: number) => {
+    if (taskId) {
+      navigate(`/tasks?taskId=  ${taskId}`);
+    } else {
+      navigate(`/tasks`);
+    }
   };
 
-  //Loading
-  const isLoading = isLoadingEvents || isLoadingTasks || insightsQuery.isLoading;
+  const getUserById = async (id: number) => {
+    const response = await apiRequest("GET", `/api/user/byId/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch user data");
+    }
+    return response.json();
+  };
 
+  useEffect(() => {
+    if (user && user.partnerId) {
+      getUserById(user.partnerId).then((data) => {
+        setPartnerName(data.user);
+      });
+    }
+  }, [user]);
+
+  //Loading
+  const isLoading =
+    isLoadingEvents || isLoadingTasks || insightsQuery.isLoading;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
 
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-20 pt-2 mt-16">
+      <main
+        className="flex-1 max-w-lg mx-auto w-full px-4 pt-2"
+        style={{ marginTop: 120 }}
+      >
         {/* Greeting & User Info */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -113,20 +172,48 @@ export default function DashboardPage() {
               Olá, {user?.name?.split(" ")[0] || ""}
             </h1>
             <p className="text-gray-500 text-sm">
-              {format(new Date(), "'Hoje é' EEEE, d 'de' MMMM", { locale: ptBR })}
+              {format(new Date(), "'Hoje é' EEEE, d 'de' MMMM", {
+                locale: ptBR,
+              })}{" "}
+              <br />
+              <b>{partnerName?.split(" ")[0] || ""}</b> e você já se escolheram
+              hoje?{" "}
             </p>
           </div>
           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Calendar className="h-6 w-6 text-primary" />
           </div>
         </div>
-
+      </main>
+      <header className=" bg-secondary p-4 rounded-lg">
+        <div className="block">
+          <div className="text-center">
+            <Heart className="h-12 w-12 text-pink-600 inline-block" />
+          </div>
+          <h2 className="text-sm font-bold text-gray-800">
+            Tá precisando de uma forcinha?{" "}
+            <span className="text-primary">
+              Nós Juntos podemos nos ajudar a ir a cada dia ajustando, desde
+              rotina até aquela palavrinha mal colocada!
+            </span>
+          </h2>
+        </div>
+      </header>
+      <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-20 pt-2">
         {/* Weekly Calendar */}
         <Card className="p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700">Minha Agenda</h2>
-            <Badge 
-              variant="outline" 
+            <h2 className="font-semibold text-gray-700">
+              Agenda{" "}
+              <small>
+                <span className="material-icons text-xs text-primary mr-1">
+                  favorite
+                </span>
+                nossa agenda
+              </small>
+            </h2>
+            <Badge
+              variant="outline"
               className="hover:bg-primary/5 cursor-pointer"
               onClick={() => navigate("/calendar")}
             >
@@ -140,27 +227,42 @@ export default function DashboardPage() {
               const isSelected = isSameDay(day, selectedDate);
 
               // Count events for this day
-              const dayEvents = events.filter(event => {
+              const dayEvents = events.filter((event) => {
                 const eventDate = new Date(event.date);
-                return isSameDay(eventDate, day);
+                const formattedEventDate =
+                  formatDateSafely(eventDate)?.split("T")[0];
+                const formattedSelectedDate =
+                  formatDateSafely(day)?.split("T")[0];
+
+                if (!formattedEventDate || !formattedSelectedDate) {
+                  return false;
+                }
+
+                return isSameDay(formattedEventDate, formattedSelectedDate);
               });
 
               return (
-                <div 
+                <div
                   key={index}
                   onClick={() => setSelectedDate(day)}
                   className={`flex flex-col items-center py-2 cursor-pointer rounded-lg transition-colors
-                    ${isSelected ? 'bg-primary text-white' : isToday ? 'bg-primary/10' : 'hover:bg-gray-100'}
+                    ${isSelected ? "bg-primary text-white" : isToday ? "bg-primary/10" : "hover:bg-gray-100"}
                   `}
                 >
                   <span className="text-xs font-medium mb-1">
-                    {format(day, 'EEE', { locale: ptBR })}
+                    {format(new Date(day), "eee", { locale: ptBR })
+                      .trim()
+                      .substring(0, 3)}
                   </span>
-                  <span className={`text-lg font-bold ${isSelected ? 'text-white' : ''}`}>
-                    {format(day, 'd')}
+                  <span
+                    className={`text-lg font-bold ${isSelected ? "text-white" : ""}`}
+                  >
+                    {format(day, "d")}
                   </span>
                   {dayEvents.length > 0 && (
-                    <div className={`w-1 h-1 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-primary'}`} />
+                    <div
+                      className={`w-1 h-1 rounded-full mt-1 ${isSelected ? "bg-white" : "bg-primary"}`}
+                    />
                   )}
                 </div>
               );
@@ -173,18 +275,18 @@ export default function DashboardPage() {
                 {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
               </h3>
               <div className="flex space-x-1">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
                   onClick={handlePrevDay}
                 >
                   <ArrowRight className="h-4 w-4 rotate-180" />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
                   onClick={handleNextDay}
                 >
                   <ArrowRight className="h-4 w-4" />
@@ -204,24 +306,32 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`p-3 rounded-lg cursor-pointer 
-                      ${event.period === 'morning' ? 'bg-orange-50 border-l-2 border-orange-400' : 
-                        event.period === 'afternoon' ? 'bg-blue-50 border-l-2 border-blue-400' : 
-                        'bg-purple-50 border-l-2 border-purple-400'}`
-                    }
+                      ${
+                        event.period === "morning"
+                          ? "bg-orange-50 border-l-2 border-orange-400"
+                          : event.period === "afternoon"
+                            ? "bg-blue-50 border-l-2 border-blue-400"
+                            : "bg-purple-50 border-l-2 border-purple-400"
+                      }`}
                     onClick={() => handleEventClick(event)}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center mb-1">
-                          <span className="mr-2 text-xl">{event.emoji || '📅'}</span>
+                          <span className="mr-2 text-xl">
+                            {event.emoji || "📅"}
+                          </span>
                           <h4 className="font-medium">{event.title}</h4>
                         </div>
                         {event.location && (
-                          <p className="text-xs text-gray-500 mb-1">{event.location}</p>
+                          <p className="text-xs text-gray-500 mb-1">
+                            {event.location}
+                          </p>
                         )}
                       </div>
                       <div className="text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-                        {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                        {formatTime(event.startTime)} -{" "}
+                        {formatTime(event.endTime)}
                       </div>
                     </div>
                   </motion.div>
@@ -232,11 +342,11 @@ export default function DashboardPage() {
         </Card>
 
         {/* Upcoming Tasks */}
-        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/20 to-primary/5">
+        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/30 to-primary/20">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-700">Tarefas pendentes</h2>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className="bg-white hover:bg-white cursor-pointer"
               onClick={handleTaskClick}
             >
@@ -251,16 +361,16 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {upcomingTasks.map((task) => (
-                <div 
-                  key={task.id} 
+                <div
+                  key={task.id}
                   className="bg-white/80 p-3 rounded-lg flex items-center cursor-pointer"
-                  onClick={handleTaskClick}
+                  onClick={() => handleTaskClick(task.id)}
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
                     <CheckCircle className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">{task.name}</h4>
+                    <h4 className="font-medium">{task.title}</h4>
                     {task.dueDate && (
                       <p className="text-xs text-gray-500">
                         Prazo: {format(new Date(task.dueDate), "dd/MM/yyyy")}
@@ -278,8 +388,8 @@ export default function DashboardPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-700">Amanhã</h2>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className="hover:bg-primary/5 cursor-pointer"
               onClick={() => navigate("/calendar")}
             >
@@ -294,17 +404,19 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {tomorrowEvents.slice(0, 2).map((event) => (
-                <div 
-                  key={event.id} 
+                <div
+                  key={event.id}
                   className="bg-gray-50 p-3 rounded-lg flex cursor-pointer"
                   onClick={() => handleEventClick(event)}
                 >
                   <div className="w-10 text-center mr-3">
-                    <span className="text-xs font-medium block">{formatTime(event.startTime)}</span>
+                    <span className="text-xs font-medium block">
+                      {formatTime(event.startTime)}
+                    </span>
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium flex items-center">
-                      <span className="mr-2">{event.emoji || '📅'}</span>
+                      <span className="mr-2">{event.emoji || "📅"}</span>
                       {event.title}
                     </h4>
                     {event.location && (
