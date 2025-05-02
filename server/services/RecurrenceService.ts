@@ -6,7 +6,19 @@ import {
   setHours,
   setMinutes,
 } from "date-fns";
-import { zonedTimeToUtc, utcToZonedTime } from "date-fns-tz";
+
+import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { addMinutes } from "date-fns";
+
+// To convert from a timezone to UTC
+function zonedTimeToUtc(date: Date, timeZone: string): Date {
+  const tzOffset = -date.getTimezoneOffset();
+  const localDate = new Date(date);
+  const targetDate = utcToZonedTime(date, timeZone);
+  const targetOffset =
+    (targetDate.getTime() - localDate.getTime()) / (60 * 1000);
+  return addMinutes(date, tzOffset - targetOffset);
+}
 
 export type RecurrencePattern =
   | "daily"
@@ -104,5 +116,44 @@ export class RecurrenceService {
 
     const date = new Date(dueDate);
     return isNaN(date.getTime()) ? null : date;
+  }
+
+  /**
+   * Converts a date from a specific timezone to UTC
+   * @param date The date to convert
+   * @param timeZone The timezone of the input date (e.g., 'America/New_York')
+   */
+  convertToUtc(date: Date | string, timeZone: string): Date {
+    // If date is a string, parse it first
+    const dateObj = typeof date === "string" ? parseISO(date) : date;
+    return zonedTimeToUtc(dateObj, timeZone);
+  }
+
+  /**
+   * Converts a UTC date to a specific timezone
+   * @param date The UTC date to convert
+   * @param timeZone The target timezone (e.g., 'America/New_York')
+   */
+  convertFromUtc(date: Date | string, timeZone: string): Date {
+    // If date is a string, parse it first
+    const dateObj = typeof date === "string" ? parseISO(date) : date;
+    return utcToZonedTime(dateObj, timeZone);
+  }
+
+  /**
+   * Formats a date for display in a specific timezone
+   * @param date The date to format
+   * @param timeZone The timezone to format the date in
+   * @param formatString The format string to use
+   */
+  formatInTimeZone(
+    date: Date | string,
+    timeZone: string,
+    formatString: string
+  ): string {
+    // If date is a string, parse it first
+    const dateObj = typeof date === "string" ? parseISO(date) : date;
+    const zonedDate = utcToZonedTime(dateObj, timeZone);
+    return format(zonedDate, formatString);
   }
 }

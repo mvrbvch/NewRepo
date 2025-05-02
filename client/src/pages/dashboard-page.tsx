@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
   // Navigate to event details
   const handleEventClick = (event: EventType) => {
-    if (event) {
+    if (event.id) {
       navigate(`/calendar?eventId=${event.id}`);
     } else {
       navigate(`/calendar`);
@@ -129,9 +129,9 @@ export default function DashboardPage() {
   };
 
   // Navigate to task details
-  const handleTaskClick = (taskId: number) => {
+  const handleTaskClick = (taskId?: number) => {
     if (taskId) {
-      navigate(`/tasks?taskId=  ${taskId}`);
+      navigate(`/tasks?taskId=${taskId}`);
     } else {
       navigate(`/tasks`);
     }
@@ -368,7 +368,7 @@ export default function DashboardPage() {
             <Badge
               variant="outline"
               className="bg-white hover:bg-white cursor-pointer"
-              onClick={handleTaskClick}
+              onClick={() => handleTaskClick()}
             >
               Ver tudo
             </Badge>

@@ -120,8 +120,8 @@ export async function sendFirebaseMessageToMultipleDevices(
           icon: "/icons/icon-192x192.png",
           click_action:
             process.env.NODE_ENV === "production"
-              ? "https://por-nos.murbach.work/"
-              : "http://localhost:5001/",
+              ? "https://nosjuntos.murbach.work/"
+              : "https://nosjuntos.murbach.work/",
           ...notification,
         },
         fcmOptions: {

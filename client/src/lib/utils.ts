@@ -86,7 +86,6 @@ export const commonEmojis = [
 ];
 
 export const formatDateSafely = (dateValue: any): string | null => {
-  console.log(dateValue);
   if (!dateValue) return null;
 
   try {

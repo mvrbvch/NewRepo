@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { MailService } from '@sendgrid/mail';
+import { MailService } from "@sendgrid/mail";
 
 // Configuração Resend
 if (!process.env.RESEND_API_KEY) {
@@ -17,8 +17,8 @@ if (process.env.SENDGRID_API_KEY) {
   );
 }
 
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY) 
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
 // Configurar SendGrid se a API key estiver disponível
@@ -38,7 +38,7 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const { to, subject, html, text } = options;
-    const from = options.from || "💜 Nós Juntos <rotina@no-reply.murbach.work>";
+    const from = options.from || "❤️ Nós Juntos <rotina@no-reply.murbach.work>";
 
     console.log(`Enviando e-mail para ${to} com assunto "${subject}"`);
 
@@ -53,7 +53,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       });
 
       if (error) {
-        console.warn("Erro ao enviar e-mail com Resend, tentando SendGrid:", error);
+        console.warn(
+          "Erro ao enviar e-mail com Resend, tentando SendGrid:",
+          error
+        );
       } else {
         console.log("E-mail enviado com sucesso via Resend, ID:", data?.id);
         return true;
@@ -73,7 +76,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       return true;
     }
 
-    console.error("Não foi possível enviar o email. Nenhum serviço de email está configurado.");
+    console.error(
+      "Não foi possível enviar o email. Nenhum serviço de email está configurado."
+    );
     return false;
   } catch (error) {
     console.error("Erro ao enviar e-mail:", error);
@@ -89,14 +94,13 @@ export function generatePartnerInviteEmail(
   inviterName: string,
   inviteToken: string
 ): { html: string; text: string } {
-  const baseUrl =
-    process.env.BASE_URL || "https://nos-juntos.replit.app";
+  const baseUrl = process.env.BASE_URL || "https://nos-juntos.replit.app";
   const inviteUrl = `${baseUrl}/auth?redirect=invite&token=${inviteToken}`;
 
   const html = `
     <div style="font-family: 'Inter', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
       <div style="background: linear-gradient(to right, #ec4899, #8b5cf6); padding: 24px; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Convite Especial do Nós Juntos 💜</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Convite Especial do Nós Juntos ❤️</h1>
       </div>
       
       <div style="padding: 32px 24px;">
@@ -124,7 +128,7 @@ export function generatePartnerInviteEmail(
   `;
 
   const text = `
-Convite Especial do Nós Juntos 💜
+Convite Especial do Nós Juntos ❤️
 
 Ei! ${inviterName} quer te convidar para viver uma nova fase ao lado do amor da sua vida no app Nós Juntos!
 
@@ -149,8 +153,7 @@ export function generateTaskReminderEmail(
   customMessage: string | null,
   taskId: number
 ): { html: string; text: string } {
-  const baseUrl =
-    process.env.BASE_URL || "https://nos-juntos.replit.app";
+  const baseUrl = process.env.BASE_URL || "https://nos-juntos.replit.app";
   const taskUrl = `${baseUrl}/tasks/${taskId}`;
 
   const message = customMessage
@@ -179,7 +182,7 @@ export function generateTaskReminderEmail(
       
       <div style="background-color: #f9fafb; padding: 16px 24px; border-top: 1px solid #e5e7eb;">
         <p style="margin: 0; font-size: 14px; color: #6b7280; text-align: center;">
-          Este é um lembrete enviado com carinho pelo aplicativo Nós Juntos 💜
+          Este é um lembrete enviado com carinho pelo aplicativo Nós Juntos ❤️
         </p>
       </div>
     </div>
@@ -197,7 +200,7 @@ ${taskDescription ? `Descrição: ${taskDescription}` : ""}
 
 Veja a tarefa aqui: ${taskUrl}
 
-Este é um lembrete enviado com carinho pelo app Nós Juntos 💜
+Este é um lembrete enviado com carinho pelo app Nós Juntos ❤️
   `;
 
   return { html, text };

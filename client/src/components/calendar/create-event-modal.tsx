@@ -209,7 +209,6 @@ export default function CreateEventModal({
                   <SelectValue placeholder="Selecione um período" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="allday">Dia todo (24h)</SelectItem>
                   <SelectItem value="morning">Manhã (6h-12h)</SelectItem>
                   <SelectItem value="afternoon">Tarde (12h-18h)</SelectItem>
                   <SelectItem value="night">Noite (18h-0h)</SelectItem>

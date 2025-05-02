@@ -93,12 +93,17 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    if (!eventIsLoading && event && eventId) {
-      setSelectedEvent(event.event);
+    if (
+      !eventIsLoading &&
+      eventId &&
+      Object.keys(event).length > 0 &&
+      "event" in event &&
+      (event.event as EventType)
+    ) {
+      setSelectedEvent(event.event as EventType);
     }
-  }, [eventId, event]);
+  }, [eventId, event]); // Mutação para enviar notificação de teste
 
-  // Mutação para enviar notificação de teste
   const testNotificationMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/notifications/test");
@@ -184,7 +189,6 @@ export default function HomePage() {
       return false;
     }
 
-    console.log(formattedEventDate, formattedSelectedDate);
     return isSameDay(formattedEventDate, formattedSelectedDate);
   });
   // Group events by period for day view

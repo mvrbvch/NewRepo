@@ -48,7 +48,7 @@ export default function IOSInstallGuide() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[425px] p-6 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px] p-20 max-h-[70vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Instalar Nós Juntos no seu iPhone/iPad</DialogTitle>
             <DialogDescription>
