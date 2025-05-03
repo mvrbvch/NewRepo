@@ -158,7 +158,7 @@ export default function DashboardPage() {
     isLoadingEvents || isLoadingTasks || insightsQuery.isLoading;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 mb-10">
+    <div className="flex flex-col min-h-screen bg-gray-50 mb-10 scroll-id">
       <Header />
 
       <main

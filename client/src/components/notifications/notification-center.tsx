@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
 // Interface para notificações
 interface Notification {
@@ -47,6 +48,7 @@ interface Notification {
 export function NotificationCenter() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -228,6 +230,11 @@ export function NotificationCenter() {
             onClick={() => {
               if (!notification.isRead) {
                 handleMarkAsRead(notification.id);
+              }
+              if (notification.referenceType === "task") {
+                navigate(`/tasks?taskId=${notification.referenceId}`);
+              } else if (notification.referenceType === "event") {
+                navigate(`/calendar?eventId=${notification.referenceId}`);
               }
             }}
           >

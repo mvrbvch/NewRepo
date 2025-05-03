@@ -46,7 +46,10 @@ export function RelationshipInsightsPage() {
     <>
       <Header />
 
-      <div className="container mx-auto p-4" style={{ paddingTop: 120 }}>
+      <div
+        className="container mx-auto p-4 scroll-id"
+        style={{ paddingTop: 120 }}
+      >
         <Route path="/insights">
           {() => (
             <>

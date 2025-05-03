@@ -239,7 +239,7 @@ export default function PartnerInvitePage() {
 
   // Sending an invite view
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col scroll-id">
       <div className="flex items-center justify-between p-4 border-b">
         <Button variant="ghost" size="icon" onClick={handleBack}>
           <span className="material-icons">arrow_back</span>

@@ -290,7 +290,7 @@ self.addEventListener("notificationclick", (event) => {
 
   // Se for uma notificação de tarefa, redirecionar para a página de tarefas
   if (payload && payload.referenceType === "task") {
-    url = `/calendar?${payload.referenceId ? `taskId=${payload.referenceId}` : ""}`;
+    url = `/tasks?${payload.referenceId ? `taskId=${payload.referenceId}` : ""}`;
   }
   // Se for uma notificação de evento, redirecionar para a página do calendário
   else if (payload && payload.referenceType === "event") {

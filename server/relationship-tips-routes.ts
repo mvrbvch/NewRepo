@@ -97,9 +97,9 @@ router.get("/api/tips/favorites", async (req, res) => {
   }
 });
 // Obter dicas de um casal
-router.get("/api/tips/couple/:userId/:partnerId", async (req, res) => {
+router.get("/api/tips/couple/:partnerId", async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = parseInt(String(req?.user?.id));
     const partnerId = parseInt(req.params.partnerId);
 
     if (isNaN(userId) || isNaN(partnerId)) {

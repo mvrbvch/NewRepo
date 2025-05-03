@@ -23,6 +23,7 @@ export function TipList({ type }: TipListProps) {
   const { user } = useAuth();
   const {
     useUserTips,
+    useCoupleTips,
     useFavoriteTips,
     useFavoriteTip,
     useUnfavoriteTip,
@@ -31,7 +32,12 @@ export function TipList({ type }: TipListProps) {
   } = useRelationshipTips();
 
   // Usa o hook apropriado com base no tipo
-  const tipsQuery = type === "all" ? useUserTips() : useFavoriteTips();
+  const tipsQuery =
+    type === "all"
+      ? user?.partnerId
+        ? useCoupleTips(user?.partnerId)
+        : useUserTips()
+      : useFavoriteTips();
 
   // Hooks para ações
   const favoriteTip = useFavoriteTip();

@@ -193,6 +193,7 @@ export const eventReminders = pgTable("event_reminders", {
   reminderTime: timestamp("reminder_time").notNull(),
   reminderType: text("reminder_type").notNull(), // push, email, sms, etc.
   sent: boolean("sent").default(false),
+  message: text("message"), // Mensagem personalizada opcional
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -318,7 +319,7 @@ export const insertEventCommentSchema = createInsertSchema(eventComments).pick({
 });
 
 export const insertCalendarConnectionSchema = createInsertSchema(
-  calendarConnections,
+  calendarConnections
 ).pick({
   userId: true,
   provider: true,
@@ -329,7 +330,7 @@ export const insertCalendarConnectionSchema = createInsertSchema(
 });
 
 export const insertPartnerInviteSchema = createInsertSchema(
-  partnerInvites,
+  partnerInvites
 ).pick({
   inviterId: true,
   email: true,
@@ -398,7 +399,7 @@ export type PartnerInvite = Omit<
 };
 
 export const insertHouseholdTaskSchema = createInsertSchema(
-  householdTasks,
+  householdTasks
 ).pick({
   title: true,
   description: true,
@@ -453,10 +454,12 @@ export const insertTaskCompletionHistorySchema = createInsertSchema(
   userId: true,
   completedDate: true,
   expectedDate: true,
-  isCompleted: true
+  isCompleted: true,
 });
 
-export type InsertTaskCompletionHistory = z.infer<typeof insertTaskCompletionHistorySchema>;
+export type InsertTaskCompletionHistory = z.infer<
+  typeof insertTaskCompletionHistorySchema
+>;
 export type TaskCompletionHistory = Omit<
   typeof taskCompletionHistory.$inferSelect,
   "createdAt" | "completedDate" | "expectedDate"
@@ -468,7 +471,7 @@ export type TaskCompletionHistory = Omit<
 
 // WebAuthn schemas
 export const insertWebAuthnChallengeSchema = createInsertSchema(
-  webAuthnChallenges,
+  webAuthnChallenges
 ).pick({
   userId: true,
   challenge: true,
@@ -477,7 +480,7 @@ export const insertWebAuthnChallengeSchema = createInsertSchema(
 
 // Schemas para inserção de novas entidades
 export const insertEventCategorySchema = createInsertSchema(
-  eventCategories,
+  eventCategories
 ).pick({
   name: true,
   color: true,
@@ -487,23 +490,24 @@ export const insertEventCategorySchema = createInsertSchema(
 });
 
 export const insertEventReminderSchema = createInsertSchema(
-  eventReminders,
+  eventReminders
 ).pick({
   eventId: true,
   userId: true,
   reminderTime: true,
   reminderType: true,
+  message: true,
+  sent: true,
 });
 
-export const insertTaskReminderSchema = createInsertSchema(
-  taskReminders,
-).pick({
+export const insertTaskReminderSchema = createInsertSchema(taskReminders).pick({
   taskId: true,
   userId: true,
   createdBy: true,
   reminderDate: true,
   reminderType: true,
   message: true,
+  sent: true,
 });
 
 export const insertSharedNoteSchema = createInsertSchema(sharedNotes).pick({
@@ -538,7 +542,7 @@ export const insertProjectTaskSchema = createInsertSchema(projectTasks).pick({
 });
 
 export const insertWebAuthnCredentialSchema = createInsertSchema(
-  webAuthnCredentials,
+  webAuthnCredentials
 ).pick({
   userId: true,
   credentialId: true,
@@ -669,7 +673,9 @@ export type RelationshipTip = Omit<
   createdAt: Date | string | null;
 };
 
-export type InsertRelationshipInsight = z.infer<typeof insertRelationshipInsightSchema>;
+export type InsertRelationshipInsight = z.infer<
+  typeof insertRelationshipInsightSchema
+>;
 export type RelationshipInsight = Omit<
   typeof relationshipInsights.$inferSelect,
   "createdAt" | "expiresAt"

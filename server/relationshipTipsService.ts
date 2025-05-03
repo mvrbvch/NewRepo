@@ -54,7 +54,7 @@ export class RelationshipTipsService {
    * Gera uma dica de relacionamento personalizada
    */
   public async generateTip(
-    params: GenerateTipParams,
+    params: GenerateTipParams
   ): Promise<RelationshipTip | null> {
     try {
       const { userId, partnerId, category, customPrompt, contextData } = params;
@@ -72,12 +72,12 @@ export class RelationshipTipsService {
       const recentTasks = await this.storage.getRecentHouseholdTasks(
         userId,
         partnerId,
-        30,
+        30
       ); // últimos 30 dias
       const recentEvents = await this.storage.getRecentEvents(
         userId,
         partnerId,
-        30,
+        30
       ); // últimos 30 dias
 
       // Selecionar categoria aleatória se não for especificada
@@ -93,7 +93,7 @@ export class RelationshipTipsService {
             recentTasks,
             recentEvents,
             customPrompt,
-            contextData,
+            contextData
           );
 
           if (perplexityTip) {
@@ -123,7 +123,7 @@ export class RelationshipTipsService {
           recentTasks,
           recentEvents,
           customPrompt,
-          contextData,
+          contextData
         );
 
         if (openAITip) {
@@ -218,7 +218,7 @@ export class RelationshipTipsService {
     recentTasks: any[],
     recentEvents: any[],
     customPrompt?: string,
-    contextData?: any,
+    contextData?: any
   ): Promise<Omit<
     RelationshipTip,
     "id" | "userId" | "partnerId" | "createdAt" | "saved"
@@ -239,7 +239,7 @@ export class RelationshipTipsService {
     const userMessage =
       customPrompt ||
       `
-Crie uma dica personalizada SUPER INFORMAL na categoria "${categoryInfo.title}" para este casal (Criar apelidos carinhosos para o casal.
+Crie uma dica personalizada SUPER INFORMAL na categoria "${categoryInfo.title}" para este casal (Criar apelidos carinhosos para o casal).
 
 Casal:
 - ${userNickname} e ${partnerNickname} (Criar apelidos carinhosos para o casal nas respostas)
@@ -298,14 +298,14 @@ Não inclua explicações, apenas o objeto JSON.
       if (!response.ok) {
         const errorData = await response.text();
         throw new Error(
-          `Erro na API Perplexity: ${response.status} ${errorData}`,
+          `Erro na API Perplexity: ${response.status} ${errorData}`
         );
       }
 
       const responseData = await response.json();
       console.log(
         "Resposta da API Perplexity:",
-        JSON.stringify(responseData, null, 2),
+        JSON.stringify(responseData, null, 2)
       );
 
       const contentText = responseData.choices[0]?.message?.content;
@@ -347,7 +347,7 @@ Não inclua explicações, apenas o objeto JSON.
     recentTasks: any[],
     recentEvents: any[],
     customPrompt?: string,
-    contextData?: any,
+    contextData?: any
   ): Promise<Omit<
     RelationshipTip,
     "id" | "userId" | "partnerId" | "createdAt" | "saved"
@@ -373,7 +373,7 @@ Não inclua explicações, apenas o objeto JSON.
 Você é um amigo próximo do casal, dando conselhos divertidos e práticos de forma SUPER INFORMAL.
 
 Casal:
-- ${userNickname} e ${partnerNickname} (use esses apelidos carinhosos na sua resposta!)
+- ${userNickname} e ${partnerNickname}  (Criar apelidos carinhosos para o casal)
 
 Dados recentes de tarefas:
 ${tasksData}
@@ -439,7 +439,7 @@ Retorne sua dica em formato JSON com os seguintes campos:
   private generateLocalTip(
     user: any,
     partner: any,
-    category: TipCategory,
+    category: TipCategory
   ): Omit<
     RelationshipTip,
     "id" | "userId" | "partnerId" | "createdAt" | "saved"
@@ -491,7 +491,7 @@ Retorne sua dica em formato JSON com os seguintes campos:
    * Salva uma dica no banco de dados
    */
   private async saveTip(
-    tip: Omit<RelationshipTip, "id">,
+    tip: Omit<RelationshipTip, "id">
   ): Promise<RelationshipTip | null> {
     try {
       // Converter a categoria e actionItems para os tipos esperados pelo storage

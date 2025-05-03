@@ -48,11 +48,26 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes } from "crypto";
 import { db } from "./db";
-import { eq, and, or, SQL, inArray, desc, sql, count, isNull, gt } from "drizzle-orm";
+import {
+  eq,
+  and,
+  or,
+  SQL,
+  inArray,
+  desc,
+  sql,
+  count,
+  isNull,
+  gt,
+} from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 import { formatDateSafely } from "./utils";
-import { UnifiedRecurrenceService, RecurrenceOptions, RecurrenceFrequency } from "./services/UnifiedRecurrenceService";
+import {
+  UnifiedRecurrenceService,
+  RecurrenceOptions,
+  RecurrenceFrequency,
+} from "./services/UnifiedRecurrenceService";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -119,20 +134,22 @@ export interface IStorage {
     completed: boolean,
     userId?: number
   ): Promise<HouseholdTask | undefined>;
-  
+
   // Task Completion History
-  addTaskCompletionRecord(record: InsertTaskCompletionHistory): Promise<TaskCompletionHistory>;
+  addTaskCompletionRecord(
+    record: InsertTaskCompletionHistory
+  ): Promise<TaskCompletionHistory>;
   getTaskCompletionHistory(taskId: number): Promise<TaskCompletionHistory[]>;
   getTaskCompletionHistoryForPeriod(
-    taskId: number, 
-    startDate: Date, 
+    taskId: number,
+    startDate: Date,
     endDate: Date
   ): Promise<TaskCompletionHistory[]>;
   getMissedTasksForPeriod(
     userId: number,
     startDate: Date,
     endDate: Date
-  ): Promise<{task: HouseholdTask, missedDates: Date[]}[]>;
+  ): Promise<{ task: HouseholdTask; missedDates: Date[] }[]>;
 
   // User devices for push notifications
   registerUserDevice(device: InsertUserDevice): Promise<UserDevice>;
@@ -169,24 +186,49 @@ export interface IStorage {
   deleteTaskReminder(id: number): Promise<boolean>;
 
   // Relationship Insights
-  createRelationshipInsight(insight: InsertRelationshipInsight): Promise<RelationshipInsight>;
+  createRelationshipInsight(
+    insight: InsertRelationshipInsight
+  ): Promise<RelationshipInsight>;
   getRelationshipInsight(id: number): Promise<RelationshipInsight | undefined>;
   getUserRelationshipInsights(userId: number): Promise<RelationshipInsight[]>;
-  getPartnerRelationshipInsights(userId: number, partnerId: number): Promise<RelationshipInsight[]>;
-  updateRelationshipInsight(id: number, updates: Partial<RelationshipInsight>): Promise<RelationshipInsight | undefined>;
-  markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined>;
+  getPartnerRelationshipInsights(
+    userId: number,
+    partnerId: number
+  ): Promise<RelationshipInsight[]>;
+  updateRelationshipInsight(
+    id: number,
+    updates: Partial<RelationshipInsight>
+  ): Promise<RelationshipInsight | undefined>;
+  markInsightAsRead(
+    id: number,
+    isUser: boolean
+  ): Promise<RelationshipInsight | undefined>;
   deleteRelationshipInsight(id: number): Promise<boolean>;
 
   // Relationship Tips
   createRelationshipTip(tip: InsertRelationshipTip): Promise<RelationshipTip>;
   getRelationshipTip(id: number): Promise<RelationshipTip | undefined>;
   getUserRelationshipTips(userId: number): Promise<RelationshipTip[]>;
-  getPartnerRelationshipTips(userId: number, partnerId: number): Promise<RelationshipTip[]>;
+  getPartnerRelationshipTips(
+    userId: number,
+    partnerId: number
+  ): Promise<RelationshipTip[]>;
   getSavedRelationshipTips(userId: number): Promise<RelationshipTip[]>;
-  updateRelationshipTip(id: number, updates: Partial<RelationshipTip>): Promise<RelationshipTip | undefined>;
+  updateRelationshipTip(
+    id: number,
+    updates: Partial<RelationshipTip>
+  ): Promise<RelationshipTip | undefined>;
   deleteRelationshipTip(id: number): Promise<boolean>;
-  getRecentHouseholdTasks(userId: number, partnerId: number, days: number): Promise<HouseholdTask[]>;
-  getRecentEvents(userId: number, partnerId: number, days: number): Promise<Event[]>;
+  getRecentHouseholdTasks(
+    userId: number,
+    partnerId: number,
+    days: number
+  ): Promise<HouseholdTask[]>;
+  getRecentEvents(
+    userId: number,
+    partnerId: number,
+    days: number
+  ): Promise<Event[]>;
 
   // Session store
   sessionStore: SessionStore;
@@ -550,11 +592,11 @@ export class MemStorage implements IStorage {
     // Se a tarefa for recorrente, atualizar a próxima data de vencimento
     let nextDueDate = task.nextDueDate;
     let completedAt = null;
-    
+
     if (completed) {
       const currentDate = new Date();
       completedAt = currentDate;
-      
+
       // Registrar no histórico de conclusão se tiver userId
       if (userId) {
         const completionRecord: InsertTaskCompletionHistory = {
@@ -562,22 +604,27 @@ export class MemStorage implements IStorage {
           userId: userId,
           completedDate: currentDate,
           expectedDate: task.dueDate,
-          isCompleted: true
+          isCompleted: true,
         };
         this.addTaskCompletionRecord(completionRecord);
       }
-      
+
       // Calcular a próxima data de vencimento com base na frequência e nas opções de recorrência
       if (task.frequency !== "once" && task.frequency !== "never") {
         const options: RecurrenceOptions = {
           frequency: task.frequency as RecurrenceFrequency,
           startDate: currentDate,
-          weekdays: task.weekdays ? task.weekdays.split(',').map(day => parseInt(day)) : undefined,
-          monthDay: task.monthDay || undefined
+          weekdays: task.weekdays
+            ? task.weekdays.split(",").map((day) => parseInt(day))
+            : undefined,
+          monthDay: task.monthDay || undefined,
         };
-        
+
         // Usar o UnifiedRecurrenceService para calcular a próxima data
-        nextDueDate = UnifiedRecurrenceService.calculateNextDate(currentDate, options);
+        nextDueDate = UnifiedRecurrenceService.calculateNextDate(
+          currentDate,
+          options
+        );
       }
     } else if (task.completed && !completed && userId) {
       // Se estiver desmarcando uma tarefa como concluída, registrar como não concluída
@@ -587,54 +634,60 @@ export class MemStorage implements IStorage {
         userId: userId,
         completedDate: currentDate,
         expectedDate: task.dueDate,
-        isCompleted: false
+        isCompleted: false,
       };
       this.addTaskCompletionRecord(completionRecord);
     }
 
-    const updatedTask = { 
-      ...task, 
-      completed, 
+    const updatedTask = {
+      ...task,
+      completed,
       nextDueDate,
-      completedAt 
+      completedAt,
     };
     this.householdTasksMap.set(id, updatedTask);
     return updatedTask;
   }
-  
+
   // Implementação de métodos para histórico de conclusão de tarefas
-  async addTaskCompletionRecord(record: InsertTaskCompletionHistory): Promise<TaskCompletionHistory> {
+  async addTaskCompletionRecord(
+    record: InsertTaskCompletionHistory
+  ): Promise<TaskCompletionHistory> {
     const id = this.taskCompletionHistoryIdCounter++;
     const historyRecord: TaskCompletionHistory = {
       ...record,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
     this.taskCompletionHistoryMap.set(id, historyRecord);
     return historyRecord;
   }
-  
-  async getTaskCompletionHistory(taskId: number): Promise<TaskCompletionHistory[]> {
+
+  async getTaskCompletionHistory(
+    taskId: number
+  ): Promise<TaskCompletionHistory[]> {
     return Array.from(this.taskCompletionHistoryMap.values())
-      .filter(record => record.taskId === taskId)
+      .filter((record) => record.taskId === taskId)
       .sort((a, b) => {
         const dateA = new Date(a.completedDate).getTime();
         const dateB = new Date(b.completedDate).getTime();
         return dateB - dateA; // Ordenar por data de conclusão, mais recente primeiro
       });
   }
-  
+
   async getTaskCompletionHistoryForPeriod(
-    taskId: number, 
-    startDate: Date, 
+    taskId: number,
+    startDate: Date,
     endDate: Date
   ): Promise<TaskCompletionHistory[]> {
     return Array.from(this.taskCompletionHistoryMap.values())
-      .filter(record => {
+      .filter((record) => {
         const recordDate = new Date(record.completedDate);
-        return record.taskId === taskId && 
-               recordDate >= startDate && 
-               recordDate <= endDate;
+        return (
+          record.taskId === taskId &&
+          recordDate >= startDate &&
+          recordDate <= endDate
+        );
       })
       .sort((a, b) => {
         const dateA = new Date(a.completedDate).getTime();
@@ -642,31 +695,37 @@ export class MemStorage implements IStorage {
         return dateA - dateB; // Ordenar por data de conclusão, mais antiga primeiro
       });
   }
-  
+
   async getMissedTasksForPeriod(
     userId: number,
     startDate: Date,
     endDate: Date
-  ): Promise<{task: HouseholdTask, missedDates: Date[]}[]> {
+  ): Promise<{ task: HouseholdTask; missedDates: Date[] }[]> {
     // Obter tarefas do usuário
     const userTasks = await this.getUserHouseholdTasks(userId);
-    const result: {task: HouseholdTask, missedDates: Date[]}[] = [];
-    
+    const result: { task: HouseholdTask; missedDates: Date[] }[] = [];
+
     // Para cada tarefa, verificar histórico de não conclusões no período
     for (const task of userTasks) {
-      const history = await this.getTaskCompletionHistoryForPeriod(task.id, startDate, endDate);
-      
+      const history = await this.getTaskCompletionHistoryForPeriod(
+        task.id,
+        startDate,
+        endDate
+      );
+
       // Filtrar por registros marcados como não concluídos
-      const missedRecords = history.filter(record => !record.isCompleted);
+      const missedRecords = history.filter((record) => !record.isCompleted);
       if (missedRecords.length > 0) {
-        const missedDates = missedRecords.map(record => new Date(record.completedDate));
+        const missedDates = missedRecords.map(
+          (record) => new Date(record.completedDate)
+        );
         result.push({
           task,
-          missedDates
+          missedDates,
         });
       }
     }
-    
+
     return result;
   }
 
@@ -732,11 +791,14 @@ export class MemStorage implements IStorage {
       ...insertNotification,
       id,
       createdAt: new Date(),
+      referenceType: insertNotification.referenceType ?? null,
+      referenceId: insertNotification.referenceId ?? null,
+      isRead: insertNotification.isRead ?? null,
+      metadata: insertNotification.metadata ?? null,
     };
     this.notificationsMap.set(id, notification);
     return notification;
   }
-
   async getUserNotifications(userId: number): Promise<Notification[]> {
     const notifications = Array.from(this.notificationsMap.values()).filter(
       (notification) => notification.userId === userId
@@ -778,11 +840,11 @@ export class MemStorage implements IStorage {
       sent: false,
       createdAt: new Date(),
       reminderTime: insertReminder.reminderTime,
+      message: insertReminder.message || null,
     };
     this.eventRemindersMap.set(id, reminder);
     return reminder;
   }
-
   async getEventReminders(eventId: number): Promise<EventReminder[]> {
     return Array.from(this.eventRemindersMap.values())
       .filter((reminder) => reminder.eventId === eventId)
@@ -859,7 +921,9 @@ export class MemStorage implements IStorage {
     return {
       ...newReminder,
       reminderDate: newReminder.reminderDate.toISOString(),
-      createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
+      createdAt: newReminder.createdAt
+        ? newReminder.createdAt.toISOString()
+        : null,
     };
   }
 
@@ -911,9 +975,7 @@ export class MemStorage implements IStorage {
     }));
   }
 
-  async markTaskReminderAsSent(
-    id: number
-  ): Promise<TaskReminder | undefined> {
+  async markTaskReminderAsSent(id: number): Promise<TaskReminder | undefined> {
     const reminder = this.taskRemindersMap.get(id);
     if (!reminder) return undefined;
 
@@ -927,84 +989,97 @@ export class MemStorage implements IStorage {
   }
 
   // Relationship Insights implementation
-  private relationshipInsightsMap: Map<number, RelationshipInsight>;
-  private relationshipInsightIdCounter: number;
 
-  async createRelationshipInsight(insight: InsertRelationshipInsight): Promise<RelationshipInsight> {
+  async createRelationshipInsight(
+    insight: InsertRelationshipInsight
+  ): Promise<RelationshipInsight> {
     const id = ++this.relationshipInsightIdCounter;
     const now = new Date();
-    
+
     const newInsight: RelationshipInsight = {
       id,
       userId: insight.userId,
       partnerId: insight.partnerId,
       insightType: insight.insightType,
-      title: insight.title,
-      content: insight.content,
-      sentiment: insight.sentiment,
-      score: insight.score,
+      title: insight.title || "",
+      content: insight.content || "",
       actions: insight.actions,
       rawData: insight.rawData,
       metadata: insight.metadata,
       userRead: false,
       partnerRead: false,
       createdAt: now,
-      expiresAt: insight.expiresAt || null
+      expiresAt: insight.expiresAt || null,
+      sentiment: insight.sentiment || "",
+      score: insight.score || 0,
     };
-    
+
     this.relationshipInsightsMap.set(id, newInsight);
     return newInsight;
   }
 
-  async getRelationshipInsight(id: number): Promise<RelationshipInsight | undefined> {
+  async getRelationshipInsight(
+    id: number
+  ): Promise<RelationshipInsight | undefined> {
     return this.relationshipInsightsMap.get(id);
   }
 
-  async getUserRelationshipInsights(userId: number): Promise<RelationshipInsight[]> {
+  async getUserRelationshipInsights(
+    userId: number
+  ): Promise<RelationshipInsight[]> {
     const now = new Date();
     return Array.from(this.relationshipInsightsMap.values())
       .filter(
-        insight => 
-          (insight.userId === userId || insight.partnerId === userId) && 
+        (insight) =>
+          (insight.userId === userId || insight.partnerId === userId) &&
           (!insight.expiresAt || insight.expiresAt > now)
       )
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async getPartnerRelationshipInsights(userId: number, partnerId: number): Promise<RelationshipInsight[]> {
+  async getPartnerRelationshipInsights(
+    userId: number,
+    partnerId: number
+  ): Promise<RelationshipInsight[]> {
     const now = new Date();
     return Array.from(this.relationshipInsightsMap.values())
       .filter(
-        insight => 
-          ((insight.userId === userId && insight.partnerId === partnerId) || 
-           (insight.userId === partnerId && insight.partnerId === userId)) && 
+        (insight) =>
+          ((insight.userId === userId && insight.partnerId === partnerId) ||
+            (insight.userId === partnerId && insight.partnerId === userId)) &&
           (!insight.expiresAt || insight.expiresAt > now)
       )
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async updateRelationshipInsight(id: number, updates: Partial<RelationshipInsight>): Promise<RelationshipInsight | undefined> {
+  async updateRelationshipInsight(
+    id: number,
+    updates: Partial<RelationshipInsight>
+  ): Promise<RelationshipInsight | undefined> {
     const insight = this.relationshipInsightsMap.get(id);
     if (!insight) return undefined;
-    
-    const updatedInsight = { 
+
+    const updatedInsight = {
       ...insight,
-      ...updates
+      ...updates,
     };
-    
+
     this.relationshipInsightsMap.set(id, updatedInsight);
     return updatedInsight;
   }
 
-  async markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined> {
+  async markInsightAsRead(
+    id: number,
+    isUser: boolean
+  ): Promise<RelationshipInsight | undefined> {
     const insight = this.relationshipInsightsMap.get(id);
     if (!insight) return undefined;
-    
-    const updatedInsight = { 
-      ...insight, 
-      ...(isUser ? { userRead: true } : { partnerRead: true })
+
+    const updatedInsight = {
+      ...insight,
+      ...(isUser ? { userRead: true } : { partnerRead: true }),
     };
-    
+
     this.relationshipInsightsMap.set(id, updatedInsight);
     return updatedInsight;
   }
@@ -1014,10 +1089,12 @@ export class MemStorage implements IStorage {
   }
 
   // Relationship Tips methods
-  async createRelationshipTip(tip: InsertRelationshipTip): Promise<RelationshipTip> {
+  async createRelationshipTip(
+    tip: InsertRelationshipTip
+  ): Promise<RelationshipTip> {
     const id = ++this.relationshipTipIdCounter;
     const now = new Date();
-    
+
     const newTip: RelationshipTip = {
       id,
       userId: tip.userId,
@@ -1028,9 +1105,9 @@ export class MemStorage implements IStorage {
       actionItems: tip.actionItems,
       saved: tip.saved || false,
       customData: tip.customData || null,
-      createdAt: now
+      createdAt: now,
     };
-    
+
     this.relationshipTipsMap.set(id, newTip);
     return newTip;
   }
@@ -1041,7 +1118,7 @@ export class MemStorage implements IStorage {
 
   async getUserRelationshipTips(userId: number): Promise<RelationshipTip[]> {
     return Array.from(this.relationshipTipsMap.values())
-      .filter(tip => tip.userId === userId)
+      .filter((tip) => tip.userId === userId)
       .sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -1049,11 +1126,15 @@ export class MemStorage implements IStorage {
       });
   }
 
-  async getPartnerRelationshipTips(userId: number, partnerId: number): Promise<RelationshipTip[]> {
+  async getPartnerRelationshipTips(
+    userId: number,
+    partnerId: number
+  ): Promise<RelationshipTip[]> {
     return Array.from(this.relationshipTipsMap.values())
-      .filter(tip => 
-        (tip.userId === userId && tip.partnerId === partnerId) || 
-        (tip.userId === partnerId && tip.partnerId === userId)
+      .filter(
+        (tip) =>
+          (tip.userId === userId && tip.partnerId === partnerId) ||
+          (tip.userId === partnerId && tip.partnerId === userId)
       )
       .sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -1064,9 +1145,10 @@ export class MemStorage implements IStorage {
 
   async getSavedRelationshipTips(userId: number): Promise<RelationshipTip[]> {
     return Array.from(this.relationshipTipsMap.values())
-      .filter(tip => 
-        (tip.userId === userId || tip.partnerId === userId) && 
-        tip.saved === true
+      .filter(
+        (tip) =>
+          (tip.userId === userId || tip.partnerId === userId) &&
+          tip.saved === true
       )
       .sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -1075,15 +1157,18 @@ export class MemStorage implements IStorage {
       });
   }
 
-  async updateRelationshipTip(id: number, updates: Partial<RelationshipTip>): Promise<RelationshipTip | undefined> {
+  async updateRelationshipTip(
+    id: number,
+    updates: Partial<RelationshipTip>
+  ): Promise<RelationshipTip | undefined> {
     const tip = this.relationshipTipsMap.get(id);
     if (!tip) return undefined;
-    
-    const updatedTip = { 
+
+    const updatedTip = {
       ...tip,
-      ...updates
+      ...updates,
     };
-    
+
     this.relationshipTipsMap.set(id, updatedTip);
     return updatedTip;
   }
@@ -1093,82 +1178,102 @@ export class MemStorage implements IStorage {
   }
 
   // Métodos para obter dados recentes para gerar dicas
-  async getRecentHouseholdTasks(userId: number, partnerId: number, days: number): Promise<HouseholdTask[]> {
+  async getRecentHouseholdTasks(
+    userId: number,
+    partnerId: number,
+    days: number
+  ): Promise<HouseholdTask[]> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    
+
     return Array.from(this.householdTasksMap.values())
-      .filter(task => {
+      .filter((task) => {
         // Filtrar tarefas do usuário ou do parceiro
-        const isRelevantTask = task.createdBy === userId || task.createdBy === partnerId ||
-                               task.assignedTo === userId || task.assignedTo === partnerId;
-        
+        const isRelevantTask =
+          task.createdBy === userId ||
+          task.createdBy === partnerId ||
+          task.assignedTo === userId ||
+          task.assignedTo === partnerId;
+
         // Verificar se a tarefa foi criada ou completada nos últimos X dias
         const taskCreatedAt = task.createdAt ? new Date(task.createdAt) : null;
-        const taskCompletedAt = task.completedAt ? new Date(task.completedAt) : null;
-        
-        const isRecentTask = (taskCreatedAt && taskCreatedAt >= startDate) ||
-                            (taskCompletedAt && taskCompletedAt >= startDate);
-        
+        const taskCompletedAt = task.completedAt
+          ? new Date(task.completedAt)
+          : null;
+
+        const isRecentTask =
+          (taskCreatedAt && taskCreatedAt >= startDate) ||
+          (taskCompletedAt && taskCompletedAt >= startDate);
+
         return isRelevantTask && isRecentTask;
       })
       .sort((a, b) => {
         // Ordenar por data de conclusão ou criação (mais recente primeiro)
-        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 
-                     (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 
-                     (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+        const dateA = a.completedAt
+          ? new Date(a.completedAt).getTime()
+          : a.createdAt
+            ? new Date(a.createdAt).getTime()
+            : 0;
+        const dateB = b.completedAt
+          ? new Date(b.completedAt).getTime()
+          : b.createdAt
+            ? new Date(b.createdAt).getTime()
+            : 0;
         return dateB - dateA;
       });
   }
 
-  async getRecentEvents(userId: number, partnerId: number, days: number): Promise<Event[]> {
+  async getRecentEvents(
+    userId: number,
+    partnerId: number,
+    days: number
+  ): Promise<Event[]> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    
+
     // Obter eventos criados pelo usuário ou pelo parceiro
-    const userEvents = Array.from(this.eventsMap.values())
-      .filter(event => {
-        // Filtrar eventos do usuário ou do parceiro
-        const isRelevantEvent = event.createdBy === userId || event.createdBy === partnerId;
-        
-        // Verificar se o evento está nos últimos X dias (data do evento)
-        const eventDate = new Date(event.date);
-        const isRecentEvent = eventDate >= startDate && eventDate <= new Date();
-        
-        return isRelevantEvent && isRecentEvent;
-      });
-    
+    const userEvents = Array.from(this.eventsMap.values()).filter((event) => {
+      // Filtrar eventos do usuário ou do parceiro
+      const isRelevantEvent =
+        event.createdBy === userId || event.createdBy === partnerId;
+
+      // Verificar se o evento está nos últimos X dias (data do evento)
+      const eventDate = new Date(event.date);
+      const isRecentEvent = eventDate >= startDate && eventDate <= new Date();
+
+      return isRelevantEvent && isRecentEvent;
+    });
+
     // Obter eventos compartilhados com o usuário ou com o parceiro
     const sharedEventIds = Array.from(this.eventSharesMap.values())
-      .filter(share => share.userId === userId || share.userId === partnerId)
-      .map(share => share.eventId);
-    
-    const sharedEvents = Array.from(this.eventsMap.values())
-      .filter(event => {
-        // Filtrar eventos compartilhados
-        const isSharedEvent = sharedEventIds.includes(event.id);
-        
-        // Verificar se o evento está nos últimos X dias
-        const eventDate = new Date(event.date);
-        const isRecentEvent = eventDate >= startDate && eventDate <= new Date();
-        
-        return isSharedEvent && isRecentEvent;
-      });
-    
+      .filter((share) => share.userId === userId || share.userId === partnerId)
+      .map((share) => share.eventId);
+
+    const sharedEvents = Array.from(this.eventsMap.values()).filter((event) => {
+      // Filtrar eventos compartilhados
+      const isSharedEvent = sharedEventIds.includes(event.id);
+
+      // Verificar se o evento está nos últimos X dias
+      const eventDate = new Date(event.date);
+      const isRecentEvent = eventDate >= startDate && eventDate <= new Date();
+
+      return isSharedEvent && isRecentEvent;
+    });
+
     // Combinar e ordenar por data (mais recente primeiro)
-    return [...userEvents, ...sharedEvents]
-      .sort((a, b) => {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return dateB - dateA;
-      });
+    return [...userEvents, ...sharedEvents].sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA;
+    });
   }
 }
 
 export class DatabaseStorage implements IStorage {
   // Implementação dos métodos de histórico de conclusão de tarefas
-  async addTaskCompletionRecord(record: InsertTaskCompletionHistory): Promise<TaskCompletionHistory> {
+  async addTaskCompletionRecord(
+    record: InsertTaskCompletionHistory
+  ): Promise<TaskCompletionHistory> {
     try {
       const [newRecord] = await db
         .insert(taskCompletionHistory)
@@ -1177,45 +1282,56 @@ export class DatabaseStorage implements IStorage {
           userId: record.userId,
           completedDate: record.completedDate,
           expectedDate: record.expectedDate || null,
-          isCompleted: record.isCompleted !== undefined ? record.isCompleted : true,
+          isCompleted:
+            record.isCompleted !== undefined ? record.isCompleted : true,
         })
         .returning();
-        
+
       return {
         ...newRecord,
         completedDate: formatDateSafely(newRecord.completedDate),
-        expectedDate: newRecord.expectedDate ? formatDateSafely(newRecord.expectedDate) : null,
-        createdAt: newRecord.createdAt ? formatDateSafely(newRecord.createdAt) : null,
+        expectedDate: newRecord.expectedDate
+          ? formatDateSafely(newRecord.expectedDate)
+          : null,
+        createdAt: newRecord.createdAt
+          ? formatDateSafely(newRecord.createdAt)
+          : null,
       };
     } catch (error) {
       console.error("Erro ao adicionar registro de conclusão:", error);
       throw error;
     }
   }
-  
-  async getTaskCompletionHistory(taskId: number): Promise<TaskCompletionHistory[]> {
+
+  async getTaskCompletionHistory(
+    taskId: number
+  ): Promise<TaskCompletionHistory[]> {
     try {
       const results = await db
         .select()
         .from(taskCompletionHistory)
         .where(eq(taskCompletionHistory.taskId, taskId))
         .orderBy(desc(taskCompletionHistory.completedDate));
-        
-      return results.map(record => ({
+
+      return results.map((record) => ({
         ...record,
-        completedDate: formatDateSafely(record.completedDate),
-        expectedDate: record.expectedDate ? formatDateSafely(record.expectedDate) : null,
+        completedDate: record.completedDate
+          ? formatDateSafely(record.completedDate)
+          : formatDateSafely(new Date()),
+        expectedDate: record.expectedDate
+          ? formatDateSafely(record.expectedDate)
+          : null,
         createdAt: record.createdAt ? formatDateSafely(record.createdAt) : null,
-      }));
+      })) as TaskCompletionHistory[];
     } catch (error) {
       console.error("Erro ao obter histórico de conclusão:", error);
       return [];
     }
   }
-  
+
   async getTaskCompletionHistoryForPeriod(
-    taskId: number, 
-    startDate: Date, 
+    taskId: number,
+    startDate: Date,
     endDate: Date
   ): Promise<TaskCompletionHistory[]> {
     try {
@@ -1231,44 +1347,55 @@ export class DatabaseStorage implements IStorage {
           )
         )
         .orderBy(taskCompletionHistory.completedDate);
-        
-      return results.map(record => ({
+
+      return results.map((record) => ({
         ...record,
         completedDate: formatDateSafely(record.completedDate),
-        expectedDate: record.expectedDate ? formatDateSafely(record.expectedDate) : null,
+        expectedDate: record.expectedDate
+          ? formatDateSafely(record.expectedDate)
+          : null,
         createdAt: record.createdAt ? formatDateSafely(record.createdAt) : null,
       }));
     } catch (error) {
-      console.error("Erro ao obter histórico de conclusão para o período:", error);
+      console.error(
+        "Erro ao obter histórico de conclusão para o período:",
+        error
+      );
       return [];
     }
   }
-  
+
   async getMissedTasksForPeriod(
     userId: number,
     startDate: Date,
     endDate: Date
-  ): Promise<{task: HouseholdTask, missedDates: Date[]}[]> {
+  ): Promise<{ task: HouseholdTask; missedDates: Date[] }[]> {
     try {
       // Obter tarefas do usuário
       const userTasks = await this.getUserHouseholdTasks(userId);
-      const result: {task: HouseholdTask, missedDates: Date[]}[] = [];
-      
+      const result: { task: HouseholdTask; missedDates: Date[] }[] = [];
+
       // Para cada tarefa, buscar histórico de não conclusões no período
       for (const task of userTasks) {
-        const history = await this.getTaskCompletionHistoryForPeriod(task.id, startDate, endDate);
-        
+        const history = await this.getTaskCompletionHistoryForPeriod(
+          task.id,
+          startDate,
+          endDate
+        );
+
         // Filtrar por registros marcados como não concluídos
-        const missedRecords = history.filter(record => !record.isCompleted);
+        const missedRecords = history.filter((record) => !record.isCompleted);
         if (missedRecords.length > 0) {
-          const missedDates = missedRecords.map(record => new Date(record.completedDate));
+          const missedDates = missedRecords.map(
+            (record) => new Date(record.completedDate)
+          );
           result.push({
             task,
-            missedDates
+            missedDates,
           });
         }
       }
-      
+
       return result;
     } catch (error) {
       console.error("Erro ao obter tarefas não concluídas:", error);
@@ -1466,7 +1593,9 @@ export class DatabaseStorage implements IStorage {
     return {
       ...newReminder,
       reminderTime: newReminder.reminderTime.toISOString(),
-      createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
+      createdAt: newReminder.createdAt
+        ? newReminder.createdAt.toISOString()
+        : null,
     };
   }
 
@@ -1557,7 +1686,9 @@ export class DatabaseStorage implements IStorage {
     return {
       ...newReminder,
       reminderDate: newReminder.reminderDate.toISOString(),
-      createdAt: newReminder.createdAt ? newReminder.createdAt.toISOString() : null,
+      createdAt: newReminder.createdAt
+        ? newReminder.createdAt.toISOString()
+        : null,
     };
   }
 
@@ -1609,9 +1740,7 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async markTaskReminderAsSent(
-    id: number
-  ): Promise<TaskReminder | undefined> {
+  async markTaskReminderAsSent(id: number): Promise<TaskReminder | undefined> {
     const [reminder] = await db
       .update(taskReminders)
       .set({ sent: true })
@@ -1674,7 +1803,12 @@ export class DatabaseStorage implements IStorage {
   ): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
-      .set(updates)
+      .set({
+        ...updates,
+        createdAt: updates.createdAt
+          ? new Date(updates.createdAt)
+          : updates.createdAt,
+      })
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
@@ -2343,12 +2477,15 @@ export class DatabaseStorage implements IStorage {
         endOfDay.setHours(23, 59, 59, 999);
 
         // Add date filter condition
-        query = query.where(
-          and(
-            householdTasks.dueDate >= startOfDay,
-            householdTasks.dueDate <= endOfDay
-          )
-        );
+        query = db
+          .select()
+          .from(householdTasks)
+          .where(
+            and(
+              sql`${householdTasks.dueDate} >= ${sql.param(startOfDay)}`,
+              sql`${householdTasks.dueDate} <= ${sql.param(endOfDay)}`
+            )
+          );
       }
 
       const tasks = await query;
@@ -2487,13 +2624,13 @@ export class DatabaseStorage implements IStorage {
 
       // Objeto com os campos a serem atualizados
       const updateData: any = { completed };
-      
+
       // Registrar data de conclusão
       if (completed) {
         // Registra a data atual como momento da conclusão
         const completionDate = new Date();
         updateData.completedAt = completionDate;
-        
+
         // Registrar no histórico de conclusão se tiver userId
         if (userId) {
           try {
@@ -2502,7 +2639,7 @@ export class DatabaseStorage implements IStorage {
               userId: userId,
               completedDate: completionDate,
               expectedDate: task.dueDate,
-              isCompleted: true
+              isCompleted: true,
             };
             await this.addTaskCompletionRecord(completionRecord);
             console.log("Registro de conclusão adicionado:", completionRecord);
@@ -2511,27 +2648,36 @@ export class DatabaseStorage implements IStorage {
             // Continuar mesmo se falhar o registro no histórico
           }
         }
-        
+
         // Caso seja uma tarefa recorrente
-        if (task.frequency && task.frequency !== "once" && task.frequency !== "never") {
+        if (
+          task.frequency &&
+          task.frequency !== "once" &&
+          task.frequency !== "never"
+        ) {
           // Criar as opções de recorrência para usar o serviço unificado
           const options: RecurrenceOptions = {
             frequency: task.frequency as RecurrenceFrequency,
             startDate: completionDate,
-            weekdays: task.weekdays ? task.weekdays.split(',').map(day => parseInt(day)) : undefined,
-            monthDay: task.monthDay || undefined
+            weekdays: task.weekdays
+              ? task.weekdays.split(",").map((day) => parseInt(day))
+              : undefined,
+            monthDay: task.monthDay || undefined,
           };
-          
+
           // Usar o UnifiedRecurrenceService para calcular a próxima data de vencimento
-          const nextDueDate = UnifiedRecurrenceService.calculateNextDate(completionDate, options);
-          
+          const nextDueDate = UnifiedRecurrenceService.calculateNextDate(
+            completionDate,
+            options
+          );
+
           if (nextDueDate) {
             updateData.nextDueDate = nextDueDate;
             console.log("Próxima data de vencimento calculada:", {
               taskId: id,
               frequency: task.frequency,
               options,
-              nextDueDate: nextDueDate.toISOString()
+              nextDueDate: nextDueDate.toISOString(),
             });
           }
         }
@@ -2543,7 +2689,7 @@ export class DatabaseStorage implements IStorage {
         updateData.nextDueDate = null;
         // Limpar a data de conclusão
         updateData.completedAt = null;
-        
+
         // Registrar desmarcação no histórico se tiver userId
         if (userId && task.completed) {
           try {
@@ -2552,10 +2698,13 @@ export class DatabaseStorage implements IStorage {
               userId: userId,
               completedDate: new Date(),
               expectedDate: task.dueDate,
-              isCompleted: false
+              isCompleted: false,
             };
             await this.addTaskCompletionRecord(completionRecord);
-            console.log("Registro de desmarcação adicionado:", completionRecord);
+            console.log(
+              "Registro de desmarcação adicionado:",
+              completionRecord
+            );
           } catch (error) {
             console.error("Erro ao registrar histórico de desmarcação:", error);
             // Continuar mesmo se falhar o registro no histórico
@@ -2822,11 +2971,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Relationship Insights methods
-  async createRelationshipInsight(insight: InsertRelationshipInsight): Promise<RelationshipInsight> {
+  async createRelationshipInsight(
+    insight: InsertRelationshipInsight
+  ): Promise<RelationshipInsight> {
     try {
       // Use current date for createdAt if not provided
       const now = new Date();
-      
+
       const [newInsight] = await db
         .insert(relationshipInsights)
         .values({
@@ -2843,14 +2994,14 @@ export class DatabaseStorage implements IStorage {
           userRead: false,
           partnerRead: false,
           createdAt: now,
-          expiresAt: insight.expiresAt || null
+          expiresAt: insight.expiresAt || null,
         })
         .returning();
 
       return {
         ...newInsight,
         createdAt: new Date(newInsight.createdAt),
-        expiresAt: newInsight.expiresAt ? new Date(newInsight.expiresAt) : null
+        expiresAt: newInsight.expiresAt ? new Date(newInsight.expiresAt) : null,
       };
     } catch (error) {
       console.error("Erro ao criar insight de relacionamento:", error);
@@ -2858,7 +3009,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getRelationshipInsight(id: number): Promise<RelationshipInsight | undefined> {
+  async getRelationshipInsight(
+    id: number
+  ): Promise<RelationshipInsight | undefined> {
     try {
       const insight = await db
         .select()
@@ -2872,16 +3025,24 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...insight[0],
-        createdAt: new Date(insight[0].createdAt),
-        expiresAt: insight[0].expiresAt ? new Date(insight[0].expiresAt) : null
+        createdAt:
+          insight[0].createdAt instanceof Date
+            ? insight[0].createdAt
+            : new Date(insight[0].createdAt),
+        expiresAt: insight[0].expiresAt
+          ? insight[0].expiresAt instanceof Date
+            ? insight[0].expiresAt
+            : new Date(insight[0].expiresAt)
+          : null,
       };
     } catch (error) {
       console.error("Erro ao obter insight de relacionamento:", error);
       return undefined;
     }
   }
-
-  async getUserRelationshipInsights(userId: number): Promise<RelationshipInsight[]> {
+  async getUserRelationshipInsights(
+    userId: number
+  ): Promise<RelationshipInsight[]> {
     try {
       const now = new Date();
       const insights = await db
@@ -2901,18 +3062,24 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(relationshipInsights.createdAt));
 
-      return insights.map(insight => ({
+      return insights.map((insight) => ({
         ...insight,
-        createdAt: new Date(insight.createdAt),
-        expiresAt: insight.expiresAt ? new Date(insight.expiresAt) : null
+        createdAt: insight.createdAt ? new Date(insight.createdAt) : null,
+        expiresAt: insight.expiresAt ? new Date(insight.expiresAt) : null,
       }));
     } catch (error) {
-      console.error("Erro ao obter insights de relacionamento do usuário:", error);
+      console.error(
+        "Erro ao obter insights de relacionamento do usuário:",
+        error
+      );
       return [];
     }
   }
 
-  async getPartnerRelationshipInsights(userId: number, partnerId: number): Promise<RelationshipInsight[]> {
+  async getPartnerRelationshipInsights(
+    userId: number,
+    partnerId: number
+  ): Promise<RelationshipInsight[]> {
     try {
       const now = new Date();
       const insights = await db
@@ -2938,18 +3105,24 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(relationshipInsights.createdAt));
 
-      return insights.map(insight => ({
+      return insights.map((insight) => ({
         ...insight,
-        createdAt: new Date(insight.createdAt),
-        expiresAt: insight.expiresAt ? new Date(insight.expiresAt) : null
+        createdAt: insight.createdAt ? new Date(insight.createdAt) : null,
+        expiresAt: insight.expiresAt ? new Date(insight.expiresAt) : null,
       }));
     } catch (error) {
-      console.error("Erro ao obter insights de relacionamento do casal:", error);
+      console.error(
+        "Erro ao obter insights de relacionamento do casal:",
+        error
+      );
       return [];
     }
   }
 
-  async updateRelationshipInsight(id: number, updates: Partial<RelationshipInsight>): Promise<RelationshipInsight | undefined> {
+  async updateRelationshipInsight(
+    id: number,
+    updates: Partial<RelationshipInsight>
+  ): Promise<RelationshipInsight | undefined> {
     try {
       const [updatedInsight] = await db
         .update(relationshipInsights)
@@ -2963,8 +3136,12 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...updatedInsight,
-        createdAt: new Date(updatedInsight.createdAt),
-        expiresAt: updatedInsight.expiresAt ? new Date(updatedInsight.expiresAt) : null
+        createdAt: updatedInsight.createdAt
+          ? new Date(updatedInsight.createdAt)
+          : null,
+        expiresAt: updatedInsight.expiresAt
+          ? new Date(updatedInsight.expiresAt)
+          : null,
       };
     } catch (error) {
       console.error("Erro ao atualizar insight de relacionamento:", error);
@@ -2972,7 +3149,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async markInsightAsRead(id: number, isUser: boolean): Promise<RelationshipInsight | undefined> {
+  async markInsightAsRead(
+    id: number,
+    isUser: boolean
+  ): Promise<RelationshipInsight | undefined> {
     try {
       const [updatedInsight] = await db
         .update(relationshipInsights)
@@ -2986,15 +3166,19 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...updatedInsight,
-        createdAt: new Date(updatedInsight.createdAt),
-        expiresAt: updatedInsight.expiresAt ? new Date(updatedInsight.expiresAt) : null
+        createdAt: updatedInsight.createdAt
+          ? new Date(updatedInsight.createdAt)
+          : null,
+        expiresAt:
+          updatedInsight.expiresAt instanceof Date
+            ? new Date(updatedInsight.expiresAt)
+            : updatedInsight.expiresAt,
       };
     } catch (error) {
       console.error("Erro ao marcar insight como lido:", error);
       return undefined;
     }
   }
-
   async deleteRelationshipInsight(id: number): Promise<boolean> {
     try {
       await db
@@ -3008,11 +3192,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Relationship Tips methods
-  async createRelationshipTip(tip: InsertRelationshipTip): Promise<RelationshipTip> {
+  async createRelationshipTip(
+    tip: InsertRelationshipTip
+  ): Promise<RelationshipTip> {
     try {
       // Use current date for createdAt if not provided
       const now = new Date();
-      
+
       const [newTip] = await db
         .insert(relationshipTips)
         .values({
@@ -3024,13 +3210,13 @@ export class DatabaseStorage implements IStorage {
           actionItems: tip.actionItems,
           saved: tip.saved || false,
           customData: tip.customData || null,
-          createdAt: now
+          createdAt: now,
         })
         .returning();
-      
+
       return {
         ...newTip,
-        createdAt: newTip.createdAt ? formatDateSafely(newTip.createdAt) : null
+        createdAt: newTip.createdAt ? formatDateSafely(newTip.createdAt) : null,
       };
     } catch (error) {
       console.error("Erro ao criar dica de relacionamento:", error);
@@ -3045,12 +3231,12 @@ export class DatabaseStorage implements IStorage {
         .from(relationshipTips)
         .where(eq(relationshipTips.id, id))
         .limit(1);
-      
+
       if (!tip) return undefined;
-      
+
       return {
         ...tip,
-        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null,
       };
     } catch (error) {
       console.error("Erro ao buscar dica de relacionamento:", error);
@@ -3065,18 +3251,24 @@ export class DatabaseStorage implements IStorage {
         .from(relationshipTips)
         .where(eq(relationshipTips.userId, userId))
         .orderBy(desc(relationshipTips.createdAt));
-      
-      return tips.map(tip => ({
+
+      return tips.map((tip) => ({
         ...tip,
-        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null,
       }));
     } catch (error) {
-      console.error("Erro ao buscar dicas de relacionamento do usuário:", error);
+      console.error(
+        "Erro ao buscar dicas de relacionamento do usuário:",
+        error
+      );
       return [];
     }
   }
 
-  async getPartnerRelationshipTips(userId: number, partnerId: number): Promise<RelationshipTip[]> {
+  async getPartnerRelationshipTips(
+    userId: number,
+    partnerId: number
+  ): Promise<RelationshipTip[]> {
     try {
       const tips = await db
         .select()
@@ -3094,10 +3286,10 @@ export class DatabaseStorage implements IStorage {
           )
         )
         .orderBy(desc(relationshipTips.createdAt));
-      
-      return tips.map(tip => ({
+
+      return tips.map((tip) => ({
         ...tip,
-        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null,
       }));
     } catch (error) {
       console.error("Erro ao buscar dicas de relacionamento do casal:", error);
@@ -3120,10 +3312,10 @@ export class DatabaseStorage implements IStorage {
           )
         )
         .orderBy(desc(relationshipTips.createdAt));
-      
-      return tips.map(tip => ({
+
+      return tips.map((tip) => ({
         ...tip,
-        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null
+        createdAt: tip.createdAt ? formatDateSafely(tip.createdAt) : null,
       }));
     } catch (error) {
       console.error("Erro ao buscar dicas de relacionamento salvas:", error);
@@ -3131,19 +3323,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateRelationshipTip(id: number, updates: Partial<RelationshipTip>): Promise<RelationshipTip | undefined> {
+  async updateRelationshipTip(
+    id: number,
+    updates: Partial<RelationshipTip>
+  ): Promise<RelationshipTip | undefined> {
     try {
       const [updatedTip] = await db
         .update(relationshipTips)
         .set(updates)
         .where(eq(relationshipTips.id, id))
         .returning();
-      
+
       if (!updatedTip) return undefined;
-      
+
       return {
         ...updatedTip,
-        createdAt: updatedTip.createdAt ? formatDateSafely(updatedTip.createdAt) : null
+        createdAt: updatedTip.createdAt
+          ? formatDateSafely(updatedTip.createdAt)
+          : null,
       };
     } catch (error) {
       console.error("Erro ao atualizar dica de relacionamento:", error);
@@ -3153,9 +3350,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRelationshipTip(id: number): Promise<boolean> {
     try {
-      await db
-        .delete(relationshipTips)
-        .where(eq(relationshipTips.id, id));
+      await db.delete(relationshipTips).where(eq(relationshipTips.id, id));
       return true;
     } catch (error) {
       console.error("Erro ao excluir dica de relacionamento:", error);
@@ -3163,11 +3358,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getRecentHouseholdTasks(userId: number, partnerId: number, days: number): Promise<HouseholdTask[]> {
+  async getRecentHouseholdTasks(
+    userId: number,
+    partnerId: number,
+    days: number
+  ): Promise<HouseholdTask[]> {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      
+
       // Buscar tarefas recentes criadas ou atribuídas ao usuário ou parceiro
       const tasks = await db
         .select()
@@ -3188,80 +3387,86 @@ export class DatabaseStorage implements IStorage {
             )
           )
         )
-        .orderBy(desc(householdTasks.completedAt), desc(householdTasks.createdAt));
-      
-      return tasks.map(task => ({
+        .orderBy(
+          desc(householdTasks.completedAt),
+          desc(householdTasks.createdAt)
+        );
+
+      return tasks.map((task) => ({
         ...task,
         dueDate: task.dueDate ? formatDateSafely(task.dueDate) : null,
-        nextDueDate: task.nextDueDate ? formatDateSafely(task.nextDueDate) : null,
+        nextDueDate: task.nextDueDate
+          ? formatDateSafely(task.nextDueDate)
+          : null,
         createdAt: task.createdAt ? formatDateSafely(task.createdAt) : null,
-        completedAt: task.completedAt ? formatDateSafely(task.completedAt) : null
+        completedAt: task.completedAt
+          ? formatDateSafely(task.completedAt)
+          : null,
       }));
-      
     } catch (error) {
       console.error("Erro ao buscar tarefas recentes:", error);
       return [];
     }
   }
 
-  async getRecentEvents(userId: number, partnerId: number, days: number): Promise<Event[]> {
+  async getRecentEvents(
+    userId: number,
+    partnerId: number,
+    days: number
+  ): Promise<Event[]> {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      
+
       // Buscar eventos dos últimos dias do usuário e do parceiro
       const userEvents = await db
         .select()
         .from(events)
         .where(
           and(
-            or(
-              eq(events.createdBy, userId),
-              eq(events.createdBy, partnerId)
-            ),
+            or(eq(events.createdBy, userId), eq(events.createdBy, partnerId)),
             sql`${events.date} >= ${startDate}`,
             sql`${events.date} <= ${new Date()}`
           )
         );
-      
+
       // Buscar IDs de eventos compartilhados com o usuário ou parceiro
       const sharedEventsSql = db
         .select({ eventId: eventShares.eventId })
         .from(eventShares)
         .where(
-          or(
-            eq(eventShares.userId, userId),
-            eq(eventShares.userId, partnerId)
-          )
+          or(eq(eventShares.userId, userId), eq(eventShares.userId, partnerId))
         );
-      
+
       // Buscar eventos compartilhados recentes
       const sharedEvents = await db
         .select()
         .from(events)
         .where(
           and(
-            inArray(events.id, sharedEventsSql.map(es => es.eventId)),
+            inArray(
+              events.id,
+              (await sharedEventsSql).map((es) => es.eventId)
+            ),
             sql`${events.date} >= ${startDate}`,
             sql`${events.date} <= ${new Date()}`
           )
         );
-      
+
       // Combinar resultados
       const allEvents = [...userEvents, ...sharedEvents];
-      
+
       // Formatar e retornar resultados
       return allEvents
-        .map(event => ({
+        .map((event) => ({
           ...event,
-          date: formatDateSafely(event.date)
+          date: formatDateSafely(event.date),
         }))
         .sort((a, b) => {
           const dateA = new Date(a.date).getTime();
           const dateB = new Date(b.date).getTime();
           return dateB - dateA;
         });
-      
     } catch (error) {
       console.error("Erro ao buscar eventos recentes:", error);
       return [];

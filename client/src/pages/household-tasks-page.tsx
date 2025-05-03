@@ -224,9 +224,7 @@ export default function HouseholdTasksPage() {
     queryKey: ["/api/tasks"],
   });
 
-  const { data: task = {}, isLoading: taskIsLoading } = useQuery<
-    HouseholdTaskType[]
-  >({
+  const { data: task, isLoading: taskIsLoading } = useQuery<HouseholdTaskType>({
     queryKey: ["task", taskId],
     queryFn: async () => {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -237,14 +235,14 @@ export default function HouseholdTasksPage() {
         throw new Error(`Erro ao buscar evento ${taskId}`);
       }
 
-      return response.json();
+      return response.json() as Promise<HouseholdTaskType>;
     },
     enabled: !!taskId, // Só executa se tiver um ID válido
   });
 
   useEffect(() => {
-    if (!taskIsLoading && task && taskId) {
-      setSelectedTask(task);
+    if (!taskIsLoading && task && task?.id && taskId) {
+      setSelectedTask(task ?? null);
     }
   }, [taskId, task]);
 
@@ -372,7 +370,6 @@ export default function HouseholdTasksPage() {
     // Filter by date if selected
     if (selectedDate) {
       filteredTasks = filteredTasks.filter((task) => {
-        console.log("task.dueDate", task.dueDate, selectedDate);
         if (!task.dueDate) return false;
         const eventDate = new Date(task.dueDate);
         const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];

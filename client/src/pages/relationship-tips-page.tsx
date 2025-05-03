@@ -14,7 +14,10 @@ export default function RelationshipTipsPage() {
   return (
     <>
       <Header />
-      <div className="container mx-auto p-4 w-full" style={{ paddingTop: 130 }}>
+      <div
+        className="container mx-auto p-4 w-full scroll-id"
+        style={{ paddingTop: 130 }}
+      >
         <header className="mb-8">
           <div className="flex items-center gap-3">
             <BookHeart className="h-8 w-8 text-pink-600" />
