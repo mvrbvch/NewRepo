@@ -4,6 +4,11 @@ import {
   RelationshipTipsService,
   TipCategory,
 } from "./relationshipTipsService";
+import {
+  sendPushToUser,
+  sendPushToDevice,
+  PushNotificationPayload,
+} from "./pushNotifications";
 
 const router = express.Router();
 const tipService = new RelationshipTipsService(storage);
@@ -142,15 +147,51 @@ router.post("/api/tips/:id/favorite", async (req, res) => {
     const tipId = parseInt(req.params.id);
 
     if (isNaN(tipId)) {
-      return res.status(400).json({ error: "ID de dica inválido" });
+      return res.status(400).json({ error: "ID da dica tá errado, confere aí!" });
+    }
+
+    const userId = (req.user as any).id;
+    const user = await storage.getUser(userId);
+
+    if (!user || !user.partnerId) {
+      return res.status(400).json({ error: "Você não tem um parceiro cadastrado!" });
     }
 
     const success = await tipService.saveTipToFavorites(tipId);
 
     if (!success) {
-      return res
-        .status(404)
-        .json({ error: "Dica não encontrada ou erro ao salvar" });
+      return res.status(404).json({ error: "Dica não encontrada ou deu ruim ao salvar!" });
+    }
+
+    // Buscar a dica favoritada para incluir o resumo na notificação
+    const tip = await storage.getRelationshipTip(tipId);
+
+    if (!tip) {
+      return res.status(404).json({ error: "Dica não encontrada!" });
+    }
+
+    // Enviar push notification ao parceiro
+    try {
+      const partner = await storage.getUser(user.partnerId);
+
+      if (partner) {
+        const pushPayload = {
+          title: "Olha só, novidade!",
+          body: `${user.name} favoritou uma dica: "${tip.title || tip.content.slice(0, 100)}..."`,
+          data: {
+            type: "favorite-tip",
+            tipId,
+          },
+        };
+
+        const sentCount = await sendPushToUser(partner.id, pushPayload);
+
+        console.log(
+          `Notificação enviada para ${partner.name}! Total de notificações: ${sentCount}`
+        );
+      }
+    } catch (pushError) {
+      console.error("Deu ruim ao enviar a notificação push:", pushError);
     }
 
     res.json({ success: true });

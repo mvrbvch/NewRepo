@@ -52,6 +52,10 @@ const registerSchema = z.object({
     .string()
     .min(6, "Uma senha com 6+ caracteres deixa tudo mais seguro! 🔒"),
   name: z.string().min(2, "Como vamos te chamar com menos de 2 letras? 😊"),
+  birthday: z
+    .string()
+    .date("Juro que é só pra nao deixar ninguem esquecer do seu dia "),
+
   email: z
     .string()
     .email("Hmm, esse email parece meio estranho... Confere pra gente?"),
@@ -62,6 +66,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
+  const [selectedDate, setSelectedDate] = useState<string | undefined>();
   const { loginMutation, registerMutation, user } = useAuth();
   const [, navigate] = useLocation();
   const [inviterName, setInviterName] = useState<string | null>(null);
@@ -111,6 +116,7 @@ export default function AuthPage() {
       name: "",
       email: "",
       phoneNumber: "",
+      birthday: "",
     },
   });
 
@@ -320,7 +326,28 @@ export default function AuthPage() {
                               <div className="relative">
                                 <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  placeholder="seunome"
+                                  placeholder="usuário"
+                                  className="pl-10"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="birthday"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Data de Nascimento</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  type="date"
+                                  placeholder="Selecione sua data de nascimento"
                                   className="pl-10"
                                   {...field}
                                 />

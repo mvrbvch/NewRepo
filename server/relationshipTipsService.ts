@@ -2,7 +2,6 @@ import OpenAI from "openai";
 import { IStorage } from "./storage";
 import { PerplexityService } from "./perplexityService";
 import { RelationshipTip as SchemaRelationshipTip } from "@shared/schema";
-
 // O modelo mais recente da OpenAI é "gpt-4o" que foi lançado em 13 de maio de 2024. Não altere isso a menos que explicitamente solicitado pelo usuário
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const perplexityService = new PerplexityService();
@@ -113,35 +112,6 @@ export class RelationshipTipsService {
         }
       }
 
-      // Se Perplexity falhar, tentar OpenAI
-      try {
-        console.log("Tentando gerar dica com OpenAI...");
-        const openAITip = await this.generateTipWithOpenAI(
-          user,
-          partner,
-          selectedCategory,
-          recentTasks,
-          recentEvents,
-          customPrompt,
-          contextData
-        );
-
-        if (openAITip) {
-          // Salvar a dica no banco de dados
-          const savedTip = await this.saveTip({
-            ...openAITip,
-            userId,
-            partnerId,
-            createdAt: new Date(),
-            saved: false,
-          });
-
-          return savedTip;
-        }
-      } catch (error) {
-        console.warn("Erro ao gerar dica com OpenAI:", error);
-      }
-
       // Se ambas as APIs falharem, gerar localmente
       console.log("Gerando dica localmente...");
       const localTip = this.generateLocalTip(user, partner, selectedCategory);
@@ -224,8 +194,20 @@ export class RelationshipTipsService {
     "id" | "userId" | "partnerId" | "createdAt" | "saved"
   > | null> {
     // Criar apelidos carinhosos para o casal
-    const userNickname = user.name;
-    const partnerNickname = partner.name;
+    const userNickname = await perplexityService.generateNicknameBasedOnName(
+      user.name
+    );
+    const partnerNickname = await perplexityService.generateNicknameBasedOnName(
+      partner.name
+    );
+
+    const getGender = (name: string) => {
+      const gender = perplexityService.getGender(name);
+      return gender;
+    };
+
+    const userGender = getGender(user.name);
+    const partnerGender = getGender(partner.name);
 
     const systemMessage =
       "Você é um amigo próximo do casal que dá conselhos práticos e divertidos de forma super informal e descontraída.";
@@ -239,10 +221,11 @@ export class RelationshipTipsService {
     const userMessage =
       customPrompt ||
       `
-Crie uma dica personalizada SUPER INFORMAL na categoria "${categoryInfo.title}" para este casal (Criar apelidos carinhosos para o casal).
+Crie uma dica personalizada SUPER INFORMAL na categoria "${categoryInfo.title}".
 
 Casal:
-- ${userNickname} e ${partnerNickname} (Criar apelidos carinhosos para o casal nas respostas)
+- ${user.name} é ${userNickname} e ${partner.name} é ${partnerNickname}
+- Gêneros: ${userNickname} é ${userGender} e ${partnerNickname} é ${partnerGender}
 
 Dados recentes de tarefas:
 ${tasksData}
@@ -254,18 +237,17 @@ ${contextData ? `Contexto adicional:\n${JSON.stringify(contextData)}\n` : ""}
 
 A dica deve ser:
 1. Bem informal e descontraída, como uma conversa entre amigos íntimos
-2. Específica para eles, USANDO OS APELIDOS (${userNickname} e ${partnerNickname}) na sua resposta
+2. Específica para eles
 3. Com linguagem casual, divertida e até gírias (como você falaria com amigos próximos)
 4. Positiva e motivadora, mas com tom de amigo e não de especialista
 5. Prática e direta, com sugestões simples que eles podem implementar facilmente
 
-Retorne sua dica em formato JSON com os seguintes campos:
-- title: um título curto, atrativo e informal (máximo 50 caracteres)
-- content: o texto principal da dica em tom descontraído, usando os apelidos dos dois
-- actionItems: um array com 2-3 ações práticas escritas em linguagem casual e divertida
-
-Não inclua explicações, apenas o objeto JSON.
-`;
+Retorne apenas um objeto JSON válido com os seguintes campos:
+{
+  "title": "título curto e atrativo (máx 50 caracteres)",
+  "content": "texto principal da dica",
+  "actionItems": ["ação 1", "ação 2", "ação 3"]
+}`;
 
     try {
       const response = await fetch(perplexityService.baseUrl, {
@@ -290,7 +272,6 @@ Não inclua explicações, apenas o objeto JSON.
           temperature: 0.7,
           top_p: 0.9,
           frequency_penalty: 0.5,
-          presence_penalty: 0.2,
           stream: false,
         }),
       });
@@ -315,15 +296,34 @@ Não inclua explicações, apenas o objeto JSON.
 
       // Limpar a resposta - remover blocos de código markdown se presentes
       let cleanedText = contentText;
+      // Remover blocos de código markdown (```json ... ```)
       if (cleanedText.includes("```")) {
+        // Obter texto entre os delimitadores de código
         const match = cleanedText.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (match && match[1]) {
           cleanedText = match[1].trim();
+          console.log("Texto limpo do markdown:", cleanedText);
+        } else {
+          console.warn(
+            "Não foi possível extrair o conteúdo JSON dos delimitadores de código markdown"
+          );
         }
       }
 
+      console.log("Texto limpo:", cleanedText);
+
       // Analisar o resultado da API
       const result = JSON.parse(cleanedText);
+
+      // Verificar se os campos obrigatórios estão presentes e não são nulos
+      if (
+        !result.title ||
+        !result.content ||
+        !Array.isArray(result.actionItems) ||
+        result.actionItems.length === 0
+      ) {
+        throw new Error("Resposta da API Perplexity incompleta ou inválida");
+      }
 
       return {
         title: result.title,
@@ -336,124 +336,30 @@ Não inclua explicações, apenas o objeto JSON.
       return null;
     }
   }
-
   /**
    * Gera uma dica usando a API OpenAI
    */
-  private async generateTipWithOpenAI(
-    user: any,
-    partner: any,
-    category: TipCategory,
-    recentTasks: any[],
-    recentEvents: any[],
-    customPrompt?: string,
-    contextData?: any
-  ): Promise<Omit<
-    RelationshipTip,
-    "id" | "userId" | "partnerId" | "createdAt" | "saved"
-  > | null> {
-    try {
-      // Criar apelidos carinhosos para o casal
-      const userNickname = user.name
-        ? `${user.name.split(" ")[0]}zinho`
-        : "Mozão";
-      const partnerNickname = partner.name
-        ? `${partner.name.split(" ")[0]}zinha`
-        : "Mozinha";
-
-      // Preparar dados para o prompt
-      const tasksData = this.formatTasksForPrompt(recentTasks);
-      const eventsData = this.formatEventsForPrompt(recentEvents);
-
-      const categoryInfo = this.getCategoryPrompt(category);
-
-      const prompt =
-        customPrompt ||
-        `
-Você é um amigo próximo do casal, dando conselhos divertidos e práticos de forma SUPER INFORMAL.
-
-Casal:
-- ${userNickname} e ${partnerNickname}  (Criar apelidos carinhosos para o casal)
-
-Dados recentes de tarefas:
-${tasksData}
-
-Eventos recentes:
-${eventsData}
-
-${contextData ? `Contexto adicional:\n${JSON.stringify(contextData)}\n` : ""}
-
-Crie uma dica personalizada super informal e descontraída na categoria "${categoryInfo.title}" para este casal.
-A dica deve ser:
-1. Bem informal e descontraída, como uma conversa entre amigos íntimos
-2. Específica para eles, USANDO OS APELIDOS (${userNickname} e ${partnerNickname}) na sua resposta
-3. Com linguagem casual, divertida e até gírias (como você falaria com amigos próximos)
-4. Positiva e motivadora, mas com tom de amigo e não de especialista
-5. Prática e direta, com sugestões simples que eles podem implementar facilmente
-
-Retorne sua dica em formato JSON com os seguintes campos:
-- title: um título curto, atrativo e informal (máximo 50 caracteres)
-- content: o texto principal da dica em tom descontraído, usando os apelidos dos dois
-- actionItems: um array com 2-3 ações práticas escritas em linguagem casual e divertida
-`;
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Você é um assistente especializado em relacionamentos, oferecendo dicas construtivas e práticas para casais.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        response_format: { type: "json_object" },
-      });
-
-      const responseContent = response.choices[0].message.content;
-      if (!responseContent) {
-        throw new Error("Resposta vazia da API OpenAI");
-      }
-
-      // Analisar o resultado da API
-      const result = JSON.parse(responseContent);
-
-      return {
-        title: result.title,
-        content: result.content,
-        category: category,
-        actionItems: result.actionItems,
-      };
-    } catch (error) {
-      console.error("Erro ao gerar dica com OpenAI:", error);
-      return null;
-    }
-  }
-
   /**
    * Gera uma dica localmente (sem APIs externas)
    */
-  private generateLocalTip(
+  private async generateLocalTip(
     user: any,
     partner: any,
     category: TipCategory
-  ): Omit<
-    RelationshipTip,
-    "id" | "userId" | "partnerId" | "createdAt" | "saved"
+  ): Promise<
+    Omit<RelationshipTip, "id" | "userId" | "partnerId" | "createdAt" | "saved">
   > {
     const categoryInfo = this.getCategoryPrompt(category);
     const tips = this.getLocalTipsByCategory(category);
 
     // Criar apelidos carinhosos para o casal
-    const userNickname = user.name
-      ? `${user.name.split(" ")[0]}zinho`
-      : "Mozão";
-    const partnerNickname = partner.name
-      ? `${partner.name.split(" ")[0]}zinha`
-      : "Mozinha";
+    const userNickname = await perplexityService.generateNicknameBasedOnName(
+      user.name
+    );
+
+    const partnerNickname = await perplexityService.generateNicknameBasedOnName(
+      partner.name
+    );
 
     // Selecionar uma dica aleatória da categoria
     const randomIndex = Math.floor(Math.random() * tips.length);
@@ -498,7 +404,7 @@ Retorne sua dica em formato JSON com os seguintes campos:
       const schemaCompatibleTip = {
         userId: tip.userId,
         partnerId: tip.partnerId,
-        category: tip.category.toString(),
+        category: tip.category || TipCategory.COMMUNICATION, // Valor padrão
         title: tip.title,
         content: tip.content,
         actionItems: JSON.stringify(tip.actionItems), // Converter array para JSON
@@ -583,6 +489,9 @@ Retorne sua dica em formato JSON com os seguintes campos:
    */
   private getRandomCategory(): TipCategory {
     const categories = Object.values(TipCategory);
+    if (categories.length === 0) {
+      return TipCategory.COMMUNICATION; // Valor padrão
+    }
     const randomIndex = Math.floor(Math.random() * categories.length);
     return categories[randomIndex];
   }

@@ -20,12 +20,12 @@ import {
   startOfWeek,
   endOfDay,
   isSameDay,
-  eachDayOfInterval
+  eachDayOfInterval,
 } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { Event, HouseholdTask } from "@shared/schema";
 
-export type RecurrenceFrequency = 
+export type RecurrenceFrequency =
   | "never"
   | "once"
   | "daily"
@@ -80,28 +80,28 @@ export class UnifiedRecurrenceService {
    * Ex: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"
    */
   static parseRecurrenceRule(
-    rule: string, 
+    rule: string,
     startDate: Date | string
   ): RecurrenceOptions | null {
     try {
-      const parts = rule.split(';');
+      const parts = rule.split(";");
       const ruleObj: Partial<RecurrenceRule> = {};
-      
-      parts.forEach(part => {
-        const [key, value] = part.split('=');
+
+      parts.forEach((part) => {
+        const [key, value] = part.split("=");
         if (key && value) {
-          ruleObj[key as keyof RecurrenceRule] = 
-            key === 'INTERVAL' || key === 'BYMONTHDAY' || key === 'COUNT' 
-              ? parseInt(value, 10) 
+          ruleObj[key as keyof RecurrenceRule] =
+            key === "INTERVAL" || key === "BYMONTHDAY" || key === "COUNT"
+              ? parseInt(value, 10)
               : value;
         }
       });
-      
+
       if (!ruleObj.FREQ) return null;
-      
+
       const frequency = this.mapRuleFrequencyToFrequency(ruleObj.FREQ);
       if (!frequency) return null;
-      
+
       const options: RecurrenceOptions = {
         frequency,
         interval: ruleObj.INTERVAL || 1,
@@ -109,17 +109,17 @@ export class UnifiedRecurrenceService {
         endDate: ruleObj.UNTIL || null,
         timezone: "UTC",
       };
-      
+
       // Adicionar dias da semana se especificados
       if (ruleObj.BYDAY) {
         options.weekdays = this.mapByDayToWeekdays(ruleObj.BYDAY);
       }
-      
+
       // Adicionar dia do mês se especificado
       if (ruleObj.BYMONTHDAY) {
         options.monthDay = ruleObj.BYMONTHDAY;
       }
-      
+
       return options;
     } catch (error) {
       console.error("Erro ao analisar regra de recorrência:", error);
@@ -134,95 +134,101 @@ export class UnifiedRecurrenceService {
     ruleFreq: string
   ): RecurrenceFrequency | null {
     const map: Record<string, RecurrenceFrequency> = {
-      'DAILY': 'daily',
-      'WEEKLY': 'weekly',
-      'MONTHLY': 'monthly',
-      'YEARLY': 'yearly'
+      DAILY: "daily",
+      WEEKLY: "weekly",
+      MONTHLY: "monthly",
+      YEARLY: "yearly",
     };
-    
+
     return map[ruleFreq] || null;
   }
-  
+
   /**
    * Mapeia string BYDAY para array de dias da semana
    * Ex: "MO,WE,FR" => [1, 3, 5]
    */
   private static mapByDayToWeekdays(byDay: string): number[] {
     const days: Record<string, number> = {
-      'SU': 0,
-      'MO': 1,
-      'TU': 2,
-      'WE': 3,
-      'TH': 4,
-      'FR': 5,
-      'SA': 6
+      SU: 0,
+      MO: 1,
+      TU: 2,
+      WE: 3,
+      TH: 4,
+      FR: 5,
+      SA: 6,
     };
-    
-    return byDay.split(',')
-      .map(d => days[d])
-      .filter(d => d !== undefined);
+
+    return byDay
+      .split(",")
+      .map((d) => days[d])
+      .filter((d) => d !== undefined);
   }
 
   /**
    * Converte frequência e opções para uma regra de recorrência no formato iCalendar
    */
   static buildRecurrenceRule(options: RecurrenceOptions): string {
-    if (options.frequency === 'never' || options.frequency === 'once') {
-      return '';
+    if (options.frequency === "never" || options.frequency === "once") {
+      return "";
     }
-    
+
     const parts: string[] = [];
-    
+
     // Mapear frequência
     const freqMap: Record<RecurrenceFrequency, string> = {
-      'daily': 'DAILY',
-      'weekly': 'WEEKLY',
-      'biweekly': 'WEEKLY', // Biweekly é weekly com intervalo 2
-      'monthly': 'MONTHLY',
-      'quarterly': 'MONTHLY', // Quarterly é monthly com intervalo 3
-      'yearly': 'YEARLY',
-      'custom': 'DAILY', // Default para custom
-      'never': '',
-      'once': ''
+      daily: "DAILY",
+      weekly: "WEEKLY",
+      biweekly: "WEEKLY", // Biweekly é weekly com intervalo 2
+      monthly: "MONTHLY",
+      quarterly: "MONTHLY", // Quarterly é monthly com intervalo 3
+      yearly: "YEARLY",
+      custom: "DAILY", // Default para custom
+      never: "",
+      once: "",
     };
-    
+
     parts.push(`FREQ=${freqMap[options.frequency]}`);
-    
+
     // Adicionar intervalo
-    if (options.interval || options.frequency === 'biweekly' || options.frequency === 'quarterly') {
+    if (
+      options.interval ||
+      options.frequency === "biweekly" ||
+      options.frequency === "quarterly"
+    ) {
       let interval = options.interval || 1;
-      
+
       // Casos especiais
-      if (options.frequency === 'biweekly') interval = 2;
-      if (options.frequency === 'quarterly') interval = 3;
-      
+      if (options.frequency === "biweekly") interval = 2;
+      if (options.frequency === "quarterly") interval = 3;
+
       parts.push(`INTERVAL=${interval}`);
     }
-    
+
     // Adicionar dias da semana
     if (options.weekdays?.length) {
-      const dayMap = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-      const byDay = options.weekdays.map(day => dayMap[day]).join(',');
+      const dayMap = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+      const byDay = options.weekdays.map((day) => dayMap[day]).join(",");
       parts.push(`BYDAY=${byDay}`);
     }
-    
+
     // Adicionar dia do mês
     if (options.monthDay) {
       parts.push(`BYMONTHDAY=${options.monthDay}`);
     }
-    
+
     // Adicionar data final
     if (options.endDate) {
-      const endDate = options.endDate instanceof Date 
-        ? options.endDate 
-        : new Date(options.endDate);
-      
+      const endDate =
+        options.endDate instanceof Date
+          ? options.endDate
+          : new Date(options.endDate);
+
       if (isValid(endDate)) {
         parts.push(`UNTIL=${format(endDate, "yyyyMMdd'T'HHmmss'Z'")}`);
       }
     }
-    
-    return parts.join(';');
+
+    return parts.join(";");
   }
 
   /**
@@ -234,49 +240,56 @@ export class UnifiedRecurrenceService {
   ): Date | null {
     try {
       // Se não tem recorrência, retorna null
-      if (options.frequency === 'never' || options.frequency === 'once') {
+      if (options.frequency === "never" || options.frequency === "once") {
         return null;
       }
-      
+
       // Converter baseDate para Date se for string
-      const baseDateObj = typeof baseDate === 'string' 
-        ? new Date(baseDate) 
-        : baseDate;
-      
+      const baseDateObj =
+        typeof baseDate === "string" ? new Date(baseDate) : baseDate;
+
       // Use current date as base if the date is in the past
       const now = new Date();
       const startDate = baseDateObj < now ? now : baseDateObj;
-      
+
       // Apply user's timezone if provided
       const timezone = options.timezone || "UTC";
       // Simplificando para evitar problemas com timezone
       let nextDate: Date;
-      
+
       switch (options.frequency) {
         case "daily":
           nextDate = addDays(startDate, options.interval || 1);
           break;
-          
+
         case "weekly":
           // Se tiver dias da semana específicos, use-os
           if (options.weekdays && options.weekdays.length > 0) {
-            nextDate = this.findNextWeekdayOccurrence(startDate, options.weekdays, options.interval || 1);
+            nextDate = this.findNextWeekdayOccurrence(
+              startDate,
+              options.weekdays,
+              options.interval || 1
+            );
           } else {
             // Se não, simplesmente adiciona uma semana
             nextDate = addWeeks(startDate, options.interval || 1);
           }
           break;
-          
+
         case "biweekly":
           // Se tiver dias da semana específicos, use-os
           if (options.weekdays && options.weekdays.length > 0) {
-            nextDate = this.findNextWeekdayOccurrence(startDate, options.weekdays, 2);
+            nextDate = this.findNextWeekdayOccurrence(
+              startDate,
+              options.weekdays,
+              2
+            );
           } else {
             // Se não, simplesmente adiciona duas semanas
             nextDate = addWeeks(startDate, 2);
           }
           break;
-          
+
         case "monthly":
           // Se tiver dia do mês específico, use-o
           if (options.monthDay && options.monthDay > 0) {
@@ -285,14 +298,14 @@ export class UnifiedRecurrenceService {
             // Verificar se o dia é válido no próximo mês (ex: 31 não é válido em todos os meses)
             const daysInNextMonth = getDaysInMonth(nextMonth);
             const dayToUse = Math.min(options.monthDay, daysInNextMonth);
-            
+
             nextDate = setDate(nextMonth, dayToUse);
           } else {
             // Se não, mantém o mesmo dia do mês
             nextDate = addMonths(startDate, options.interval || 1);
           }
           break;
-          
+
         case "quarterly":
           // Se tiver dia do mês específico, use-o
           if (options.monthDay && options.monthDay > 0) {
@@ -301,28 +314,28 @@ export class UnifiedRecurrenceService {
             // Verificar se o dia é válido no próximo mês (ex: 31 não é válido em todos os meses)
             const daysInNextMonth = getDaysInMonth(nextQuarter);
             const dayToUse = Math.min(options.monthDay, daysInNextMonth);
-            
+
             nextDate = setDate(nextQuarter, dayToUse);
           } else {
             // Se não, mantém o mesmo dia do mês
             nextDate = addQuarters(startDate, options.interval || 1);
           }
           break;
-          
+
         case "yearly":
           nextDate = addYears(startDate, options.interval || 1);
           break;
-          
+
         case "custom":
           nextDate = this.handleCustomRecurrence(startDate, options);
           break;
-          
+
         default:
           throw new Error(
             `Unsupported recurrence frequency: ${options.frequency}`
           );
       }
-      
+
       // Retornar a data diretamente
       return nextDate;
     } catch (error) {
@@ -330,7 +343,7 @@ export class UnifiedRecurrenceService {
       return null;
     }
   }
-  
+
   /**
    * Encontra a próxima ocorrência de um dia da semana específico
    * @param baseDate Data base para iniciar a busca
@@ -338,27 +351,26 @@ export class UnifiedRecurrenceService {
    * @param intervalWeeks Número de semanas a avançar antes de procurar o próximo dia
    */
   private static findNextWeekdayOccurrence(
-    baseDate: Date, 
-    weekdays: number[], 
+    baseDate: Date,
+    weekdays: number[],
     intervalWeeks: number = 1
   ): Date {
     // Começamos a partir do dia seguinte
     const startDate = addDays(baseDate, 1);
-    
+
     // Se o intervalWeeks for maior que 1, avançamos para a semana correta
-    const targetWeekStart = intervalWeeks > 1
-      ? addWeeks(startDate, intervalWeeks - 1)
-      : startDate;
-    
+    const targetWeekStart =
+      intervalWeeks > 1 ? addWeeks(startDate, intervalWeeks - 1) : startDate;
+
     // Obter o início da semana correspondente
     const weekStart = startOfWeek(targetWeekStart, { weekStartsOn: 0 }); // 0 = domingo
-    
+
     // Ordenar os dias da semana
     const sortedWeekdays = [...weekdays].sort((a, b) => a - b);
-    
+
     // Dia atual da semana (0-6)
     const currentDayOfWeek = getDay(targetWeekStart);
-    
+
     // Encontrar o próximo dia da semana após o dia atual
     for (const day of sortedWeekdays) {
       if (day >= currentDayOfWeek) {
@@ -367,7 +379,7 @@ export class UnifiedRecurrenceService {
         return addDays(targetWeekStart, daysToAdd);
       }
     }
-    
+
     // Se chegamos aqui, significa que precisamos ir para a próxima semana
     // e pegar o primeiro dia da semana da lista
     const firstDayNextWeek = sortedWeekdays[0];
@@ -387,7 +399,7 @@ export class UnifiedRecurrenceService {
       let nextDate = addDays(baseDate, 1);
       const maxIterations = 7; // Prevent infinite loop
       let iterations = 0;
-      
+
       while (iterations < maxIterations) {
         const dayOfWeek = nextDate.getDay();
         if (options.weekdays.includes(dayOfWeek)) {
@@ -397,7 +409,7 @@ export class UnifiedRecurrenceService {
         iterations++;
       }
     }
-    
+
     // If no specific pattern, default to daily
     return addDays(baseDate, options.interval || 1);
   }
@@ -411,86 +423,84 @@ export class UnifiedRecurrenceService {
     endDate: Date
   ): Event[] {
     const result: Event[] = [];
-    
+
     // Evento sem recorrência é adicionado diretamente
     if (!event.recurrence || event.recurrence === "never") {
       result.push(event);
       return result;
     }
-    
+
     // Adiciona a instância original
     result.push(event);
-    
+
     // Se não tem regra de recorrência, retorna apenas o original
     if (!event.recurrenceRule) {
       return result;
     }
-    
+
     // Parse a data do evento
     let eventDate: Date;
     try {
-      eventDate = typeof event.date === 'string' 
-        ? new Date(event.date) 
-        : event.date;
-      
+      eventDate =
+        typeof event.date === "string" ? new Date(event.date) : event.date;
+
       if (!isValid(eventDate)) return result;
     } catch {
       return result; // Retorna só o original se não conseguir converter a data
     }
-    
+
     // Se a data está após o período de visualização, retorna só o original
     if (isAfter(eventDate, endDate)) {
       return result;
     }
-    
+
     // Parse a data final da recorrência
     let recurrenceEndDate: Date | null = null;
     if (event.recurrenceEnd) {
       try {
-        recurrenceEndDate = typeof event.recurrenceEnd === 'string'
-          ? new Date(event.recurrenceEnd)
-          : event.recurrenceEnd;
-          
+        recurrenceEndDate =
+          typeof event.recurrenceEnd === "string"
+            ? new Date(event.recurrenceEnd)
+            : event.recurrenceEnd;
+
         if (!isValid(recurrenceEndDate)) recurrenceEndDate = null;
       } catch {
         recurrenceEndDate = null;
       }
     }
-    
+
     // Limite pelo período de visualização ou pela data de fim da recorrência
-    const finalEndDate = recurrenceEndDate && isBefore(recurrenceEndDate, endDate)
-      ? recurrenceEndDate
-      : endDate;
-    
+    const finalEndDate =
+      recurrenceEndDate && isBefore(recurrenceEndDate, endDate)
+        ? recurrenceEndDate
+        : endDate;
+
     // Obtém as opções de recorrência da regra
     const recurrenceOptions = this.parseRecurrenceRule(
       event.recurrenceRule,
       eventDate
     );
-    
+
     if (!recurrenceOptions) return result;
-    
+
     // Usa a frequência da regra de recorrência para gerar instâncias
     let currentDate = eventDate;
     const maxIterations = 100; // Limite de segurança para evitar loops infinitos
     let iterations = 0;
-    
+
     while (isBefore(currentDate, finalEndDate) && iterations < maxIterations) {
       // Calcula a próxima data
-      const nextDate = this.calculateNextDate(
-        currentDate,
-        recurrenceOptions
-      );
-      
+      const nextDate = this.calculateNextDate(currentDate, recurrenceOptions);
+
       if (!nextDate) break;
       currentDate = nextDate;
       iterations++;
-      
+
       // Se a data está fora do período, pule
       if (isAfter(currentDate, finalEndDate)) {
         break;
       }
-      
+
       // Adicionar nova instância do evento recorrente
       const recurringInstance: Event = {
         ...event,
@@ -499,93 +509,150 @@ export class UnifiedRecurrenceService {
         isRecurring: true, // Marcar como instância de recorrência
         originalDate: event.date, // Guardar a data original para referência
       };
-      
+
       result.push(recurringInstance);
     }
-    
+
     return result;
   }
-  
+
   /**
    * Determina se uma tarefa doméstica precisa ser reativada
    * baseada em sua programação de recorrência
    */
   static shouldReactivateTask(task: HouseholdTask): boolean {
     // Se a tarefa não está completa ou não tem recorrência, não precisa reativar
-    if (!task.completed || !task.frequency || task.frequency === 'once' || task.frequency === 'never') {
+    if (
+      !task.completed ||
+      !task.frequency ||
+      task.frequency === "once" ||
+      task.frequency === "never"
+    ) {
       return false;
     }
-    
+
     // Se tem próxima data e está no futuro, não reativa ainda
     if (task.nextDueDate) {
-      const nextDueDate = typeof task.nextDueDate === 'string'
-        ? new Date(task.nextDueDate)
-        : task.nextDueDate;
-        
+      const nextDueDate =
+        typeof task.nextDueDate === "string"
+          ? new Date(task.nextDueDate)
+          : task.nextDueDate;
+
       if (isValid(nextDueDate) && isAfter(nextDueDate, new Date())) {
         return false;
       }
     }
-    
+
     return true;
   }
-  
+
   /**
    * Calcula a próxima data de vencimento para uma tarefa doméstica
    */
   static calculateNextDueDateForTask(task: HouseholdTask): Date | null {
     // Se não tem recorrência, retorna null
-    if (!task.frequency || task.frequency === 'once' || task.frequency === 'never') {
+    if (
+      !task.frequency ||
+      task.frequency === "once" ||
+      task.frequency === "never"
+    ) {
       return null;
     }
-    
+
     // Define a data base para cálculo
     let baseDate: Date;
     if (task.dueDate) {
-      baseDate = typeof task.dueDate === 'string'
-        ? new Date(task.dueDate)
-        : task.dueDate;
+      baseDate =
+        typeof task.dueDate === "string"
+          ? new Date(task.dueDate)
+          : task.dueDate;
     } else {
       baseDate = new Date(); // Usa hoje como base se não tem data de vencimento
     }
-    
+
     if (!isValid(baseDate)) {
       baseDate = new Date();
     }
-    
+
     // Cria opções de recorrência
     const options: RecurrenceOptions = {
       frequency: task.frequency as RecurrenceFrequency,
       startDate: baseDate,
-      timezone: "UTC"
+      timezone: "UTC",
     };
-    
+
     // Se tem regra de recorrência no formato iCalendar, usa-a para opções mais detalhadas
     if (task.recurrenceRule) {
       const parsedOptions = this.parseRecurrenceRule(
         task.recurrenceRule,
         baseDate
       );
-      
+
       if (parsedOptions) {
         return this.calculateNextDate(baseDate, parsedOptions);
       }
     }
-    
+
     // Utiliza a frequência simples se não tem regra detalhada
     return this.calculateNextDate(baseDate, options);
   }
-  
+
+  /**
+   * Calculates the next due date for an event, similar to tasks.
+   */
+  static calculateNextDueDateForEvent(event: Event): Date | null {
+    // If no recurrence, return null
+    if (
+      !event.recurrence ||
+      event.recurrence === "once" ||
+      event.recurrence === "never"
+    ) {
+      return null;
+    }
+
+    // Define the base date for calculation
+    let baseDate: Date;
+    if (event.date) {
+      baseDate =
+        typeof event.date === "string" ? new Date(event.date) : event.date;
+    } else {
+      baseDate = new Date(); // Use today as the base if no date is provided
+    }
+
+    if (!isValid(baseDate)) {
+      baseDate = new Date();
+    }
+
+    // Create recurrence options
+    const options: RecurrenceOptions = {
+      frequency: event.recurrence as RecurrenceFrequency,
+      startDate: baseDate,
+      timezone: "UTC",
+    };
+
+    // Use detailed recurrence rule if available
+    if (event.recurrenceRule) {
+      const parsedOptions = this.parseRecurrenceRule(
+        event.recurrenceRule,
+        baseDate
+      );
+      if (parsedOptions) {
+        return this.calculateNextDate(baseDate, parsedOptions);
+      }
+    }
+
+    // Use simple frequency if no detailed rule is available
+    return this.calculateNextDate(baseDate, options);
+  }
+
   /**
    * Check if a task or event is overdue
    */
   static isOverdue(dueDate: Date | string | null): boolean {
     if (!dueDate) return false;
-    
-    const date = typeof dueDate === 'string'
-      ? new Date(dueDate)
-      : dueDate;
-      
+
+    const date = typeof dueDate === "string" ? new Date(dueDate) : dueDate;
+
     return isValid(date) && date < new Date();
   }
 
@@ -594,12 +661,10 @@ export class UnifiedRecurrenceService {
    */
   static validateDate(date: Date | string | null | undefined): Date | null {
     if (!date) return null;
-    
+
     try {
-      const dateObj = typeof date === 'string'
-        ? new Date(date)
-        : date;
-        
+      const dateObj = typeof date === "string" ? new Date(date) : date;
+
       return isValid(dateObj) ? dateObj : null;
     } catch {
       return null;

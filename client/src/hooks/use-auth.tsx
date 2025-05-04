@@ -1,4 +1,10 @@
-import React, { createContext, ReactNode, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "./use-toast";
@@ -27,6 +33,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   phoneNumber: z.string().optional(),
+  birthday: z.string().date("Please enter a valid date"),
 });
 
 type RegisterData = z.infer<typeof registerSchema>;
@@ -34,37 +41,39 @@ type RegisterData = z.infer<typeof registerSchema>;
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 // Simplificação extrema do AuthProvider para resolver problemas com hooks
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const { toast } = useToast();
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // Verificar autenticação ao carregar o componente
   useEffect(() => {
     let isMounted = true;
-    
+
     async function checkAuth() {
       try {
         console.log("Verificando autenticação do usuário...");
         const res = await fetch("/api/user", {
           credentials: "include",
         });
-        
+
         if (!isMounted) return;
-        
+
         if (res.status === 401) {
           console.log("Usuário não autenticado");
           setUser(null);
           setIsLoading(false);
           return;
         }
-        
+
         if (!res.ok) {
           console.error(`Erro na requisição: ${res.status}`);
           throw new Error(`Error: ${res.status}`);
         }
-        
+
         const userData = await res.json();
         console.log("Usuário autenticado:", userData.username);
         if (isMounted) {
@@ -80,9 +89,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     }
-    
+
     checkAuth();
-    
+
     return () => {
       isMounted = false;
     };
@@ -164,16 +173,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await fetch("/api/user", {
         credentials: "include",
       });
-      
+
       if (res.status === 401) {
         setUser(null);
         return null;
       }
-      
+
       if (!res.ok) {
         throw new Error(`Error: ${res.status}`);
       }
-      
+
       const userData = await res.json();
       setUser(userData);
       return userData;
@@ -196,7 +205,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         registerMutation,
         logoutMutation,
         refreshAuth,
-        isAuthenticated
+        isAuthenticated,
       }}
     >
       {children}

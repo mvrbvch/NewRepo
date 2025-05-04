@@ -5,7 +5,6 @@
  * e retornando null quando não consegue formatar
  */
 export function formatDateSafely(date: any): string | null {
-  console.log(date);
   if (!date) return null;
 
   try {

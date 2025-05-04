@@ -26,6 +26,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "emoji-picker-react";
+import RecurrenceOptionsSelector, {
+  RecurrenceOptionsProps,
+} from "@/components/household/recurrence-options-selector";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -53,6 +56,10 @@ export default function CreateEventModal({
   const [emoji, setEmoji] = useState("");
   const [shareWithPartner, setShareWithPartner] = useState(false);
   const [partnerPermission, setPartnerPermission] = useState("view");
+  const [recurrenceOptions, setRecurrenceOptions] =
+    useState<RecurrenceOptionsProps>({
+      frequency: "never",
+    });
 
   // Reset form when modal opens with a new default date
   useEffect(() => {
@@ -115,6 +122,8 @@ export default function CreateEventModal({
       emoji: emoji || undefined,
       period,
       recurrence,
+      recurrenceOptions:
+        recurrence === "custom" ? recurrenceOptions : undefined,
       description,
       shareWithPartner,
       partnerPermission,
@@ -149,6 +158,11 @@ export default function CreateEventModal({
       setStartTime("19:00");
       setEndTime("20:00");
     }
+  };
+
+  const handleRecurrenceChange = (value: string) => {
+    setRecurrence(value);
+    setRecurrenceOptions((prev) => ({ ...prev, frequency: value }));
   };
 
   return (
@@ -263,7 +277,7 @@ export default function CreateEventModal({
 
           <div>
             <Label htmlFor="recurrence">Repetir</Label>
-            <Select value={recurrence} onValueChange={setRecurrence}>
+            <Select value={recurrence} onValueChange={handleRecurrenceChange}>
               <SelectTrigger id="recurrence">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
@@ -275,6 +289,13 @@ export default function CreateEventModal({
                 <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
+
+            {recurrence === "custom" && (
+              <RecurrenceOptionsSelector
+                options={recurrenceOptions}
+                onChange={setRecurrenceOptions}
+              />
+            )}
           </div>
 
           {/* Show partner sharing option only if user has a partner */}

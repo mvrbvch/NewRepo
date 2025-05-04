@@ -56,7 +56,7 @@ function expandRecurringEvents(
       startDate,
       endDate
     );
-    
+
     // Adicionar todas as instâncias expandidas ao resultado
     result.push(...expandedEvents);
   }
@@ -85,13 +85,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Registrar rotas de autenticação biométrica WebAuthn
   registerWebAuthnRoutes(app);
-  
+
   // Configurar rotas para o sistema de lembretes
   setupReminderRoutes(app, storage);
-  
+
   // Configurar rotas para o sistema de insights de relacionamento
   setupRelationshipInsightsRoutes(app, storage);
-  
+
   // Configurar rotas para o sistema de dicas de relacionamento
   app.use(relationshipTipsRoutes);
 
@@ -99,83 +99,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/test/task-history/:id", async (req: Request, res: Response) => {
     try {
       const taskId = parseInt(req.params.id);
-      
+
       // Obter a tarefa
       const task = await storage.getHouseholdTask(taskId);
       if (!task) {
         return res.status(404).json({ message: "Tarefa não encontrada" });
       }
-      
+
       // Obter o histórico de conclusão
       const history = await storage.getTaskCompletionHistory(taskId);
-      
+
       return res.json({
         task,
         history,
         message: `Histórico de conclusão recuperado para a tarefa ${taskId}`,
-        count: history.length
+        count: history.length,
       });
     } catch (error) {
       console.error("Erro ao obter histórico de conclusão:", error);
-      return res.status(500).json({ message: "Erro ao obter histórico de conclusão de tarefa" });
+      return res
+        .status(500)
+        .json({ message: "Erro ao obter histórico de conclusão de tarefa" });
     }
   });
 
   // Rota de teste para a funcionalidade de marcar tarefas como concluídas
-  app.get("/api/test/task-complete/:id", async (req: Request, res: Response) => {
-    try {
-      const taskId = parseInt(req.params.id);
-      const task = await storage.getHouseholdTask(taskId);
-      
-      if (!task) {
-        return res.status(404).json({ message: "Tarefa não encontrada" });
-      }
-      
-      // Verificar se o parâmetro completed foi fornecido na query, padrão é true
-      const completed = req.query.completed === 'false' ? false : true;
-      console.log(`Marcando tarefa ${taskId} como ${completed ? 'concluída' : 'não concluída'}`);
-      
-      // Usar userId padrão para testes (1 é geralmente o primeiro usuário do sistema)
-      const testUserId = parseInt(req.query.userId as string) || 1;
-      console.log(`Usando userId ${testUserId} para registro de conclusão`);
-      
-      const updatedTask = await storage.markHouseholdTaskAsCompleted(taskId, completed, testUserId);
-      
-      // Verificar o status da tarefa
-      if (updatedTask) {
-        // Se a tarefa foi marcada como concluída, verificar se a data de conclusão foi registrada
-        if (completed && !updatedTask.completedAt) {
-          return res.status(500).json({ 
-            message: "Falha ao marcar data de conclusão", 
-            task: updatedTask 
+  app.get(
+    "/api/test/task-complete/:id",
+    async (req: Request, res: Response) => {
+      try {
+        const taskId = parseInt(req.params.id);
+        const task = await storage.getHouseholdTask(taskId);
+
+        if (!task) {
+          return res.status(404).json({ message: "Tarefa não encontrada" });
+        }
+
+        // Verificar se o parâmetro completed foi fornecido na query, padrão é true
+        const completed = req.query.completed === "false" ? false : true;
+        console.log(
+          `Marcando tarefa ${taskId} como ${completed ? "concluída" : "não concluída"}`
+        );
+
+        // Usar userId padrão para testes (1 é geralmente o primeiro usuário do sistema)
+        const testUserId = parseInt(req.query.userId as string) || 1;
+        console.log(`Usando userId ${testUserId} para registro de conclusão`);
+
+        const updatedTask = await storage.markHouseholdTaskAsCompleted(
+          taskId,
+          completed,
+          testUserId
+        );
+
+        // Verificar o status da tarefa
+        if (updatedTask) {
+          // Se a tarefa foi marcada como concluída, verificar se a data de conclusão foi registrada
+          if (completed && !updatedTask.completedAt) {
+            return res.status(500).json({
+              message: "Falha ao marcar data de conclusão",
+              task: updatedTask,
+            });
+          }
+
+          // Se a tarefa foi desmarcada, verificar se a data de conclusão foi limpa
+          if (!completed && updatedTask.completedAt) {
+            return res.status(500).json({
+              message: "Falha ao limpar data de conclusão",
+              task: updatedTask,
+            });
+          }
+
+          // Sucesso
+          const status = completed ? "concluída" : "não concluída";
+          return res.json({
+            message: `Tarefa marcada como ${status} com sucesso`,
+            task: updatedTask,
+          });
+        } else {
+          return res.status(500).json({
+            message: "Falha ao atualizar tarefa",
+            task: null,
           });
         }
-        
-        // Se a tarefa foi desmarcada, verificar se a data de conclusão foi limpa
-        if (!completed && updatedTask.completedAt) {
-          return res.status(500).json({ 
-            message: "Falha ao limpar data de conclusão", 
-            task: updatedTask 
-          });
-        }
-        
-        // Sucesso
-        const status = completed ? "concluída" : "não concluída";
-        return res.json({
-          message: `Tarefa marcada como ${status} com sucesso`,
-          task: updatedTask
-        });
-      } else {
-        return res.status(500).json({ 
-          message: "Falha ao atualizar tarefa", 
-          task: null
-        });
+      } catch (error) {
+        console.error("Erro ao testar conclusão de tarefa:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao testar conclusão de tarefa" });
       }
-    } catch (error) {
-      console.error("Erro ao testar conclusão de tarefa:", error);
-      return res.status(500).json({ message: "Erro ao testar conclusão de tarefa" });
     }
-  });
+  );
 
   // Rota de diagnóstico para verificar a conexão com o banco de dados
   app.get("/api/db-health", async (req: Request, res: Response) => {
@@ -817,15 +830,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/invites/validate", async (req, res) => {
     try {
       const { token } = req.query;
-      
-      if (!token || typeof token !== 'string') {
+
+      if (!token || typeof token !== "string") {
         return res.status(400).json({ message: "Token é obrigatório" });
       }
 
       const invite = await storage.getPartnerInviteByToken(token);
 
       if (!invite) {
-        return res.status(404).json({ message: "Convite não encontrado ou expirado" });
+        return res
+          .status(404)
+          .json({ message: "Convite não encontrado ou expirado" });
       }
 
       if (invite.status !== "pending") {
@@ -838,7 +853,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inviter = await storage.getUser(invite.inviterId);
 
       if (!inviter) {
-        return res.status(404).json({ message: "Usuário que enviou o convite não encontrado" });
+        return res
+          .status(404)
+          .json({ message: "Usuário que enviou o convite não encontrado" });
       }
 
       // Retornar informações sobre o convite
@@ -847,7 +864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inviterName: inviter.name,
         inviterEmail: inviter.email,
         status: invite.status,
-        createdAt: invite.createdAt
+        createdAt: invite.createdAt,
       });
     } catch (error) {
       console.error("Erro ao validar convite:", error);
@@ -867,7 +884,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invite = await storage.getPartnerInviteByToken(token);
 
       if (!invite) {
-        return res.status(404).json({ message: "Convite não encontrado ou expirado" });
+        return res
+          .status(404)
+          .json({ message: "Convite não encontrado ou expirado" });
       }
 
       if (invite.status !== "pending") {
@@ -903,13 +922,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Obter informações do parceiro para retornar
       const partner = await storage.getUser(inviterId);
 
-      res.json({ 
+      res.json({
         message: "Conexão com parceiro estabelecida com sucesso",
         partner: {
           id: partner.id,
           name: partner.name,
-          email: partner.email
-        }
+          email: partner.email,
+        },
       });
     } catch (error) {
       console.error("Erro ao aceitar convite:", error);
@@ -1536,9 +1555,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (task.createdBy !== user.partnerId &&
             task.assignedTo !== user.partnerId)
         ) {
-          return res
-            .status(403)
-            .json({ message: "You don't have permission to view this task history" });
+          return res.status(403).json({
+            message: "You don't have permission to view this task history",
+          });
         }
       }
 
@@ -1551,7 +1570,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Se foram fornecidas datas de início e fim, filtrar por período
         const startDate = new Date(startDateParam);
         const endDate = new Date(endDateParam);
-        history = await storage.getTaskCompletionHistoryForPeriod(taskId, startDate, endDate);
+        history = await storage.getTaskCompletionHistoryForPeriod(
+          taskId,
+          startDate,
+          endDate
+        );
       } else {
         // Caso contrário, retornar todo o histórico
         history = await storage.getTaskCompletionHistory(taskId);
@@ -1559,11 +1582,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         task,
-        history
+        history,
       });
     } catch (error) {
       console.error("Erro ao obter histórico de conclusão:", error);
-      res.status(500).json({ message: "Failed to get task completion history" });
+      res
+        .status(500)
+        .json({ message: "Failed to get task completion history" });
     }
   });
 
