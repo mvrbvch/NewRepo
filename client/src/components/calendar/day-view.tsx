@@ -1,7 +1,9 @@
 import { EventType, UserType } from "@/lib/types";
-import { formatTime, periodLabels } from "@/lib/utils";
+import { formatTime, getCategoryByValue, periodLabels } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
+import { Flag, Star } from "lucide-react";
 
 interface DayViewProps {
   date: Date;
@@ -81,6 +83,15 @@ export default function DayView({
                 </span>
               </div>
               <div className="flex-1">
+                {event.category && (
+                  <Badge
+                    variant="outline"
+                    className=" bg-[#F27474]/5 text-[#F27474] text-xs font-normal border-[#F27474]/20"
+                  >
+                    <Flag className="h-3 w-3" />
+                    {getCategoryByValue(event.category, "events")?.label}
+                  </Badge>
+                )}
                 <div className="flex items-center mb-1">
                   <span className="mr-1">{event.emoji || "📅"}</span>
                   <h4 className="font-medium">{event.title}</h4>
@@ -93,7 +104,7 @@ export default function DayView({
                 <div className="flex items-center text-xs text-gray-500">
                   {event.isShared ? (
                     <>
-                      <span className="material-icons text-xs text-secondary mr-1">
+                      <span className="material-icons text-xs text-primary mr-1">
                         favorite
                       </span>
                       <span>Compartilhado</span>

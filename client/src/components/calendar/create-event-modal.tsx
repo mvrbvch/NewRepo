@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { commonEmojis, formatDate } from "@/lib/utils";
+import { commonEmojis, formatDate, getCategories } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -39,7 +39,14 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 // Schema de validação para criação de eventos
 const eventFormSchema = z.object({
@@ -62,6 +69,8 @@ const eventFormSchema = z.object({
     .optional(),
   shareWithPartner: z.boolean(),
   partnerPermission: z.enum(["view", "edit"]).optional(),
+  category: z.string().optional(),
+  isSpecial: z.boolean().optional(),
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -81,6 +90,12 @@ export default function CreateEventModal({
   const { user } = useAuth();
   const [changeEmoji, setChangeEmoji] = useState(false);
 
+  const [isEditable, setIsEditable] = useState(true); // Example: Replace with actual logic
+  const [shareWithPartner, setShareWithPartner] = useState(false);
+  const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
+    "view"
+  );
+
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
@@ -95,6 +110,8 @@ export default function CreateEventModal({
       recurrence: "never",
       shareWithPartner: false,
       partnerPermission: "view",
+      category: "",
+      isSpecial: false,
     },
   });
 
@@ -236,21 +253,30 @@ export default function CreateEventModal({
               name="recurrence"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Repetir</FormLabel>
+                  <FormLabel>Frequência</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       field.onChange(value);
-                      if (value === "custom") {
+                      // Inicializar as opções de recorrência quando a frequência muda
+                      if (
+                        value === "weekly" ||
+                        value === "monthly" ||
+                        value === "custom"
+                      ) {
                         form.setValue("recurrenceOptions", {
-                          frequency: "custom",
+                          frequency: value,
+                          weekdays:
+                            value === "weekly" ? [1, 2, 3, 4, 5] : undefined, // Seg a Sex por padrão
+                          monthDay: value === "monthly" ? 1 : undefined, // Dia 1 por padrão
+                          endDate: null,
                         });
                       }
                     }}
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
+                      <SelectTrigger className="shadow-input">
+                        <SelectValue placeholder="Selecione a frequência" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -261,22 +287,152 @@ export default function CreateEventModal({
                       <SelectItem value="custom">Personalizado</SelectItem>
                     </SelectContent>
                   </Select>
-                  {form.watch("recurrence") === "custom" && (
-                    <RecurrenceOptionsSelector
-                      options={
-                        form.watch("recurrenceOptions") || {
-                          frequency: "custom",
-                        }
-                      }
-                      onChange={(newOptions) =>
-                        form.setValue("recurrenceOptions", newOptions)
-                      }
-                    />
-                  )}
+                  <FormDescription className="text-small text-medium">
+                    Com que frequência este evento deve ser realizado?
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {form.watch("recurrence") !== "never" &&
+              form.watch("recurrence") !== "daily" && (
+                <Collapsible className="space-y-2 border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold">
+                      Opções de recorrência
+                    </h4>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-9 p-0">
+                        <ChevronDown className="h-4 w-4" />
+                        <span className="sr-only">Toggle</span>
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="recurrenceOptions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RecurrenceOptionsSelector
+                              options={
+                                field.value || {
+                                  frequency: form.watch("recurrence"),
+                                  weekdays: [1, 2, 3, 4, 5], // Seg a Sex
+                                  monthDay: 1,
+                                  endDate: null,
+                                }
+                              }
+                              onChange={(newOptions) => {
+                                field.onChange(newOptions);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription className="text-small text-medium">
+                            Configure opções adicionais de recorrência para este
+                            evento.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(value)}
+                    defaultValue={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {getCategories().events.map((category: any) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isSpecial"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between">
+                  <FormLabel>Evento Especial</FormLabel>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(value) => field.onChange(value)}
+                  />
+                  <FormDescription>
+                    Marque se este evento for especial.
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("isSpecial") && (
+              <div className="bg-yellow-100 text-yellow-800 p-2 rounded">
+                <span>Este é um evento especial!</span>
+              </div>
+            )}
+            {/* Partner sharing section */}
+            {isEditable && user?.partnerId && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="shareWithPartner" className="cursor-pointer">
+                    Compartilhar com parceiro
+                  </Label>
+                  <Switch
+                    id="shareWithPartner"
+                    checked={shareWithPartner}
+                    onCheckedChange={setShareWithPartner}
+                  />
+                </div>
+              </div>
+            )}
+
+            {form.watch("shareWithPartner") && (
+              <div className="bg-gray-50 p-3 rounded-lg flex flex-wrap items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm">
+                  {user?.name?.[0] || "P"}
+                </div>
+                <div className="flex-1 min-w-[120px]">
+                  <div className="text-sm font-medium">Parceiro</div>
+                  <div className="text-xs text-gray-500">Permissão:</div>
+                </div>
+                <Select
+                  value={partnerPermission}
+                  onValueChange={(value: string) =>
+                    setPartnerPermission(value as "view" | "edit")
+                  }
+                >
+                  <SelectTrigger className="w-[130px] lg:w-[140px]">
+                    <SelectValue placeholder="Permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="view">Pode visualizar</SelectItem>
+                    <SelectItem value="edit">Pode editar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
               <Button

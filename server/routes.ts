@@ -41,6 +41,10 @@ import { log } from "./vite";
 import { registerWebAuthnRoutes } from "./webauthn-routes";
 import { getVapidPublicKey } from "./pushNotifications";
 
+import { PerplexityService } from "./perplexityService";
+
+const perplexityService = new PerplexityService();
+
 // Função para expandir eventos recorrentes em múltiplas instâncias
 function expandRecurringEvents(
   events: Event[],
@@ -62,6 +66,19 @@ function expandRecurringEvents(
   }
 
   return result;
+}
+
+// Add overdue check for recurring events
+function checkOverdueEvents(events: Event[]): Event[] {
+  return events.filter((event) => {
+    if (!event.recurrence || event.recurrence === "never") {
+      return false;
+    }
+
+    const nextDueDate =
+      UnifiedRecurrenceService.calculateNextDueDateForEvent(event);
+    return UnifiedRecurrenceService.isOverdue(nextDueDate);
+  });
 }
 
 /**
@@ -314,6 +331,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao buscar eventos:", error);
       res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  app.get("/api/events/overdue", async (req, res) => {
+    try {
+      const userId = req.user?.id as number;
+      const userEvents = await storage.getUserEvents(userId);
+      const overdueEvents = checkOverdueEvents(userEvents);
+
+      res.json(overdueEvents);
+    } catch (error) {
+      console.error("Error fetching overdue events:", error);
+      res.status(500).json({ message: "Failed to fetch overdue events" });
     }
   });
 
@@ -1046,6 +1076,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Household Tasks API
   // GET - Obter tarefas do usuário
+
+  app.post("/api/tasks/smart-category", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const taskData = req.body;
+      console.log(taskData);
+      const response =
+        await perplexityService.generateCategoryBasedOnTask(taskData);
+      res.json(response);
+    } catch (error) {
+      console.error("Erro smart category:", error);
+      res
+        .status(500)
+        .json({ message: "Failed to fetch partner's household tasks" });
+    }
+  });
   app.get("/api/tasks", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });

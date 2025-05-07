@@ -9,7 +9,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { HouseholdTaskType } from "@/lib/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 import {
   Dialog,
@@ -44,8 +49,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import RecurrenceOptionsSelector, { RecurrenceOptionsProps } from "./recurrence-options-selector";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import RecurrenceOptionsSelector, {
+  RecurrenceOptionsProps,
+} from "./recurrence-options-selector";
+import { getCategories } from "@/lib/utils";
 
 // Form schema
 const taskFormSchema = z.object({
@@ -55,12 +67,15 @@ const taskFormSchema = z.object({
   frequency: z.enum(["once", "daily", "weekly", "monthly", "biweekly"]),
   priority: z.enum(["0", "1", "2"]),
   assignToPartner: z.boolean().default(false),
-  recurrenceOptions: z.object({
-    frequency: z.string(),
-    weekdays: z.array(z.number()).optional(),
-    monthDay: z.number().optional(),
-    endDate: z.date().optional().nullable(),
-  }).optional(),
+  category: z.string().optional(),
+  recurrenceOptions: z
+    .object({
+      frequency: z.string(),
+      weekdays: z.array(z.number()).optional(),
+      monthDay: z.number().optional(),
+      endDate: z.date().optional().nullable(),
+    })
+    .optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -90,6 +105,7 @@ export default function EditTaskModal({
       frequency: task.frequency || "once",
       priority: (task.priority?.toString() as "0" | "1" | "2") || "0",
       assignToPartner: task.assignedTo === user?.partnerId,
+      category: task.category || "personal",
     },
   });
 
@@ -97,7 +113,7 @@ export default function EditTaskModal({
   const parseWeekdays = (weekdaysStr: string | null): number[] | undefined => {
     if (!weekdaysStr) return undefined;
     try {
-      return weekdaysStr.split(',').map(day => parseInt(day.trim(), 10));
+      return weekdaysStr.split(",").map((day) => parseInt(day.trim(), 10));
     } catch (e) {
       console.error("Erro ao processar dias da semana:", e);
       return undefined;
@@ -108,15 +124,18 @@ export default function EditTaskModal({
   useEffect(() => {
     if (task) {
       // Preparar opções de recorrência se necessário
-      const recurrenceOptions = (task.frequency === "weekly" || task.frequency === "biweekly" || task.frequency === "monthly") 
-        ? {
-            frequency: task.frequency,
-            weekdays: parseWeekdays(task.weekdays),
-            monthDay: task.monthDay || undefined,
-            endDate: task.recurrenceEnd ? new Date(task.recurrenceEnd) : null,
-          }
-        : undefined;
-        
+      const recurrenceOptions =
+        task.frequency === "weekly" ||
+        task.frequency === "biweekly" ||
+        task.frequency === "monthly"
+          ? {
+              frequency: task.frequency,
+              weekdays: parseWeekdays(task.weekdays),
+              monthDay: task.monthDay || undefined,
+              endDate: task.recurrenceEnd ? new Date(task.recurrenceEnd) : null,
+            }
+          : undefined;
+
       form.reset({
         title: task.title,
         description: task.description || "",
@@ -124,7 +143,8 @@ export default function EditTaskModal({
         frequency: task.frequency || "once",
         priority: (task.priority?.toString() as "0" | "1" | "2") || "0",
         assignToPartner: task.assignedTo === user?.partnerId,
-        recurrenceOptions
+        recurrenceOptions,
+        category: task.category || "personal",
       });
     }
   }, [task, form, user?.partnerId]);
@@ -140,7 +160,7 @@ export default function EditTaskModal({
   // Função para converter array de dias da semana para string
   const formatWeekdays = (weekdays?: number[]): string | null => {
     if (!weekdays || weekdays.length === 0) return null;
-    return weekdays.join(',');
+    return weekdays.join(",");
   };
 
   // Mutation to update task
@@ -148,7 +168,7 @@ export default function EditTaskModal({
     mutationFn: async (data: TaskFormValues) => {
       // Prepara os dados de recorrência extras se necessário
       const recurrenceOptions = data.recurrenceOptions;
-      
+
       const response = await apiRequest("PUT", `/api/tasks/${task.id}`, {
         title: data.title,
         description: data.description,
@@ -157,9 +177,12 @@ export default function EditTaskModal({
         priority: parseInt(data.priority),
         assignedTo: data.assignToPartner ? user?.partnerId : user?.id,
         // Adiciona campos de recorrência se disponíveis
-        weekdays: recurrenceOptions ? formatWeekdays(recurrenceOptions.weekdays) : null,
+        weekdays: recurrenceOptions
+          ? formatWeekdays(recurrenceOptions.weekdays)
+          : null,
         monthDay: recurrenceOptions?.monthDay || null,
-        recurrenceEnd: recurrenceOptions?.endDate || null
+        recurrenceEnd: recurrenceOptions?.endDate || null,
+        category: data.category || "personal",
       });
       return await response.json();
     },
@@ -184,36 +207,48 @@ export default function EditTaskModal({
     },
   });
 
-  const onSubmit = (data: TaskFormValues) => {
+  const getCategoryByContext = useMutation({
+    mutationFn: async (taskData: { title: string; description?: string }) => {
+      const response = await apiRequest(
+        "POST",
+        "/api/tasks/smart-category",
+        taskData
+      );
+      return response.json();
+    },
+  });
+
+  const onSubmit = async (data: TaskFormValues) => {
     setIsSubmitting(true);
-    
+
     // Prepara objeto para passar para onClose
     const updatedTask: HouseholdTaskType = {
+      ...task,
       title: data.title,
-      id: task.id,
       description: data.description || null,
       dueDate: data.dueDate || null,
       frequency: data.frequency,
       priority: parseInt(data.priority),
       assignedTo: data.assignToPartner ? user?.partnerId : user?.id,
-      createdBy: task.createdBy,
-      completed: task.completed,
-      nextDueDate: task.nextDueDate,
-      recurrenceRule: task.recurrenceRule,
-      position: task.position,
-      createdAt: task.createdAt,
-      weekdays: task.weekdays,
-      monthDay: task.monthDay,
-      recurrenceEnd: task.recurrenceEnd
+      category: data.category || "personal",
     };
-    
+
+    // Determinar categoria automaticamente, se necessário
+    if (data.category === "generate") {
+      const response = await getCategoryByContext.mutateAsync({
+        title: data.title,
+        description: data.description,
+      });
+      data.category = response || "personal"; // Default to "personal" if no match
+    }
+
     // Adiciona opções de recorrência adicionais, se disponíveis
     if (data.recurrenceOptions) {
       updatedTask.weekdays = formatWeekdays(data.recurrenceOptions.weekdays);
       updatedTask.monthDay = data.recurrenceOptions.monthDay || null;
       updatedTask.recurrenceEnd = data.recurrenceOptions.endDate || null;
     }
-    
+
     onClose(updatedTask);
     updateTaskMutation.mutate(data);
   };
@@ -317,7 +352,10 @@ export default function EditTaskModal({
                       // Inicializar as opções de recorrência quando a frequência muda
                       form.setValue("recurrenceOptions", {
                         frequency: value,
-                        weekdays: value === "weekly" || value === "biweekly" ? [1, 2, 3, 4, 5] : undefined, // Seg a Sex por padrão
+                        weekdays:
+                          value === "weekly" || value === "biweekly"
+                            ? [1, 2, 3, 4, 5]
+                            : undefined, // Seg a Sex por padrão
                         monthDay: value === "monthly" ? 1 : undefined, // Dia 1 por padrão
                         endDate: null,
                       });
@@ -341,47 +379,53 @@ export default function EditTaskModal({
                 </FormItem>
               )}
             />
-            
-            {form.watch("frequency") !== "once" && form.watch("frequency") !== "daily" && (
-              <Collapsible className="space-y-2 border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold">Opções de recorrência</h4>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-9 p-0">
-                      <ChevronDown className="h-4 w-4" />
-                      <span className="sr-only">Toggle</span>
-                    </Button>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="recurrenceOptions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <RecurrenceOptionsSelector
-                            options={field.value || {
-                              frequency: form.watch("frequency"),
-                              weekdays: [1, 2, 3, 4, 5], // Seg a Sex
-                              monthDay: 1,
-                              endDate: null
-                            }}
-                            onChange={(newOptions) => {
-                              field.onChange(newOptions);
-                            }}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Configure opções adicionais de recorrência para esta tarefa.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            )}
+
+            {form.watch("frequency") !== "once" &&
+              form.watch("frequency") !== "daily" && (
+                <Collapsible className="space-y-2 border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold">
+                      Opções de recorrência
+                    </h4>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-9 p-0">
+                        <ChevronDown className="h-4 w-4" />
+                        <span className="sr-only">Toggle</span>
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="recurrenceOptions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RecurrenceOptionsSelector
+                              options={
+                                field.value || {
+                                  frequency: form.watch("frequency"),
+                                  weekdays: [1, 2, 3, 4, 5], // Seg a Sex
+                                  monthDay: 1,
+                                  endDate: null,
+                                }
+                              }
+                              onChange={(newOptions) => {
+                                field.onChange(newOptions);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Configure opções adicionais de recorrência para esta
+                            tarefa.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
 
             <FormField
               control={form.control}
@@ -432,6 +476,41 @@ export default function EditTaskModal({
               />
             )}
 
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-subtitle">Categoria</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(value)}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="shadow-input" id="category">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="generate">
+                        Identificar automaticamente
+                      </SelectItem>
+                      {getCategories().tasks.map((category: any) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-small text-medium">
+                    Escolha uma categoria para esta tarefa, ou deixe que nossa
+                    IA faça isso por você!.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <DialogFooter>
               <Button
                 type="button"
@@ -444,7 +523,7 @@ export default function EditTaskModal({
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin mt-1" />
                     Salvando...
                   </>
                 ) : (

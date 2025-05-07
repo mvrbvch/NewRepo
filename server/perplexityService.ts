@@ -200,6 +200,110 @@ Não inclua explicações, apenas o objeto JSON.
   }
 
   /**
+   * Gera uma categoria automaticamente com base nos dados da tarefa usando a API Perplexity
+   */
+  public async generateCategoryBasedOnTask({
+    title,
+    description,
+  }: {
+    title: string;
+    description?: string;
+  }): Promise<string | null> {
+    if (!this.isConfigured()) {
+      console.warn(
+        "API Perplexity não configurada (PERPLEXITY_API_KEY não definida)"
+      );
+      return null;
+    }
+
+    if (!title) {
+      console.error("Erro: O título da tarefa é obrigatório.");
+      return null;
+    }
+
+    try {
+      const systemMessage =
+        "Você é um assistente especializado em categorização de tarefas.";
+      const userMessage = `
+    Baseado no título e descrição da tarefa abaixo, determine a categoria mais apropriada. 
+    Escolha entre as seguintes categorias: 
+    - cleaning
+    - shopping
+    - maintenance
+    - work
+    - personal
+    - important
+    - exercise
+    - meal_prep
+    - finance
+    - hobbies
+    - study
+    - relaxation
+    - health
+    - pets
+    - planning
+    - gardening
+    - cleaning_car
+    - chill
+    - meditation
+
+
+    TAREFA:
+    Título: ${title}
+    Descrição: ${description || "Sem descrição"}
+
+    Retorne apenas o nome da categoria como uma string. Não inclua explicações ou outros dados.
+    `;
+
+      const response = await fetch(this.baseUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: this.defaultModel,
+          messages: [
+            {
+              role: "system",
+              content: systemMessage,
+            },
+            {
+              role: "user",
+              content: userMessage,
+            },
+          ],
+          max_tokens: 100,
+          temperature: 0.2,
+          top_p: 0.9,
+          frequency_penalty: 1,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Erro na API Perplexity: ${response.status} ${errorData}`
+        );
+      }
+
+      const responseData = await response.json();
+      const contentText = responseData.choices[0]?.message?.content?.trim();
+
+      if (!contentText) {
+        throw new Error("Resposta vazia da API Perplexity");
+      }
+
+      console.log("Categoria gerada pela API Perplexity:", contentText);
+      return contentText;
+    } catch (error) {
+      console.error("Erro ao gerar categoria com a API Perplexity:", error);
+      return null;
+    }
+  }
+
+  /**
    * Gera um apelido baseado no nome usando a API Perplexity
    */
   public async generateNicknameBasedOnName(name: string): Promise<string> {

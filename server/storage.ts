@@ -2110,6 +2110,8 @@ export class DatabaseStorage implements IStorage {
         recurrenceRule: events.recurrenceRule,
         createdBy: events.createdBy,
         isShared: events.isShared,
+        category: events.category,
+        isSpecial: events.isSpecial,
       })
       .from(events)
       .where(eq(events.createdBy, userId));
@@ -2210,6 +2212,8 @@ export class DatabaseStorage implements IStorage {
           recurrenceRule: events.recurrenceRule,
           createdBy: events.createdBy,
           isShared: events.isShared,
+          category: events.category,
+          isSpecial: events.isSpecial,
         })
         .from(events)
         .where(eq(events.id, share.eventId));

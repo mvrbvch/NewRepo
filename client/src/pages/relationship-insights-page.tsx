@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Route } from "wouter";
+import { Route, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InsightList } from "@/components/relationship-insights/insight-list";
 import { InsightDetail } from "@/components/relationship-insights/insight-detail";
@@ -12,6 +12,7 @@ import {
   HeartHandshake,
   Lightbulb,
   Sparkles,
+  Heart,
 } from "lucide-react";
 import Header from "@/components/shared/header";
 import BottomNavigation from "@/components/shared/bottom-navigation";
@@ -19,6 +20,7 @@ import BottomNavigation from "@/components/shared/bottom-navigation";
 export function RelationshipInsightsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const { user, isLoading } = useAuth();
+  const [, navigate] = useLocation();
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -59,7 +61,8 @@ export function RelationshipInsightsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <Lightbulb className="h-5 w-5 text-[#F27474]" />
                       <h1 className="text-xl font-bold text-[#F27474]">
-                        Insights de Relacionamento
+                        Insights baseados em suas interações e divisões de
+                        tarefas
                       </h1>
                     </div>
                     <p className="text-gray-600 text-sm">
@@ -116,7 +119,29 @@ export function RelationshipInsightsPage() {
                   </div>
                 </div>
               </div>
-
+              <header className="bg-white border border-gray-200 p-4 rounded-md shadow-sm mb-1">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <Heart className="h-10 w-10 text-pink-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-base font-medium text-gray-800">
+                      Construindo juntos
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Pequenos ajustes diários fortalecem nossa parceria. Da
+                      rotina à comunicação.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate("/tips")}
+                    className="px-4 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 
+                     rounded-md transition-colors duration-200 flex-shrink-0 font-medium"
+                  >
+                    Explorar dicas
+                  </button>
+                </div>
+              </header>
               <Tabs
                 defaultValue="all"
                 value={activeTab}
@@ -141,6 +166,7 @@ export function RelationshipInsightsPage() {
                 </TabsContent>
               </Tabs>
               <BottomNavigation />
+              <div style={{ marginBottom: 90 }}></div>
             </>
           )}
         </Route>
@@ -148,6 +174,7 @@ export function RelationshipInsightsPage() {
         <Route path="/insights/:id">
           <InsightDetail />
         </Route>
+        <div style={{ marginBottom: 90 }}></div>
       </div>
     </>
   );

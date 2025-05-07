@@ -7,7 +7,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { EventType, EventCommentType } from "@/lib/types";
-import { formatDate, formatTime, periodLabels } from "@/lib/utils";
+import {
+  formatDate,
+  formatTime,
+  getCategoryByValue,
+  periodLabels,
+} from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -17,6 +22,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 import EditEventModal from "./edit-event-modal";
+import { Badge } from "@/components/ui/badge";
 
 interface EventDetailsModalProps {
   event: EventType;
@@ -282,6 +288,15 @@ export default function EventDetailsModal({
                           : "Pode visualizar"}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {event.category && (
+                  <div className="flex items-center text-gray-700">
+                    <span className="material-icons mr-3">label</span>
+                    <Badge className="bg-primary-light text-primary">
+                      {getCategoryByValue(event.category, "events")?.label}
+                    </Badge>
                   </div>
                 )}
 

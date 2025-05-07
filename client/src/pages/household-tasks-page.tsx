@@ -215,6 +215,8 @@ export default function HouseholdTasksPage() {
   const [showQuickCelebration, setShowQuickCelebration] = useState(false);
   const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>("");
 
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   // Queries
   const {
     data: tasks = [],
@@ -385,6 +387,13 @@ export default function HouseholdTasksPage() {
       });
     }
 
+    // Filter by category if selected
+    if (selectedCategory) {
+      filteredTasks = filteredTasks.filter(
+        (task) => task.category === selectedCategory
+      );
+    }
+
     // Sort tasks
     return filteredTasks.sort((a, b) => {
       // Pending tasks first
@@ -451,6 +460,13 @@ export default function HouseholdTasksPage() {
 
         return isSameDay(formattedEventDate, formattedSelectedDate);
       });
+    }
+
+    // Filter by category if selected
+    if (selectedCategory) {
+      filteredTasks = filteredTasks.filter(
+        (task) => task.category === selectedCategory
+      );
     }
 
     // Sort tasks
@@ -580,6 +596,7 @@ export default function HouseholdTasksPage() {
     selectedDate,
     viewPartner,
     viewMyTasks,
+    selectedCategory,
   ]);
 
   // Event handlers
@@ -1090,6 +1107,158 @@ export default function HouseholdTasksPage() {
             <span>Limpar data</span>
           </DropdownMenuItem>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Categoria</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory(null)}
+            className={!selectedCategory ? "bg-primary-light/20" : ""}
+          >
+            <span>Todas</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("cleaning")}
+            className={
+              selectedCategory === "cleaning" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Limpeza</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("shopping")}
+            className={
+              selectedCategory === "shopping" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Compras</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("maintenance")}
+            className={
+              selectedCategory === "maintenance" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Manutenção</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("work")}
+            className={selectedCategory === "work" ? "bg-primary-light/20" : ""}
+          >
+            <span>Trabalho</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("personal")}
+            className={
+              selectedCategory === "personal" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Pessoal</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("important")}
+            className={
+              selectedCategory === "important" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Importante</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("exercise")}
+            className={
+              selectedCategory === "exercise" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Exercício</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("meal_prep")}
+            className={
+              selectedCategory === "meal_prep" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Preparação de Refeições</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("finance")}
+            className={
+              selectedCategory === "finance" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Finanças</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("hobbies")}
+            className={
+              selectedCategory === "hobbies" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Hobbies</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("study")}
+            className={
+              selectedCategory === "study" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Estudo</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("relaxation")}
+            className={
+              selectedCategory === "relaxation" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Relaxamento</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("health")}
+            className={
+              selectedCategory === "health" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Saúde</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("pets")}
+            className={selectedCategory === "pets" ? "bg-primary-light/20" : ""}
+          >
+            <span>Pets</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("planning")}
+            className={
+              selectedCategory === "planning" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Planejamento</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("gardening")}
+            className={
+              selectedCategory === "gardening" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Jardinagem</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("cleaning_car")}
+            className={
+              selectedCategory === "cleaning_car" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Limpeza do Carro</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => setSelectedCategory("other")}
+            className={
+              selectedCategory === "other" ? "bg-primary-light/20" : ""
+            }
+          >
+            <span>Outro</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -1131,6 +1300,8 @@ export default function HouseholdTasksPage() {
 
       return (
         <>
+          {renderTaskGroup("once", groupedTasks.once || [])}
+
           {renderTaskGroup("daily", groupedTasks.daily || [])}
           {renderTaskGroup("weekly", groupedTasks.weekly || [])}
           {renderTaskGroup("biweekly", groupedTasks.biweekly || [])}
@@ -1138,7 +1309,6 @@ export default function HouseholdTasksPage() {
           {renderTaskGroup("quarterly", groupedTasks.quarterly || [])}
           {renderTaskGroup("yearly", groupedTasks.yearly || [])}
           {renderTaskGroup("custom", groupedTasks.custom || [])}
-          {renderTaskGroup("once", groupedTasks.once || [])}
 
           {!hasAnyTasks && renderEmptyState()}
         </>
@@ -1268,6 +1438,7 @@ export default function HouseholdTasksPage() {
         taskTitle={quickCelebrationTask}
         onComplete={() => setShowQuickCelebration(false)}
       />
+      <div style={{ marginBottom: 90 }}></div>
     </div>
   );
 }

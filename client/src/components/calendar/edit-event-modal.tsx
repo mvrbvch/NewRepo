@@ -26,6 +26,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { EventType } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
+import { getCategories } from "@/lib/utils";
 
 interface EditEventModalProps {
   event: EventType;
@@ -48,20 +49,19 @@ export default function EditEventModal({
   const [startTime, setStartTime] = useState(event.startTime);
   const [endTime, setEndTime] = useState(event.endTime);
   const [description, setDescription] = useState(event.description || "");
-
   const [location, setLocation] = useState(event.location || "");
   const [recurrence, setRecurrence] = useState<
     "never" | "daily" | "weekly" | "monthly" | "custom"
   >(event.recurrence);
   const [emoji, setEmoji] = useState(event.emoji || "");
   const [changeEmoji, setChangeEmoji] = useState(false);
-
   const [shareWithPartner, setShareWithPartner] = useState(
-    event.isShared || false,
+    event.isShared || false
   );
   const [partnerPermission, setPartnerPermission] = useState<"view" | "edit">(
-    (event.sharePermission as "view" | "edit") || "view",
+    (event.sharePermission as "view" | "edit") || "view"
   );
+  const [category, setCategory] = useState(event.category || "");
 
   // Set initial form values when modal opens or event changes
   useEffect(() => {
@@ -88,7 +88,9 @@ export default function EditEventModal({
     }
   }, [isOpen, event]);
 
-  // Check if user has permission to edit the event
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+  };
   const isEditable =
     user?.id === event.createdBy ||
     (event.sharePermission === "edit" && event.isShared);
@@ -165,6 +167,7 @@ export default function EditEventModal({
       description,
       emoji: emoji || null,
       isShared: shareWithPartner,
+      category,
     };
 
     // Send update request
@@ -217,6 +220,21 @@ export default function EditEventModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Digite uma descrição para o evento"
             />
+          </div>
+          <div>
+            <Label htmlFor="category">Categoria</Label>
+            <Select value={category} onValueChange={handleCategoryChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {getCategories().events.map((category: any) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

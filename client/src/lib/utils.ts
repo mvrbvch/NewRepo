@@ -116,3 +116,42 @@ export const formatDateSafely = (dateValue: any): string | null => {
 
   return null;
 };
+
+export const getCategories = () => {
+  return {
+    tasks: [
+      { value: "cleaning", label: "Limpeza" },
+      { value: "shopping", label: "Compras" },
+      { value: "maintenance", label: "Manutenção" },
+      { value: "work", label: "Trabalho" },
+      { value: "personal", label: "Pessoal" },
+      { value: "important", label: "Importante" },
+      { value: "exercise", label: "Exercício" },
+      { value: "meal_prep", label: "Preparação de Refeições" },
+      { value: "finance", label: "Finanças" },
+      { value: "hobbies", label: "Hobbies" },
+      { value: "study", label: "Estudo" },
+      { value: "relaxation", label: "Relaxamento" },
+      { value: "health", label: "Saúde" },
+      { value: "pets", label: "Pets" },
+      { value: "planning", label: "Planejamento" },
+      { value: "gardening", label: "Jardinagem" },
+      { value: "cleaning_car", label: "Limpeza do Carro" },
+      { value: "chill", label: "Relaxar" },
+      { value: "meditation", label: "Meditação" },
+    ],
+    events: [
+      { value: "date_night", label: "Noite de Encontro" },
+      { value: "family", label: "Família" },
+      { value: "appointments", label: "Compromissos" },
+      { value: "travel", label: "Viagem" },
+      { value: "social", label: "Social" },
+      { value: "birthday", label: "Aniversário" },
+      { value: "holiday", label: "Feriado" },
+    ],
+  };
+};
+export const getCategoryByValue = (value: string, type: "tasks" | "events") => {
+  const categories = getCategories()[type];
+  return categories.find((category) => category.value === value) || null;
+};

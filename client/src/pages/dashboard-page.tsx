@@ -27,6 +27,7 @@ import {
   BookHeart,
   HeartPulse,
   Heart,
+  SendIcon,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
@@ -40,6 +41,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AnimatedList } from "@/components/ui/animated-list";
 import { AlertCircle, Timer, Star } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { IconButton } from "@mui/material";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -183,20 +185,22 @@ export default function DashboardPage() {
                       <span className="material-icons mr-2 text-primary/80 text-sm">
                         people
                       </span>
-                      <span>Convida logo seu parceiro...</span>
+                      <span>Convidar parceirx 💕</span>
                     </a>
                   </Link>
                 )}
               </b>{" "}
-              e você já se escolheram hoje?{" "}
+              e você já se escolheram hoje? 💕
             </p>
           </div>
           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Calendar className="h-6 w-6 text-primary" />
+            <IconButton>
+              <SendIcon />
+            </IconButton>
           </div>
         </div>
       </main>
-      <header className="bg-white border border-gray-200 p-4 rounded-md shadow-sm my-3">
+      <header className="bg-white border border-gray-200 p-4 rounded-md shadow-sm mb-1">
         <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
             <Heart className="h-10 w-10 text-pink-500" />

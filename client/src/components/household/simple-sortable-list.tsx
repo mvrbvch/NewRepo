@@ -32,6 +32,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { isBefore } from "date-fns";
+import { getCategoryByValue } from "@/lib/utils";
 
 interface SortableItemProps {
   id: number;
@@ -97,6 +98,13 @@ function SortableItem({
           </motion.div>
 
           <div className="flex-1 min-w-0" onClick={() => onClick(task)}>
+            {task.category && (
+              <div className="flex items-center text-gray-700">
+                <Badge className="bg-primary-light text-primary">
+                  {getCategoryByValue(task.category, "tasks")?.label}
+                </Badge>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3
                 className={`font-semibold text-lg break-words prevent-select ${

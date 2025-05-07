@@ -310,6 +310,8 @@ export const insertEventSchema = createInsertSchema(events).pick({
   recurrenceRule: true,
   createdBy: true,
   isShared: true,
+  category: true,
+  isSpecial: true,
 });
 
 export const insertEventShareSchema = createInsertSchema(eventShares).pick({
@@ -422,6 +424,8 @@ export const insertHouseholdTaskSchema = createInsertSchema(
   monthDay: true,
   priority: true,
   position: true,
+  category: true,
+  isSpecial: true,
 });
 
 export type InsertHouseholdTask = z.infer<typeof insertHouseholdTaskSchema>;
@@ -688,4 +692,192 @@ export type RelationshipInsight = Omit<
 > & {
   createdAt: Date | string | null;
   expiresAt: Date | string | null;
+};
+
+export const generateHouseholdTaskDump = (userIds: number[]) => {
+  const getRandomUserId = () =>
+    userIds[Math.floor(Math.random() * userIds.length)];
+
+  return [
+    {
+      title: "Limpar e organizar cômoda",
+      description: "Cômodo 1 - Quarto de casal",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1, // Média prioridade
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Tirar pó e organizar mesa do trabalho",
+      description: "Cômodo 1 - Quarto de casal",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 2, // Alta prioridade
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar as portas do guarda roupas",
+      description: "Cômodo 1 - Quarto de casal",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 0, // Baixa prioridade
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Guardar o resto das roupas no guarda roupas",
+      description: "Cômodo 2 - Escritório",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Organizar e limpar mesa do Matheus",
+      description: "Cômodo 2 - Escritório",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 2,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar portas do guarda roupas",
+      description: "Cômodo 2 - Escritório",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 0,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar estante de suprimentos",
+      description: "Cômodo 5 - Copa",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Tirar comidas antigas da geladeira para jogar fora",
+      description: "Cômodo 6 - Cozinha",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 2,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar a geladeira e microondas",
+      description: "Cômodo 6 - Cozinha",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar os móveis e organizar a cozinha",
+      description: "Cômodo 6 - Cozinha",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 0,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Lavar banheiros",
+      description: "Cômodo 7 - Banheiros",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 2,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar prateleira",
+      description: "Tarefas gerais",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Guardar todas as roupas",
+      description: "Tarefas gerais",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 0,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar mesas de trabalho",
+      description: "Tarefas gerais",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 2,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar as portas",
+      description: "Tarefas gerais",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar janelas",
+      description: "Tarefas gerais",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 0,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Arrumar as caixas do guarda roupa branco",
+      description: "Tarefas gerais",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar e arrumar ventiladores",
+      description: "Tarefas gerais",
+      category: "maintenance",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 2,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar tanque de roupas",
+      description: "Cômodo 6 - Cozinha",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 0,
+      assignedTo: getRandomUserId(),
+    },
+    {
+      title: "Limpar armário cozinha",
+      description: "Cômodo 6 - Cozinha",
+      category: "cleaning",
+      frequency: "daily",
+      recurrenceRule: "daily",
+      priority: 1,
+      assignedTo: getRandomUserId(),
+    },
+  ];
 };

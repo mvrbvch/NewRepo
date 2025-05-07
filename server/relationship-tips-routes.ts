@@ -147,20 +147,26 @@ router.post("/api/tips/:id/favorite", async (req, res) => {
     const tipId = parseInt(req.params.id);
 
     if (isNaN(tipId)) {
-      return res.status(400).json({ error: "ID da dica tá errado, confere aí!" });
+      return res
+        .status(400)
+        .json({ error: "ID da dica tá errado, confere aí!" });
     }
 
     const userId = (req.user as any).id;
     const user = await storage.getUser(userId);
 
     if (!user || !user.partnerId) {
-      return res.status(400).json({ error: "Você não tem um parceiro cadastrado!" });
+      return res
+        .status(400)
+        .json({ error: "Você não tem um parceiro cadastrado!" });
     }
 
     const success = await tipService.saveTipToFavorites(tipId);
 
     if (!success) {
-      return res.status(404).json({ error: "Dica não encontrada ou deu ruim ao salvar!" });
+      return res
+        .status(404)
+        .json({ error: "Dica não encontrada ou deu ruim ao salvar!" });
     }
 
     // Buscar a dica favoritada para incluir o resumo na notificação

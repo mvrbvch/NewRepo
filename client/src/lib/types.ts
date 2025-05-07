@@ -31,6 +31,8 @@ export interface EventType {
   isShared?: boolean;
   description?: string;
   sharePermission?: "view" | "edit";
+  category?: string;
+  isSpecial?: boolean;
 }
 
 export interface EventShareType {
@@ -101,6 +103,7 @@ export interface HouseholdTaskType {
   weekdays?: string | null; // formato: "1,2,3,4,5" para segunda a sexta
   monthDay?: number | null; // dia do mês para recorrências mensais
   recurrenceEnd?: string | Date | null; // data de término da recorrência
+  category: string | null; // categoria da tarefa
 }
 
 export interface EventReminderType {
@@ -122,13 +125,15 @@ export interface SharedNoteType {
   updatedAt: string | Date | null;
   pinnedOrder: number | null;
   color: string | null;
-  attachments: {
-    url: string;
-    name: string;
-    type: string;
-    size?: number;
-    thumbnail?: string;
-  }[] | null;
+  attachments:
+    | {
+        url: string;
+        name: string;
+        type: string;
+        size?: number;
+        thumbnail?: string;
+      }[]
+    | null;
 }
 
 export interface ProjectType {
@@ -172,10 +177,10 @@ export interface TaskCompletionHistoryType {
 export enum TipCategory {
   COMMUNICATION = "communication",
   QUALITY_TIME = "quality_time",
-  CONFLICT_RESOLUTION = "conflict_resolution", 
+  CONFLICT_RESOLUTION = "conflict_resolution",
   RELATIONSHIP_GROWTH = "relationship_growth",
   SHARED_GOALS = "shared_goals",
-  DAILY_HABITS = "daily_habits"
+  DAILY_HABITS = "daily_habits",
 }
 
 export interface RelationshipTipType {
