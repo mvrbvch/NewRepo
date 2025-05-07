@@ -152,7 +152,10 @@ export default function CreateEventModal({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 py-2"
+          >
             <FormField
               control={form.control}
               name="title"
@@ -175,22 +178,27 @@ export default function CreateEventModal({
               name="emoji"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Emoji</FormLabel>
+                  <FormLabel className="w-full">Emoji</FormLabel>
                   <Button
                     variant="outline"
                     size={"lg"}
-                    onClick={() => setChangeEmoji(true)}
-                    className={`w-full sm:w-auto ${field.value ? "text-3xl" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setChangeEmoji(true);
+                    }}
+                    className={`w-full ${field.value ? "text-3xl" : ""}`}
                   >
                     {field.value || "Selecionar"}
                   </Button>
                   {changeEmoji && (
-                    <EmojiPicker
-                      onEmojiClick={(emojiData) => {
-                        field.onChange(emojiData.emoji);
-                        setChangeEmoji(false);
-                      }}
-                    />
+                    <div className={`w-full sm:w-auto`}>
+                      <EmojiPicker
+                        onEmojiClick={(emojiData) => {
+                          field.onChange(emojiData.emoji);
+                          setChangeEmoji(false);
+                        }}
+                      />
+                    </div>
                   )}
                 </FormItem>
               )}
@@ -198,56 +206,20 @@ export default function CreateEventModal({
 
             <FormField
               control={form.control}
-              name="date"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data</FormLabel>
+                  <FormLabel>Descrição</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Textarea
+                      placeholder="Digite uma descrição para o evento"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="period"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Período</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      if (value === "morning") {
-                        form.setValue("startTime", "08:00");
-                        form.setValue("endTime", "09:00");
-                      } else if (value === "afternoon") {
-                        form.setValue("startTime", "14:00");
-                        form.setValue("endTime", "15:00");
-                      } else {
-                        form.setValue("startTime", "19:00");
-                        form.setValue("endTime", "20:00");
-                      }
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um período" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="morning">Manhã (6h-12h)</SelectItem>
-                      <SelectItem value="afternoon">Tarde (12h-18h)</SelectItem>
-                      <SelectItem value="night">Noite (18h-0h)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="recurrence"
@@ -370,30 +342,110 @@ export default function CreateEventModal({
               )}
             />
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="period"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Período</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        if (value === "morning") {
+                          form.setValue("startTime", "08:00");
+                          form.setValue("endTime", "09:00");
+                        } else if (value === "afternoon") {
+                          form.setValue("startTime", "14:00");
+                          form.setValue("endTime", "15:00");
+                        } else {
+                          form.setValue("startTime", "19:00");
+                          form.setValue("endTime", "20:00");
+                        }
+                      }}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um período" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="morning">Manhã (6h-12h)</SelectItem>
+                        <SelectItem value="afternoon">
+                          Tarde (12h-18h)
+                        </SelectItem>
+                        <SelectItem value="night">Noite (18h-0h)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hora início</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hora fim</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="isSpecial"
+              name="location"
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between">
-                  <FormLabel>Evento Especial</FormLabel>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={(value) => field.onChange(value)}
-                  />
-                  <FormDescription>
-                    Marque se este evento for especial.
-                  </FormDescription>
+                <FormItem>
+                  <FormLabel>Local</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Digite o endereço ou local"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
-            {form.watch("isSpecial") && (
-              <div className="bg-yellow-100 text-yellow-800 p-2 rounded">
-                <span>Este é um evento especial!</span>
-              </div>
-            )}
-            {/* Partner sharing section */}
-            {isEditable && user?.partnerId && (
+            {user?.partnerId && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="shareWithPartner" className="cursor-pointer">
@@ -405,32 +457,32 @@ export default function CreateEventModal({
                     onCheckedChange={setShareWithPartner}
                   />
                 </div>
-              </div>
-            )}
 
-            {form.watch("shareWithPartner") && (
-              <div className="bg-gray-50 p-3 rounded-lg flex flex-wrap items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm">
-                  {user?.name?.[0] || "P"}
-                </div>
-                <div className="flex-1 min-w-[120px]">
-                  <div className="text-sm font-medium">Parceiro</div>
-                  <div className="text-xs text-gray-500">Permissão:</div>
-                </div>
-                <Select
-                  value={partnerPermission}
-                  onValueChange={(value: string) =>
-                    setPartnerPermission(value as "view" | "edit")
-                  }
-                >
-                  <SelectTrigger className="w-[130px] lg:w-[140px]">
-                    <SelectValue placeholder="Permissão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="view">Pode visualizar</SelectItem>
-                    <SelectItem value="edit">Pode editar</SelectItem>
-                  </SelectContent>
-                </Select>
+                {shareWithPartner && (
+                  <div className="bg-gray-50 p-3 rounded-lg flex flex-wrap items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm">
+                      {user?.name?.[0] || "P"}
+                    </div>
+                    <div className="flex-1 min-w-[120px]">
+                      <div className="text-sm font-medium">Parceiro</div>
+                      <div className="text-xs text-gray-500">Permissão:</div>
+                    </div>
+                    <Select
+                      value={partnerPermission}
+                      onValueChange={(value) =>
+                        setPartnerPermission(value as "view" | "edit")
+                      }
+                    >
+                      <SelectTrigger className="w-[130px] lg:w-[140px]">
+                        <SelectValue placeholder="Permissão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="view">Pode visualizar</SelectItem>
+                        <SelectItem value="edit">Pode editar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             )}
 

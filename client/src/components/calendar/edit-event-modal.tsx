@@ -194,12 +194,15 @@ export default function EditEventModal({
             />
           </div>
           <div>
-            <Label>Emoji</Label>
+            <Label className="w-full">Emoji</Label>
             <Button
               variant="outline"
               size={"lg"}
-              onClick={() => setChangeEmoji(true)}
-              className={`w-full sm:w-auto ${emoji ? "text-3xl" : ""}`}
+              onClick={(e) => {
+                e.preventDefault();
+                setChangeEmoji(true);
+              }}
+              className={`w-full ${emoji ? "text-3xl" : ""}`}
             >
               {emoji || "Selecionar"}
             </Button>
@@ -236,7 +239,6 @@ export default function EditEventModal({
               </SelectContent>
             </Select>
           </div>
-          {/* Data e Período em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label htmlFor="date">Data</Label>
@@ -247,7 +249,6 @@ export default function EditEventModal({
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
-
             <div>
               <Label htmlFor="period">Período</Label>
               <Select value={period} onValueChange={handlePeriodChange}>
@@ -262,8 +263,6 @@ export default function EditEventModal({
               </Select>
             </div>
           </div>
-
-          {/* Horários de início e fim em uma linha para telas maiores, empilhados para mobile */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label htmlFor="startTime">Hora início</Label>
@@ -274,7 +273,6 @@ export default function EditEventModal({
                 onChange={(e) => setStartTime(e.target.value)}
               />
             </div>
-
             <div>
               <Label htmlFor="endTime">Hora fim</Label>
               <Input
@@ -285,7 +283,6 @@ export default function EditEventModal({
               />
             </div>
           </div>
-
           <div>
             <Label htmlFor="location">Local</Label>
             <Input
@@ -295,23 +292,6 @@ export default function EditEventModal({
               placeholder="Digite o endereço ou local"
             />
           </div>
-
-          <div>
-            <Label htmlFor="recurrence">Repetir</Label>
-            <Select value={recurrence} onValueChange={handleRecurrenceChange}>
-              <SelectTrigger id="recurrence">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="never">Nunca</SelectItem>
-                <SelectItem value="daily">Diariamente</SelectItem>
-                <SelectItem value="weekly">Semanalmente</SelectItem>
-                <SelectItem value="monthly">Mensalmente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Partner sharing section */}
           {isEditable && user?.partnerId && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -326,7 +306,6 @@ export default function EditEventModal({
               </div>
             </div>
           )}
-
           {shareWithPartner && (
             <div className="bg-gray-50 p-3 rounded-lg flex flex-wrap items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white text-sm">
