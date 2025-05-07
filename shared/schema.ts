@@ -53,6 +53,8 @@ export const events = pgTable("events", {
   createdBy: integer("created_by")
     .notNull()
     .references(() => users.id),
+  category: text("category"), // Categoria do evento (ex: reunião, celebração, etc.)
+  isSpecial: boolean("is_special").default(false), // Indica se é um evento especial
 });
 
 export const eventShares = pgTable("event_shares", {
@@ -124,6 +126,8 @@ export const householdTasks = pgTable("household_tasks", {
   priority: integer("priority").default(0), // Valores: 0 (baixa), 1 (média), 2 (alta) prioridade
   createdAt: timestamp("created_at").defaultNow(),
   position: integer().notNull().default(0),
+  category: text("category"), // Categoria da tarefa (ex: limpeza, compras, etc.)
+  isSpecial: boolean("is_special").default(false), // Indica se é uma tarefa especial
 });
 
 // Tabela para histórico de conclusão de tarefas
