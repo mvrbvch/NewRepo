@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/shared/header";
 import BottomNavigation from "@/components/shared/bottom-navigation";
@@ -32,6 +32,12 @@ export default function NotificationSettingsPage() {
     enablePushNotifications,
     disablePushNotifications,
   } = usePushNotifications();
+
+  React.useEffect(() => {
+    if (!isPushEnabled) {
+      setActiveTab("settings");
+    }
+  }, [pushStatus]);
 
   // Buscar dispositivos registrados
   const { data: devices = [] } = useQuery({
@@ -169,11 +175,6 @@ export default function NotificationSettingsPage() {
                   </div>
                 )}
               </div>
-
-              {/* Componente de teste de notificações */}
-              {isPushEnabled && <PushNotificationTester />}
-
-              <hr />
 
               {/* Tipos de notificações */}
               <div>

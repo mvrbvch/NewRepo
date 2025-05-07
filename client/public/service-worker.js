@@ -67,8 +67,7 @@ self.addEventListener("fetch", (event) => {
     event.request.url.includes("analytics") ||
     event.request.url.includes("socket.io") ||
     event.request.url.includes("ws:") ||
-    event.request.url.includes("wss:") ||
-    event.request.url.includes("replit.com")
+    event.request.url.includes("wss:")
   ) {
     return;
   }

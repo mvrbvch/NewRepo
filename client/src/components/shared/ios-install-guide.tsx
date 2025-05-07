@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowDownToLine, Share2, PlusCircle } from "lucide-react";
 
-export default function IOSInstallGuide() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function IOSInstallGuide(props: { open?: boolean }) {
+  const { open } = props;
+  const [isOpen, setIsOpen] = useState(open || false);
 
   // Detecta se estamos em um dispositivo iOS
   const isIOS = () => {
@@ -48,7 +49,7 @@ export default function IOSInstallGuide() {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[425px] p-20 max-h-[70vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px] p-5 max-h-[70vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Instalar Nós Juntos no seu iPhone/iPad</DialogTitle>
             <DialogDescription>

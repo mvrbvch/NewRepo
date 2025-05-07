@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import {
   Form,
@@ -34,6 +34,7 @@ import {
   Coffee,
   Calendar,
 } from "lucide-react";
+import { useHookFormMask, withMask } from "use-mask-input";
 
 // Mensagens de erro personalizadas e descontraídas
 const loginSchema = z.object({
@@ -54,7 +55,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Como vamos te chamar com menos de 2 letras? 😊"),
   birthday: z
     .string()
-    .date("Juro que é só pra nao deixar ninguem esquecer do seu dia "),
+    .min(1, "Juro que é só pra nao deixar ninguem esquecer do seu dia "),
 
   email: z
     .string()
@@ -108,6 +109,10 @@ export default function AuthPage() {
     },
   });
 
+  const { register } = useForm();
+
+  const registerWithMask = useHookFormMask(register);
+
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -116,7 +121,7 @@ export default function AuthPage() {
       name: "",
       email: "",
       phoneNumber: "",
-      birthday: "",
+      birthday: "DD/MM/AAAA",
     },
   });
 
@@ -145,7 +150,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex md:flex-row flex-col">
       {/* Coluna esquerda (formulário) */}
-      <div className="md:w-1/2 w-full flex flex-col justify-center items-center px-6 py-12 bg-background">
+      <div className="md:w-1/2 w-full flex flex-col justify-center items-center px-6 py-20 bg-background">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
@@ -326,7 +331,7 @@ export default function AuthPage() {
                               <div className="relative">
                                 <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  placeholder="usuário"
+                                  placeholder="Escolha um nome de usuário"
                                   className="pl-10"
                                   {...field}
                                 />
@@ -336,6 +341,7 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
+
                       <FormField
                         control={registerForm.control}
                         name="birthday"
@@ -345,11 +351,27 @@ export default function AuthPage() {
                             <FormControl>
                               <div className="relative">
                                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  type="date"
-                                  placeholder="Selecione sua data de nascimento"
-                                  className="pl-10"
-                                  {...field}
+                                <Controller
+                                  name="birthday"
+                                  render={({ field }) => {
+                                    return (
+                                      <Input
+                                        {...field}
+                                        style={{
+                                          paddingLeft: "35px",
+                                        }}
+                                        ref={(ref) => {
+                                          withMask("99/99/9999", {
+                                            inputType: "number",
+                                            inputmode: "numeric",
+                                            inputFormat: "DD/MM/YYYY",
+                                            outputFormat: "YYYY-MM-DD",
+                                          })(ref);
+                                          field.ref(ref);
+                                        }}
+                                      />
+                                    );
+                                  }}
                                 />
                               </div>
                             </FormControl>

@@ -4,100 +4,192 @@ import { pool } from "../db";
 const DAILY = "daily";
 const WEEKLY = "weekly";
 
+// Mock function to get a random user ID
+function getRandomUserId(): number {
+  return Math.floor(Math.random() * 1000); // Replace with actual logic
+}
+
 // Define the tasks
 const householdTasks = [
-  // Daily tasks
   {
-    name: "Arrumar a cama",
-    description: "Organizar lençóis e cobertores",
-    category: DAILY,
+    title: "Limpar e organizar cômoda",
+    description: "Cômodo 1 - Quarto de casal",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1, // Média prioridade
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Passar aspirador de pó",
-    description: "Limpar o chão de todos os cômodos",
-    category: DAILY,
+    title: "Tirar pó e organizar mesa do trabalho",
+    description: "Cômodo 1 - Quarto de casal",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 2, // Alta prioridade
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Passar pano",
-    description: "Passar pano úmido no chão após aspirar",
-    category: DAILY,
+    title: "Limpar as portas do guarda roupas",
+    description: "Cômodo 1 - Quarto de casal",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 0, // Baixa prioridade
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar a cozinha",
-    description: "Limpar bancadas e eletrodomésticos",
-    category: DAILY,
+    title: "Guardar o resto das roupas no guarda roupas",
+    description: "Cômodo 2 - Escritório",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Lavar as louças",
-    description: "Lavar e guardar todas as louças usadas",
-    category: DAILY,
+    title: "Organizar e limpar mesa do Matheus",
+    description: "Cômodo 2 - Escritório",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 2,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar a mesa",
-    description: "Limpar a mesa de jantar após as refeições",
-    category: DAILY,
+    title: "Limpar portas do guarda roupas",
+    description: "Cômodo 2 - Escritório",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 0,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar as cadeiras e o sofá",
-    description: "Remover poeira e migalhas",
-    category: DAILY,
+    title: "Limpar estante de suprimentos",
+    description: "Cômodo 5 - Copa",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Organizar e arrumar as roupas",
-    description: "Dobrar e guardar roupas limpas",
-    category: DAILY,
+    title: "Tirar comidas antigas da geladeira para jogar fora",
+    description: "Cômodo 6 - Cozinha",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 2,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Tirar os lixos",
-    description: "Esvaziar todas as lixeiras da casa",
-    category: DAILY,
+    title: "Limpar a geladeira e microondas",
+    description: "Cômodo 6 - Cozinha",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar o robô aspirador",
-    description: "Esvaziar e limpar o compartimento",
-    category: DAILY,
-  },
-
-  // Weekly tasks
-  {
-    name: "Lavar banheiros",
-    description: "Limpar pias, vasos sanitários e box",
-    category: WEEKLY,
+    title: "Limpar os móveis e organizar a cozinha",
+    description: "Cômodo 6 - Cozinha",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 0,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Tirar pó dos móveis",
-    description: "Limpar todas as superfícies de móveis",
-    category: WEEKLY,
+    title: "Lavar banheiros",
+    description: "Cômodo 7 - Banheiros",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 2,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar janelas",
-    description: "Limpar vidros e batentes",
-    category: WEEKLY,
+    title: "Limpar prateleira",
+    description: "Tarefas gerais",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar espelho",
-    description: "Limpar todos os espelhos da casa",
-    category: WEEKLY,
+    title: "Guardar todas as roupas",
+    description: "Tarefas gerais",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 0,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar as portas do guarda roupa",
-    description: "Limpar portas e puxadores",
-    category: WEEKLY,
+    title: "Limpar mesas de trabalho",
+    description: "Tarefas gerais",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 2,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Limpar as portas no total",
-    description: "Limpar todas as portas da casa",
-    category: WEEKLY,
+    title: "Limpar as portas",
+    description: "Tarefas gerais",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Lavar as roupas",
-    description: "Lavar, secar e passar as roupas da semana",
-    category: WEEKLY,
+    title: "Limpar janelas",
+    description: "Tarefas gerais",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 0,
+    assignedTo: getRandomUserId(),
   },
   {
-    name: "Fazer marmitas semanais",
-    description: "Preparar refeições para a semana",
-    category: WEEKLY,
+    title: "Arrumar as caixas do guarda roupa branco",
+    description: "Tarefas gerais",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
+  },
+  {
+    title: "Limpar e arrumar ventiladores",
+    description: "Tarefas gerais",
+    category: "maintenance",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 2,
+    assignedTo: getRandomUserId(),
+  },
+  {
+    title: "Limpar tanque de roupas",
+    description: "Cômodo 6 - Cozinha",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 0,
+    assignedTo: getRandomUserId(),
+  },
+  {
+    title: "Limpar armário cozinha",
+    description: "Cômodo 6 - Cozinha",
+    category: "cleaning",
+    frequency: "daily",
+    recurrenceRule: "daily",
+    priority: 1,
+    assignedTo: getRandomUserId(),
   },
 ];
 
@@ -118,29 +210,11 @@ async function addHouseholdTasks() {
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
         WHERE table_schema = 'public' 
-        AND table_name = 'tasks'
+        AND table_name = 'household_tasks'
       );
     `;
 
-    const tableExists = (await client.query(tableCheckQuery)).rows[0].exists;
-
-    if (!tableExists) {
-      console.log("Tabela de tarefas não encontrada. Criando tabela...");
-
-      // Criar tabela de tarefas se não existir
-      await client.query(`
-        CREATE TABLE tasks (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          description TEXT,
-          category VARCHAR(50) NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-      `);
-
-      console.log("Tabela de tarefas criada com sucesso.");
-    }
+    await client.query(tableCheckQuery); // Check if the table exists
 
     // Inserir as tarefas
     for (const task of householdTasks) {
@@ -149,7 +223,7 @@ async function addHouseholdTasks() {
          VALUES ($1, $2, $3)
          ON CONFLICT (name) DO UPDATE 
          SET description = $2, category = $3, updated_at = CURRENT_TIMESTAMP`,
-        [task.name, task.description, task.category]
+        [task.title, task.description, task.category]
       );
     }
 

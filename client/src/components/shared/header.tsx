@@ -10,20 +10,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import React, { useState } from "react";
 import InstallButton from "@/components/pwa/install-button";
 import NotificationButton from "@/components/shared/notification-button";
 import IOSInstallGuide from "@/components/shared/ios-install-guide";
 import { NotificationIndicator } from "./notification-indicator";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 export default function Header() {
   const { user, logoutMutation } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const {
+    isPushSupported,
+    isPushEnabled,
+    pushStatus,
+    enablePushNotifications,
+    disablePushNotifications,
+  } = usePushNotifications();
 
   const handleLogout = () => {
     logoutMutation.mutate();
   };
+  const isIOS = () => {
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    );
+  };
 
+  React.useState(() => {
+    if (isIOS() && !isPushEnabled && isPushSupported) {
+      setOpen(true);
+    }
+  });
   // Get user initials for avatar
   const userInitials = user?.name
     ? (() => {
@@ -53,7 +73,7 @@ export default function Header() {
 
       <div className="flex items-center space-x-3">
         <InstallButton />
-        <IOSInstallGuide />
+        <IOSInstallGuide open={open} />
         <NotificationIndicator
           size="sm"
           showLabel={false}
