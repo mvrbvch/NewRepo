@@ -144,7 +144,8 @@ export default function AuthPage() {
   };
 
   const onSubmitRegister = (data: RegisterFormValues) => {
-    registerMutation.mutate(data);
+    const birthdayFormated = new Date(data.birthday).toISOString();
+    registerMutation.mutate({ ...data, birthday: birthdayFormated });
   };
 
   return (
