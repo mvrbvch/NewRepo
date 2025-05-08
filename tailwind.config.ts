@@ -61,6 +61,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        emotional: {
+          happy: "#FFD166",
+          calm: "#118AB2",
+          excited: "#FF6B6B",
+          love: "#FF85A1",
+          focused: "#073B4C",
+          neutral: "#8A898C",
+        },
       },
       keyframes: {
         "accordion-down": {

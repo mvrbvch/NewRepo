@@ -24,6 +24,7 @@ import { SplashScreen } from "./components/pwa/splash-screen";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import DashboardPage from "./pages/dashboard-page"; //Import added for the new dashboard page
+import Header from "@/components/shared/header";
 
 function ScrollToTop() {
   const [pathname] = useLocation();
@@ -46,7 +47,7 @@ function Router() {
   return (
     <>
       <ScrollToTop />
-
+      <Header />
       <Switch>
         {/* Landing page pública */}
         <Route path="/" component={LandingPage} />

@@ -42,6 +42,7 @@ import { AnimatedList } from "@/components/ui/animated-list";
 import { AlertCircle, Timer, Star } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { IconButton } from "@mui/material";
+import { UpcomingEventBanner } from "@/components/new-ui/UpcomingEventBanner";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -161,8 +162,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 mb-10 scroll-id">
-      <Header />
-
       <main
         className="flex-1 max-w-lg mx-auto w-full px-4 pt-2"
         style={{ marginTop: 120 }}
@@ -170,10 +169,10 @@ export default function DashboardPage() {
         {/* Greeting & User Info */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-3xl font-bold">
               Olá, {user?.name?.split(" ")[0] || ""}
             </h1>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-500 text-md pt-2">
               {format(new Date(), "'Hoje é' EEEE, d 'de' MMMM", {
                 locale: ptBR,
               })}{" "}
@@ -200,7 +199,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-      <header className="bg-white border border-gray-200 p-4 rounded-md shadow-sm mb-1">
+      <Card className="flex-1 max-w-lg mx-auto w-full px-4 pb-3 pt-2">
         <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
             <Heart className="h-10 w-10 text-pink-500" />
@@ -217,12 +216,13 @@ export default function DashboardPage() {
           <button
             onClick={() => navigate("/tips")}
             className="px-4 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 
-                     rounded-md transition-colors duration-200 flex-shrink-0 font-medium"
+                     rounded-md transition-colors duration-200 md-w-full flex-shrink-0 font-medium"
           >
             Explorar dicas
           </button>
         </div>
-      </header>
+      </Card>
+      <UpcomingEventBanner events={events} />
       <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-20 pt-2">
         {/* Weekly Calendar */}
         <Card className="p-4 mb-6">

@@ -52,6 +52,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import { useSearchParam } from "react-use";
+import { UpcomingEventBanner } from "@/components/new-ui/UpcomingEventBanner";
 
 export default function HomePage() {
   const [view, setView] = useState<"day" | "week" | "month" | "timeline">(
@@ -307,8 +308,6 @@ export default function HomePage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <Header />
-
       <motion.div
         style={{ marginTop: 98 }}
         initial={{ y: -10, opacity: 0 }}
@@ -332,7 +331,7 @@ export default function HomePage() {
       >
         <ViewToggle view={view} onChange={setView} onToday={goToToday} />
       </motion.div>
-
+      <UpcomingEventBanner events={filteredEvents} />
       <AnimatePresence mode="wait">
         {view === "day" && (
           <motion.div

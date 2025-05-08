@@ -43,7 +43,10 @@ import {
   Star,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { TaskCompletionCelebration, QuickTaskCelebration } from "@/components/household/task-completion-celebration";
+import {
+  TaskCompletionCelebration,
+  QuickTaskCelebration,
+} from "@/components/household/task-completion-celebration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -178,14 +181,16 @@ export default function HouseholdTasksPage() {
       once: true,
     }
   );
-  
+
   // Celebration animation state
   const [showCelebration, setShowCelebration] = useState(false);
-  const [completedTaskTitle, setCompletedTaskTitle] = useState('');
+  const [completedTaskTitle, setCompletedTaskTitle] = useState("");
   const [taskStreak, setTaskStreak] = useState(0);
-  
+
   // Track completed tasks to calculate streaks
-  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<number[]>([]);
+  const [recentlyCompletedTasks, setRecentlyCompletedTasks] = useState<
+    number[]
+  >([]);
 
   // Busca todas as tarefas do usuário
   const {
@@ -206,8 +211,8 @@ export default function HouseholdTasksPage() {
 
   // Estado para controlar a animação rápida
   const [showQuickCelebration, setShowQuickCelebration] = useState(false);
-  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>('');
-  
+  const [quickCelebrationTask, setQuickCelebrationTask] = useState<string>("");
+
   // Mutação para marcar tarefa como concluída/pendente
   const toggleCompleteMutation = useMutation({
     mutationFn: async ({
@@ -225,11 +230,11 @@ export default function HouseholdTasksPage() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/partner-tasks"] });
-      
+
       // Mostrar mensagem de sucesso e celebração simples quando marcar como concluída
       if (variables.completed) {
         // Encontrar o título da tarefa que foi concluída
-        const task = tasks.find(t => t.id === variables.id);
+        const task = tasks.find((t) => t.id === variables.id);
         if (task) {
           setQuickCelebrationTask(task.title);
         }
@@ -281,7 +286,9 @@ export default function HouseholdTasksPage() {
   // Mutação para atualizar a ordem das tarefas
   const reorderTasksMutation = useMutation({
     mutationFn: async (tasks: { id: number; sortOrder: number }[]) => {
-      const response = await apiRequest("PATCH", "/api/tasks-reorder", { tasks });
+      const response = await apiRequest("PATCH", "/api/tasks-reorder", {
+        tasks,
+      });
       return await response.json();
     },
     onSuccess: () => {
@@ -295,7 +302,8 @@ export default function HouseholdTasksPage() {
     onError: (error) => {
       toast({
         title: "Erro ao reordenar tarefas",
-        description: "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
+        description:
+          "Não foi possível atualizar a ordem das tarefas. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -320,7 +328,7 @@ export default function HouseholdTasksPage() {
         break;
     }
 
-    // Ordenar tarefas: primeiro por status (pendentes antes das concluídas), 
+    // Ordenar tarefas: primeiro por status (pendentes antes das concluídas),
     // em seguida por prioridade (alta para baixa) e finalmente por data
     return filteredTasks.sort((a, b) => {
       // Se uma tarefa está completa e a outra não, a pendente vem primeiro
@@ -330,11 +338,11 @@ export default function HouseholdTasksPage() {
       // Se ambas têm o mesmo status de conclusão, ordenar por prioridade (alta para baixa)
       const priorityA = a.priority || 0;
       const priorityB = b.priority || 0;
-      
+
       if (priorityA !== priorityB) {
         return priorityB - priorityA; // Ordem decrescente: 2 (alta) vem antes de 0 (baixa)
       }
-      
+
       // Se ambas têm a mesma prioridade, ordenar por data de vencimento
       if (a.dueDate && b.dueDate) {
         const dateA = new Date(a.dueDate);
@@ -425,7 +433,7 @@ export default function HouseholdTasksPage() {
     if (!task.completed) {
       // Set the task title for the celebration message
       setCompletedTaskTitle(task.title);
-      
+
       // Calculate streak (counting this task)
       const updatedRecentlyCompleted = [...recentlyCompletedTasks];
       // Add this task ID if not already in the list
@@ -433,20 +441,20 @@ export default function HouseholdTasksPage() {
         updatedRecentlyCompleted.push(task.id);
         setRecentlyCompletedTasks(updatedRecentlyCompleted);
       }
-      
+
       // Calculate streak (limit to last 24 hours for consecutive tasks)
       const streak = Math.min(updatedRecentlyCompleted.length, 10); // Cap at 10 for UI purposes
       setTaskStreak(streak);
-      
+
       // Show the celebration animation
       setShowCelebration(true);
-      
+
       // Auto-hide celebration after animation completes
       setTimeout(() => {
         setShowCelebration(false);
       }, 3000);
     }
-    
+
     toggleCompleteMutation.mutate({
       id: task.id,
       completed: !task.completed,
@@ -596,17 +604,24 @@ export default function HouseholdTasksPage() {
                     </div>
                   )
                 )}
-                
+
                 {/* Indicador de prioridade */}
                 {!task.completed && (
-                  <div className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
-                    task.priority === 2 ? 'bg-red-50 text-red-600' : 
-                    task.priority === 1 ? 'bg-yellow-50 text-yellow-600' : 
-                    'bg-blue-50 text-blue-600'
-                  }`}>
+                  <div
+                    className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
+                      task.priority === 2
+                        ? "bg-red-50 text-red-600"
+                        : task.priority === 1
+                          ? "bg-yellow-50 text-yellow-600"
+                          : "bg-blue-50 text-blue-600"
+                    }`}
+                  >
                     <Star className="h-3 w-3 mr-1 flex-shrink-0" />
-                    {task.priority === 2 ? 'Alta' : 
-                     task.priority === 1 ? 'Média' : 'Baixa'}
+                    {task.priority === 2
+                      ? "Alta"
+                      : task.priority === 1
+                        ? "Média"
+                        : "Baixa"}
                   </div>
                 )}
               </div>
@@ -684,8 +699,6 @@ export default function HouseholdTasksPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <Header />
-
       <div className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light">
         <h2 className="text-xl font-semibold text-primary-dark">
           Minhas Tarefas
@@ -720,14 +733,14 @@ export default function HouseholdTasksPage() {
                   <Clock className="mr-2 h-4 w-4" />
                   <span>Lista simples</span>
                 </DropdownMenuItem>
-                
-                {process.env.NODE_ENV === 'development' && (
+
+                {process.env.NODE_ENV === "development" && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => {
                         // Add a test task completion
-                        setCompletedTaskTitle('Teste de tarefa');
+                        setCompletedTaskTitle("Teste de tarefa");
                         setTaskStreak(Math.floor(Math.random() * 10) + 1);
                         setShowCelebration(true);
                         // Auto-hide after a few seconds
@@ -880,7 +893,7 @@ export default function HouseholdTasksPage() {
           onToggleComplete={handleToggleTaskComplete}
         />
       )}
-      
+
       {/* Task completion celebration animation */}
       <TaskCompletionCelebration
         isActive={showCelebration}
@@ -888,7 +901,7 @@ export default function HouseholdTasksPage() {
         streakCount={taskStreak}
         onComplete={() => setShowCelebration(false)}
       />
-      
+
       {/* Quick celebration animation for checkbox toggles */}
       <QuickTaskCelebration
         isActive={showQuickCelebration}

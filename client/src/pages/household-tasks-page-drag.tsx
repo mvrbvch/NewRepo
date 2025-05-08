@@ -95,7 +95,7 @@ function PullToRefresh({
     currentY.current = e.touches[0].clientY;
     const pullDistance = Math.max(
       0,
-      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE),
+      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
     );
 
     if (pullDistance > 0) {
@@ -170,7 +170,7 @@ export default function HouseholdTasksPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<HouseholdTaskType | null>(
-    null,
+    null
   );
   const [groupByFrequency, setGroupByFrequency] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
@@ -179,7 +179,7 @@ export default function HouseholdTasksPage() {
       weekly: true,
       monthly: true,
       once: true,
-    },
+    }
   );
 
   // Celebration animation state
@@ -305,7 +305,7 @@ export default function HouseholdTasksPage() {
         "Formato da requisição:",
         JSON.stringify({
           tasks: validatedTasks,
-        }),
+        })
       );
 
       const response = await apiRequest("PUT", "/api/tasks-reorder", {
@@ -369,7 +369,7 @@ export default function HouseholdTasksPage() {
     // Debug: verificar IDs das tarefas
     console.log(
       "Filtered tasks IDs:",
-      filteredTasks.map((t) => ({ id: t.id, type: typeof t.id })),
+      filteredTasks.map((t) => ({ id: t.id, type: typeof t.id }))
     );
 
     // Ordenar tarefas: primeiro por status (pendentes antes das concluídas),
@@ -438,7 +438,7 @@ export default function HouseholdTasksPage() {
         acc[frequency].push(task);
         return acc;
       },
-      {} as Record<string, HouseholdTaskType[]>,
+      {} as Record<string, HouseholdTaskType[]>
     );
   }, [tasks, partnerTasks, activeTab, groupByFrequency]);
 
@@ -614,7 +614,7 @@ export default function HouseholdTasksPage() {
         };
       })
       .filter(
-        (update): update is { id: number; position: number } => update !== null,
+        (update): update is { id: number; position: number } => update !== null
       );
 
     if (taskUpdates.length === 0) {
@@ -757,8 +757,6 @@ export default function HouseholdTasksPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <Header />
-
       <div
         style={{ marginTop: 100 }}
         className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light"

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InstallButton from "@/components/pwa/install-button";
 import NotificationButton from "@/components/shared/notification-button";
 import IOSInstallGuide from "@/components/shared/ios-install-guide";
@@ -21,6 +21,18 @@ export default function Header() {
   const { user, logoutMutation } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Ensure header always has blur background regardless of scroll
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const headerClass = "translate-y-0 opacity-100";
+  const backgroundClass = "bg-white/70 backdrop-blur-md shadow-md";
 
   const {
     isPushSupported,
@@ -56,14 +68,14 @@ export default function Header() {
 
   return (
     <header
-      className="px-4 w-full fixed py-3 flex items-center justify-between bg-primary-dark shadow-md text-white"
-      style={{ zIndex: 50, paddingTop: 50 }}
+      className={`px-4 w-full fixed py-3 flex items-center justify-between transition-transform duration-300 ease-in-out ${headerClass} ${backgroundClass}`}
+      style={{ zIndex: 50, paddingTop: 45 }}
     >
       <div className="flex items-center">
         <Link href="/dashboard">
           <a className="flex items-center">
             <img
-              src="/logo-white.png"
+              src="/logo.png"
               alt="Nós Juntos"
               className="h-10 drop-shadow-sm"
             />
@@ -72,12 +84,12 @@ export default function Header() {
       </div>
 
       <div className="flex items-center space-x-3">
-        <InstallButton />
-        <IOSInstallGuide open={open} />
+        {/* <InstallButton />
+        <IOSInstallGuide open={open} /> */}
         <NotificationIndicator
           size="sm"
           showLabel={false}
-          className="text-white"
+          className="text-primary"
         />
 
         <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>

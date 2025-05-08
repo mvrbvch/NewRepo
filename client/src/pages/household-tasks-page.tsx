@@ -1340,7 +1340,6 @@ export default function HouseholdTasksPage() {
 
   return (
     <div className="h-screen flex flex-col scroll-id">
-      <Header />
       <div
         className="flex items-center justify-between p-4 bg-primary-light border-b border-primary-light"
         style={{ marginTop: 100 }}

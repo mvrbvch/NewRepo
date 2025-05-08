@@ -13,7 +13,6 @@ export default function RelationshipTipsPage() {
 
   return (
     <>
-      <Header />
       <div
         className="container mx-auto p-4 w-full scroll-id"
         style={{ paddingTop: 130 }}

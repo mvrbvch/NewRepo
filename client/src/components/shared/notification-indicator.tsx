@@ -103,7 +103,7 @@ export function NotificationIndicator({
             transition={{ duration: 0.5 }}
           >
             <Bell
-              className={`${getIconSize()} ${hasNewNotifications ? "text-white/70" : "text-white"}`}
+              className={`${getIconSize()} ${hasNewNotifications ? "text-primary/70" : "text-primary"}`}
             />
           </motion.div>
 
@@ -116,7 +116,7 @@ export function NotificationIndicator({
                 className={`absolute ${getBadgePosition()}`}
               >
                 <Badge
-                  className={`bg-primary text-white px-1 flex items-center justify-center rounded-full ${getBadgeSize()}`}
+                  className={`bg-primary text-primary px-1 flex items-center justify-center rounded-full ${getBadgeSize()}`}
                 >
                   {count > 99 ? "99+" : count}
                 </Badge>

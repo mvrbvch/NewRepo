@@ -115,7 +115,7 @@ export default function HouseholdTasksPageSimple() {
         const myTasks = processedTasks.filter(
           (task) =>
             (task.assignedTo === user.id || task.createdBy === user.id) &&
-            !task.completed,
+            !task.completed
         );
 
         console.log("Tarefas filtradas por usuário:", myTasks.length);
@@ -129,7 +129,7 @@ export default function HouseholdTasksPageSimple() {
 
         console.log(
           "Tarefas processadas para reordenação:",
-          sortedTasks.map((t) => ({ id: t.id, position: t.position })),
+          sortedTasks.map((t) => ({ id: t.id, position: t.position }))
         );
 
         setTasks(sortedTasks);
@@ -146,7 +146,7 @@ export default function HouseholdTasksPageSimple() {
       // Debug detalhado dos dados de entrada
       console.log(
         "DADOS ORIGINAIS RECEBIDOS PELA MUTATION:",
-        JSON.stringify(taskUpdates),
+        JSON.stringify(taskUpdates)
       );
 
       // Validar dados antes de enviar
@@ -196,7 +196,7 @@ export default function HouseholdTasksPageSimple() {
               numericPosition = parseInt(task.position, 10);
             } else {
               console.error(
-                `Posição com tipo não suportado: ${typeof task.position}`,
+                `Posição com tipo não suportado: ${typeof task.position}`
               );
               return false;
             }
@@ -208,20 +208,20 @@ export default function HouseholdTasksPageSimple() {
           // Validar posição
           if (isNaN(numericPosition)) {
             console.error(
-              `Posição resultou em NaN: ${task.position} -> ${numericPosition}`,
+              `Posição resultou em NaN: ${task.position} -> ${numericPosition}`
             );
             return false;
           }
 
           if (!Number.isInteger(numericPosition) || numericPosition < 0) {
             console.error(
-              `Posição não é um inteiro não-negativo: ${numericPosition}`,
+              `Posição não é um inteiro não-negativo: ${numericPosition}`
             );
             return false;
           }
 
           console.log(
-            `Tarefa validada com sucesso: ID=${numericId}, Posição=${numericPosition}`,
+            `Tarefa validada com sucesso: ID=${numericId}, Posição=${numericPosition}`
           );
           return true;
         })
@@ -231,7 +231,7 @@ export default function HouseholdTasksPageSimple() {
           const safePosition = Number(task.position);
 
           console.log(
-            `Convertendo para envio: ID=${safeId}, Posição=${safePosition}`,
+            `Convertendo para envio: ID=${safeId}, Posição=${safePosition}`
           );
 
           return {
@@ -242,7 +242,7 @@ export default function HouseholdTasksPageSimple() {
 
       console.log(
         "Enviando atualizações de posições:",
-        JSON.stringify(validatedTasks),
+        JSON.stringify(validatedTasks)
       );
 
       if (validatedTasks.length === 0) {
@@ -271,7 +271,7 @@ export default function HouseholdTasksPageSimple() {
     onError: (error) => {
       console.error("Erro ao reordenar tarefas:", error);
       setErrorMsg(
-        error instanceof Error ? error.message : "Erro ao reordenar tarefas",
+        error instanceof Error ? error.message : "Erro ao reordenar tarefas"
       );
       toast({
         title: "Erro ao reordenar tarefas",
@@ -457,7 +457,7 @@ export default function HouseholdTasksPageSimple() {
 
         console.log(
           "Enviando atualizações após mover para baixo:",
-          taskUpdates,
+          taskUpdates
         );
 
         // Enviar para o servidor apenas se tivermos atualizações válidas
@@ -477,8 +477,6 @@ export default function HouseholdTasksPageSimple() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <Header />
-
       <div
         className="flex items-center p-4 bg-white border-b"
         style={{ marginTop: 100 }}
