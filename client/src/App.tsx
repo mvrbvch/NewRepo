@@ -28,6 +28,7 @@ import Header from "@/components/shared/header";
 
 function ScrollToTop() {
   const [pathname] = useLocation();
+  const [showHeader, setShowHeader] = React.useState(true);
   console.log(pathname);
   useEffect(() => {
     if (pathname !== "/auth") {
@@ -44,10 +45,32 @@ function ScrollToTop() {
 
 // Componente de rotas da aplicação
 function Router() {
+  const [pathname] = useLocation();
+  const [showHeader, setShowHeader] = React.useState(true);
+  console.log(pathname);
+  useEffect(() => {
+    if (pathname !== "/" && pathname !== "/auth") {
+      setTimeout(() => {
+        window.document
+          .getElementsByClassName("scroll-id")[0]
+          .scrollIntoView({ behavior: "smooth" });
+      }, 0);
+    }
+    if (
+      pathname === "/auth" ||
+      pathname === "/" ||
+      pathname === "/welcome" ||
+      pathname === "/onboarding" ||
+      pathname === "/partner-invite" ||
+      pathname === "/welcome"
+    ) {
+      setShowHeader(false);
+    }
+  }, [pathname]);
   return (
     <>
       <ScrollToTop />
-      <Header />
+      {showHeader && <Header />}
       <Switch>
         {/* Landing page pública */}
         <Route path="/" component={LandingPage} />
