@@ -49,13 +49,6 @@ function Router() {
   const [showHeader, setShowHeader] = React.useState(true);
   console.log(pathname);
   useEffect(() => {
-    if (pathname !== "/" && pathname !== "/auth") {
-      setTimeout(() => {
-        window.document
-          .getElementsByClassName("scroll-id")[0]
-          .scrollIntoView({ behavior: "smooth" });
-      }, 0);
-    }
     if (
       pathname === "/auth" ||
       pathname === "/" ||
@@ -65,6 +58,14 @@ function Router() {
       pathname === "/welcome"
     ) {
       setShowHeader(false);
+    }
+
+    if (pathname !== "/" && pathname !== "/auth") {
+      setTimeout(() => {
+        window.document
+          .getElementsByClassName("scroll-id")[0]
+          .scrollIntoView({ behavior: "smooth" });
+      }, 0);
     }
   }, [pathname]);
   return (
