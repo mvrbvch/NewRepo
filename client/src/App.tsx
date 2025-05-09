@@ -62,9 +62,10 @@ function Router() {
 
     if (pathname !== "/" && pathname !== "/auth") {
       setTimeout(() => {
-        window.document
-          .getElementsByClassName("scroll-id")[0]
-          .scrollIntoView({ behavior: "smooth" });
+        window.document.getElementsByClassName("scroll-id").length > 0 &&
+          window.document
+            .getElementsByClassName("scroll-id")[0]
+            .scrollIntoView({ behavior: "smooth" });
       }, 0);
     }
   }, [pathname]);
