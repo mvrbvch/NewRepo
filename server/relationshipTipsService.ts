@@ -3,7 +3,10 @@ import { IStorage } from "./storage";
 import { PerplexityService } from "./perplexityService";
 import { RelationshipTip as SchemaRelationshipTip } from "@shared/schema";
 // O modelo mais recente da OpenAI é "gpt-4o" que foi lançado em 13 de maio de 2024. Não altere isso a menos que explicitamente solicitado pelo usuário
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey:
+    "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",
+});
 const perplexityService = new PerplexityService();
 
 // Definição das categorias de dicas

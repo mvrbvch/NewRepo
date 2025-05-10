@@ -49,16 +49,18 @@ function Router() {
   const [showHeader, setShowHeader] = React.useState(true);
   console.log(pathname);
   useEffect(() => {
-    if (
-      pathname === "/auth" ||
-      pathname === "/" ||
-      pathname === "/welcome" ||
-      pathname === "/onboarding" ||
-      pathname === "/partner-invite" ||
-      pathname === "/welcome"
-    ) {
-      setShowHeader(false);
-    }
+    setTimeout(() => {
+      if (
+        pathname === "/auth" ||
+        pathname === "/" ||
+        pathname === "/welcome" ||
+        pathname === "/onboarding" ||
+        pathname === "/partner-invite" ||
+        pathname === "/welcome"
+      ) {
+        setShowHeader(false);
+      }
+    }, 0);
 
     if (pathname !== "/" && pathname !== "/auth") {
       setTimeout(() => {

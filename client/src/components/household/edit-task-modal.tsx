@@ -65,8 +65,8 @@ const taskFormSchema = z.object({
   description: z.string().optional(),
   dueDate: z.date().optional(),
   frequency: z.enum(["once", "daily", "weekly", "monthly", "biweekly"]),
+  assignedTo: z.union([z.number(), z.literal("both"), z.null()]).optional(),
   priority: z.enum(["0", "1", "2"]),
-  assignToPartner: z.boolean().default(false),
   category: z.string().optional(),
   recurrenceOptions: z
     .object({
@@ -104,7 +104,12 @@ export default function EditTaskModal({
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
       frequency: task.frequency || "once",
       priority: (task.priority?.toString() as "0" | "1" | "2") || "0",
-      assignToPartner: task.assignedTo === user?.partnerId,
+      assignedTo:
+        task.assignedTo === user?.partnerId
+          ? user?.partnerId
+          : task.assignedTo === user?.id
+            ? user?.id
+            : "both",
       category: task.category || "personal",
     },
   });
@@ -142,7 +147,12 @@ export default function EditTaskModal({
         dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
         frequency: task.frequency || "once",
         priority: (task.priority?.toString() as "0" | "1" | "2") || "0",
-        assignToPartner: task.assignedTo === user?.partnerId,
+        assignedTo:
+          task.assignedTo === user?.partnerId
+            ? user?.partnerId
+            : task.assignedTo === user?.id
+              ? user?.id
+              : "both",
         recurrenceOptions,
         category: task.category || "personal",
       });
@@ -175,7 +185,7 @@ export default function EditTaskModal({
         dueDate: data.dueDate,
         frequency: data.frequency,
         priority: parseInt(data.priority),
-        assignedTo: data.assignToPartner ? user?.partnerId : user?.id,
+        assignedTo: data.assignedTo === "both" ? null : data.assignedTo,
         // Adiciona campos de recorrência se disponíveis
         weekdays: recurrenceOptions
           ? formatWeekdays(recurrenceOptions.weekdays)
@@ -229,7 +239,7 @@ export default function EditTaskModal({
       dueDate: data.dueDate || null,
       frequency: data.frequency,
       priority: parseInt(data.priority),
-      assignedTo: data.assignToPartner ? user?.partnerId : user?.id,
+      assignedTo: data.assignedTo === "both" ? null : data.assignedTo,
       category: data.category || "personal",
     };
 
@@ -453,28 +463,47 @@ export default function EditTaskModal({
               )}
             />
 
-            {user?.partnerId && (
-              <FormField
-                control={form.control}
-                name="assignToPartner"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Atribuir ao parceiro</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        {partner?.name || "Seu parceiro"}
-                      </div>
-                    </div>
+            <FormField
+              control={form.control}
+              name="assignedTo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atribuir a</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      if (value === "both") {
+                        field.onChange(null); // Usar null para indicar atribuição a ambos
+                      } else {
+                        field.onChange(parseInt(value));
+                      }
+                    }}
+                    defaultValue={
+                      field.value === null
+                        ? "both"
+                        : field.value?.toString() || user.id.toString()
+                    }
+                  >
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Quem realizará a tarefa?" />
+                      </SelectTrigger>
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
+                    <SelectContent>
+                      <SelectItem value={user.id.toString()}>Eu</SelectItem>
+                      <SelectItem value={user.partnerId?.toString() || ""}>
+                        Meu Parceiro
+                      </SelectItem>
+                      <SelectItem value="both">Ambos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione "Ambos" para criar uma tarefa compartilhada que
+                    qualquer um pode completar.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

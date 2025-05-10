@@ -549,7 +549,10 @@ export class MemStorage implements IStorage {
 
   async getUserHouseholdTasks(userId: number): Promise<HouseholdTask[]> {
     return Array.from(this.householdTasksMap.values()).filter(
-      (task) => task.assignedTo === userId || task.createdBy === userId
+      (task) =>
+        task.assignedTo === userId ||
+        task.createdBy === userId ||
+        task.assignedTo === null
     );
   }
 
@@ -2467,6 +2470,7 @@ export class DatabaseStorage implements IStorage {
         .where(
           or(
             eq(householdTasks.assignedTo, userId),
+            isNull(householdTasks.assignedTo),
             eq(householdTasks.createdBy, userId)
           )
         );

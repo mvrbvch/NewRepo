@@ -61,7 +61,7 @@ const taskFormSchema = z.object({
   title: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
   description: z.string().optional(),
   frequency: z.enum(["once", "daily", "weekly", "biweekly", "monthly"]),
-  assignedTo: z.number().nullable().optional(),
+  assignedTo: z.union([z.number(), z.literal("both"), z.null()]).optional(),
   dueDate: z.date().nullable().optional(),
   priority: z.number().default(0), // 0: baixa, 1: média, 2: alta
   recurrenceOptions: z
@@ -327,9 +327,17 @@ export default function CreateTaskModal({
                   <FormItem>
                     <FormLabel className="text-subtitle">Atribuir a</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      onValueChange={(value) => {
+                        if (value === "both") {
+                          field.onChange(null); // Usar null para indicar atribuição a ambos
+                        } else {
+                          field.onChange(parseInt(value));
+                        }
+                      }}
                       defaultValue={
-                        field.value?.toString() || user.id.toString()
+                        field.value === null
+                          ? "both"
+                          : field.value?.toString() || user.id.toString()
                       }
                     >
                       <FormControl>
@@ -342,8 +350,13 @@ export default function CreateTaskModal({
                         <SelectItem value={user.partnerId?.toString() || ""}>
                           Meu Parceiro
                         </SelectItem>
+                        <SelectItem value="both">Ambos</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormDescription className="text-small text-medium">
+                      Selecione "Ambos" para criar uma tarefa compartilhada que
+                      qualquer um pode completar.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

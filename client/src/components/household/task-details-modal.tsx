@@ -223,9 +223,23 @@ export default function TaskDetailsModal({
                       {getFrequencyText(task.frequency)}
                       {task.weekdays && task.frequency === "weekly" && (
                         <span className="ml-1 text-gray-500 text-xs">
-                          ({task.weekdays.split(",").map(day => 
-                            ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][parseInt(day)]
-                          ).join(", ")})
+                          (
+                          {task.weekdays
+                            .split(",")
+                            .map(
+                              (day) =>
+                                [
+                                  "Dom",
+                                  "Seg",
+                                  "Ter",
+                                  "Qua",
+                                  "Qui",
+                                  "Sex",
+                                  "Sáb",
+                                ][parseInt(day)]
+                            )
+                            .join(", ")}
+                          )
                         </span>
                       )}
                       {task.monthDay && task.frequency === "monthly" && (
@@ -253,19 +267,21 @@ export default function TaskDetailsModal({
                   </div>
                 )}
 
-                {task.assignedTo && (
-                  <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
-                    <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
-                      <User className="h-4 w-4 text-primary-dark" />
-                    </div>
-                    <div className="min-w-0 overflow-hidden">
-                      <p className="text-xs text-medium">Atribuída a</p>
-                      <p className="font-medium text-dark truncate">
-                        {task.assignedTo === user?.id ? "Você" : "Seu parceiro"}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
+                  <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
+                    <User className="h-4 w-4 text-primary-dark" />
                   </div>
-                )}
+                  <div className="min-w-0 overflow-hidden">
+                    <p className="text-xs text-medium">Atribuída a</p>
+                    <p className="font-medium text-dark truncate">
+                      {task.assignedTo === user?.id
+                        ? "Você"
+                        : task.assignedTo === null
+                          ? "Você e seu parceiro"
+                          : "Seu parceiro"}
+                    </p>
+                  </div>
+                </div>
 
                 {task.createdAt && (
                   <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
@@ -359,87 +375,125 @@ export default function TaskDetailsModal({
                 )}
               </div>
             </div>
-            
+
             {/* Tabs para detalhes e histórico */}
             <div className="mt-6 border-t pt-6">
               <Tabs defaultValue="details" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="details" className="flex items-center gap-1.5">
+                  <TabsTrigger
+                    value="details"
+                    className="flex items-center gap-1.5"
+                  >
                     <ClipboardList className="h-4 w-4" />
                     <span>Detalhes</span>
                   </TabsTrigger>
-                  <TabsTrigger value="history" className="flex items-center gap-1.5">
+                  <TabsTrigger
+                    value="history"
+                    className="flex items-center gap-1.5"
+                  >
                     <History className="h-4 w-4" />
                     <span>Histórico</span>
                   </TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="details" className="space-y-4">
                   {/* Conteúdo já existente sobre os detalhes */}
                   <div className="bg-primary-light/5 p-3 rounded-lg border border-primary-light/20">
                     <p className="text-sm text-muted-foreground">
-                      Esta tarefa foi criada por {isCreatedByUser ? "você" : "seu parceiro"}.
+                      Esta tarefa foi criada por{" "}
+                      {isCreatedByUser ? "você" : "seu parceiro"}.
                       {task.assignedTo && (
                         <span className="block mt-1">
-                          Atribuída a {task.assignedTo === user?.id ? "você" : "seu parceiro"}.
+                          Atribuída a{" "}
+                          {task.assignedTo === null
+                            ? "vocês"
+                            : task.assignedTo === user?.id
+                              ? "você"
+                              : "seu parceiro"}
+                          .
                         </span>
                       )}
                     </p>
                   </div>
-                  
+
                   {task.nextDueDate && task.frequency !== "once" && (
                     <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
                       <p className="text-sm flex items-center gap-1.5 font-medium">
                         <CalendarIcon className="h-4 w-4 text-amber-500" />
                         <span>
-                          Próximo vencimento: {format(new Date(task.nextDueDate), "PPP", { locale: ptBR })}
+                          Próximo vencimento:{" "}
+                          {format(new Date(task.nextDueDate), "PPP", {
+                            locale: ptBR,
+                          })}
                         </span>
                       </p>
                     </div>
                   )}
-                  
+
                   {task.frequency !== "once" && (
                     <div className="bg-primary-light/5 p-3 rounded-lg border border-primary-light/20">
-                      <h4 className="text-sm font-semibold mb-2">Detalhes da recorrência</h4>
-                      
+                      <h4 className="text-sm font-semibold mb-2">
+                        Detalhes da recorrência
+                      </h4>
+
                       <div className="space-y-2 text-sm">
                         <p className="flex items-center gap-1.5">
                           <RefreshCw className="h-4 w-4 text-primary" />
-                          <span>Frequência: {getFrequencyText(task.frequency)}</span>
+                          <span>
+                            Frequência: {getFrequencyText(task.frequency)}
+                          </span>
                         </p>
-                        
-                        {(task.frequency === "weekly" || task.frequency === "biweekly") && task.weekdays && (
-                          <p className="flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4 text-primary" />
-                            <span>
-                              Dias da semana: {task.weekdays.split(',').map(day => {
-                                switch (day.trim()) {
-                                  case '0': return 'Dom';
-                                  case '1': return 'Seg';
-                                  case '2': return 'Ter';
-                                  case '3': return 'Qua';
-                                  case '4': return 'Qui';
-                                  case '5': return 'Sex';
-                                  case '6': return 'Sáb';
-                                  default: return '';
-                                }
-                              }).filter(Boolean).join(', ')}
-                            </span>
-                          </p>
-                        )}
-                        
+
+                        {(task.frequency === "weekly" ||
+                          task.frequency === "biweekly") &&
+                          task.weekdays && (
+                            <p className="flex items-center gap-1.5">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              <span>
+                                Dias da semana:{" "}
+                                {task.weekdays
+                                  .split(",")
+                                  .map((day) => {
+                                    switch (day.trim()) {
+                                      case "0":
+                                        return "Dom";
+                                      case "1":
+                                        return "Seg";
+                                      case "2":
+                                        return "Ter";
+                                      case "3":
+                                        return "Qua";
+                                      case "4":
+                                        return "Qui";
+                                      case "5":
+                                        return "Sex";
+                                      case "6":
+                                        return "Sáb";
+                                      default:
+                                        return "";
+                                    }
+                                  })
+                                  .filter(Boolean)
+                                  .join(", ")}
+                              </span>
+                            </p>
+                          )}
+
                         {task.frequency === "monthly" && task.monthDay && (
                           <p className="flex items-center gap-1.5">
                             <Calendar className="h-4 w-4 text-primary" />
                             <span>Dia do mês: {task.monthDay}</span>
                           </p>
                         )}
-                        
+
                         {task.recurrenceEnd && (
                           <p className="flex items-center gap-1.5">
                             <CalendarIcon className="h-4 w-4 text-primary" />
                             <span>
-                              Término da recorrência: {format(new Date(task.recurrenceEnd), "PPP", { locale: ptBR })}
+                              Término da recorrência:{" "}
+                              {format(new Date(task.recurrenceEnd), "PPP", {
+                                locale: ptBR,
+                              })}
                             </span>
                           </p>
                         )}
@@ -447,7 +501,7 @@ export default function TaskDetailsModal({
                     </div>
                   )}
                 </TabsContent>
-                
+
                 <TabsContent value="history" className="space-y-4">
                   {/* Componente de histórico de conclusão */}
                   <TaskCompletionHistory taskId={task.id} userId={user?.id} />

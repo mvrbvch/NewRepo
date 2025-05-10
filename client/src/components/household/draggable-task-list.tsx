@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -14,14 +14,14 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { HouseholdTaskType } from '@/lib/types';
-import { AnimatedList } from '@/components/ui/animated-list';
-import { TactileFeedback } from '@/components/ui/tactile-feedback';
-import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
+import { HouseholdTaskType } from "@/lib/types";
+import { AnimatedList } from "@/components/ui/animated-list";
+import { TactileFeedback } from "@/components/ui/tactile-feedback";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 import {
   Calendar as CalendarIcon,
   Check,
@@ -29,7 +29,7 @@ import {
   User as UserIcon,
   Star,
 } from "lucide-react";
-import { isBefore } from 'date-fns';
+import { isBefore } from "date-fns";
 
 interface SortableTaskCardProps {
   task: HouseholdTaskType & { id: number }; // Garante que id é um número
@@ -42,50 +42,50 @@ interface SortableTaskCardProps {
 }
 
 // Componente de item arrastável (Sortable Task Card)
-export function SortableTaskCard({ 
-  task, 
-  onClick, 
+export function SortableTaskCard({
+  task,
+  onClick,
   onToggleComplete,
   getFormattedDueDate,
   getFrequencyIcon,
   getFrequencyText,
-  user
+  user,
 }: SortableTaskCardProps) {
   // Garantir que id é um número
-  const taskId = typeof task.id === 'string' ? parseInt(task.id, 10) : task.id;
-  
+  const taskId = typeof task.id === "string" ? parseInt(task.id, 10) : task.id;
+
   // Log para ajudar a identificar problemas
   if (isNaN(taskId)) {
     console.error("ID de tarefa inválido:", task);
   }
-  
+
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging
-  } = useSortable({ 
-    id: taskId 
+    isDragging,
+  } = useSortable({
+    id: taskId,
   });
-  
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : 1,
     opacity: isDragging ? 0.9 : 1,
   };
-  
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TactileFeedback scale={0.98} onClick={onClick}>
+      <TactileFeedback onClick={onClick} className="w-full">
         <Card
           className={`p-4 relative ${
             task.completed
               ? "bg-gray-50 border-gray-200"
               : "bg-white hover:bg-primary-light/10 border-primary-light"
-          } shadow-sm hover:shadow-md transition-all ${isDragging ? 'ring-2 ring-primary cursor-grabbing' : 'cursor-grab'}`}
+          } shadow-sm hover:shadow-md transition-all ${isDragging ? "ring-2 ring-primary cursor-grabbing" : "cursor-grab"}`}
         >
           <div className="flex items-start gap-4">
             <motion.div
@@ -169,9 +169,13 @@ export function SortableTaskCard({
                     <Check className="h-3 w-3 mr-1 flex-shrink-0" />
                     Concluída
                   </div>
+                ) : /* Informação sobre atribuição */
+                task.assignedTo === null ? (
+                  <div className="text-xs flex items-center bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-medium">
+                    <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                    Atribuída a ambos
+                  </div>
                 ) : (
-                  /* Informação sobre atribuição */
-                  task.assignedTo &&
                   task.assignedTo === user?.partnerId && (
                     <div className="text-xs flex items-center bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
                       <UserIcon className="h-3 w-3 mr-1 flex-shrink-0" />
@@ -179,17 +183,24 @@ export function SortableTaskCard({
                     </div>
                   )
                 )}
-                
+
                 {/* Indicador de prioridade */}
                 {!task.completed && (
-                  <div className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
-                    task.priority === 2 ? 'bg-red-50 text-red-600' : 
-                    task.priority === 1 ? 'bg-yellow-50 text-yellow-600' : 
-                    'bg-blue-50 text-blue-600'
-                  }`}>
+                  <div
+                    className={`text-xs flex items-center px-2 py-1 rounded-full font-medium ${
+                      task.priority === 2
+                        ? "bg-red-50 text-red-600"
+                        : task.priority === 1
+                          ? "bg-yellow-50 text-yellow-600"
+                          : "bg-blue-50 text-blue-600"
+                    }`}
+                  >
                     <Star className="h-3 w-3 mr-1 flex-shrink-0" />
-                    {task.priority === 2 ? 'Alta' : 
-                     task.priority === 1 ? 'Média' : 'Baixa'}
+                    {task.priority === 2
+                      ? "Alta"
+                      : task.priority === 1
+                        ? "Média"
+                        : "Baixa"}
                   </div>
                 )}
               </div>
@@ -212,21 +223,24 @@ interface SortableTaskListProps {
   user?: any;
 }
 
-export function SortableTaskList({ 
-  tasks, 
+export function SortableTaskList({
+  tasks,
   onDragEnd,
   onClick,
   onToggleComplete,
   getFormattedDueDate,
   getFrequencyIcon,
   getFrequencyText,
-  user
+  user,
 }: SortableTaskListProps) {
   const { toast } = useToast();
-  
+
   // Log para debug
-  console.log("SortableTaskList recebeu tarefas:", tasks.map(t => ({ id: t.id, tipo: typeof t.id })));
-  
+  console.log(
+    "SortableTaskList recebeu tarefas:",
+    tasks.map((t) => ({ id: t.id, tipo: typeof t.id }))
+  );
+
   // Configure o sensor para detectar arrasto
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -235,82 +249,95 @@ export function SortableTaskList({
       },
     })
   );
-  
+
   // Preparar os IDs das tarefas para o SortableContext
-  const taskIds = tasks.map(task => {
-    // Fazer uma validação mais rigorosa dos IDs de tarefas
-    if (task.id === undefined || task.id === null) {
-      console.error("Tarefa sem ID encontrada:", task);
-      return -1;
-    }
-    
-    // Garantir que todos os IDs são números
-    const id = typeof task.id === 'string' ? parseInt(task.id, 10) : Number(task.id);
-    
-    if (isNaN(id) || id <= 0) {
-      console.error("ID inválido encontrado:", { taskId: task.id, taskType: typeof task.id, taskValue: task.id, convertedId: id });
-      return -1; // Valor de fallback para evitar NaN
-    }
-    
-    return id;
-  }).filter(id => id > 0); // Remover IDs inválidos
-  
+  const taskIds = tasks
+    .map((task) => {
+      // Fazer uma validação mais rigorosa dos IDs de tarefas
+      if (task.id === undefined || task.id === null) {
+        console.error("Tarefa sem ID encontrada:", task);
+        return -1;
+      }
+
+      // Garantir que todos os IDs são números
+      const id =
+        typeof task.id === "string" ? parseInt(task.id, 10) : Number(task.id);
+
+      if (isNaN(id) || id <= 0) {
+        console.error("ID inválido encontrado:", {
+          taskId: task.id,
+          taskType: typeof task.id,
+          taskValue: task.id,
+          convertedId: id,
+        });
+        return -1; // Valor de fallback para evitar NaN
+      }
+
+      return id;
+    })
+    .filter((id) => id > 0); // Remover IDs inválidos
+
   // Verificação adicional de segurança
   if (taskIds.length === 0 && tasks.length > 0) {
-    console.error("Nenhum ID válido encontrado nas tarefas. Verifique o formato dos dados:", tasks);
+    console.error(
+      "Nenhum ID válido encontrado nas tarefas. Verifique o formato dos dados:",
+      tasks
+    );
   }
-  
+
   console.log("Task IDs processados para SortableContext:", taskIds);
-  
+
   // Wrapper personalizado para onDragEnd
   const handleDragEnd = (event: DragEndEvent) => {
     console.log("DragEnd raw event:", event);
-    
+
     // Verifique se os IDs são válidos antes de chamar o callback
     const { active, over } = event;
     if (!active || !over) {
       console.error("Evento de arrasto inválido - active ou over ausentes");
       return;
     }
-    
+
     // Validar IDs antes de processar o evento
-    const activeId = typeof active.id === 'string' ? Number(active.id) : Number(active.id);
-    const overId = typeof over.id === 'string' ? Number(over.id) : Number(over.id);
-    
+    const activeId =
+      typeof active.id === "string" ? Number(active.id) : Number(active.id);
+    const overId =
+      typeof over.id === "string" ? Number(over.id) : Number(over.id);
+
     if (isNaN(activeId) || isNaN(overId) || activeId <= 0 || overId <= 0) {
-      console.error("ID de tarefa inválido no evento de arrasto:", { activeId, overId });
+      console.error("ID de tarefa inválido no evento de arrasto:", {
+        activeId,
+        overId,
+      });
       toast({
         title: "Erro ao reordenar",
         description: "Identificadores de tarefas inválidos",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-    
+
     // Continuar com o processamento normal
     onDragEnd(event, tasks);
   };
-  
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext 
-        items={taskIds}
-        strategy={verticalListSortingStrategy}
-      >
+      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <AnimatedList
           items={tasks}
           keyExtractor={(task) => task.id}
           staggerDelay={0.05}
           className="space-y-4"
           renderItem={(task) => (
-            <SortableTaskCard 
+            <SortableTaskCard
               key={task.id}
-              task={task} 
-              onClick={() => onClick(task)} 
+              task={task}
+              onClick={() => onClick(task)}
               onToggleComplete={onToggleComplete}
               getFormattedDueDate={getFormattedDueDate}
               getFrequencyIcon={getFrequencyIcon}

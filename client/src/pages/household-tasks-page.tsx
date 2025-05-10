@@ -365,7 +365,7 @@ export default function HouseholdTasksPage() {
 
     if (viewMyTasks) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.assignedTo === user?.id
+        (task) => task.assignedTo === user?.id || task.assignedTo === null // inclui tarefas atribuídas ao usuário ou a ambos
       );
     }
 
@@ -760,7 +760,7 @@ export default function HouseholdTasksPage() {
   // UI Components
   const renderTaskCard = (task: HouseholdTaskType) => {
     return (
-      <TactileFeedback scale={0.98}>
+      <TactileFeedback className="w-full">
         <Card
           className={`p-4 relative ${
             task.completed
