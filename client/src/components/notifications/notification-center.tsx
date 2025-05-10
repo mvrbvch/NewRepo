@@ -60,6 +60,7 @@ export function NotificationCenter() {
     refetch,
   } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
+    credentials: "include",
     staleTime: 60000, // 1 minuto
   });
 
