@@ -964,7 +964,7 @@ export default function HouseholdTasksPage() {
         </PullToRefresh>
       </Tabs>
 
-      <BottomNavigation onCreateEvent={handleOpenCreateModal} />
+      <BottomNavigation />
 
       <CreateTaskModal
         isOpen={createModalOpen}

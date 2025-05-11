@@ -69,6 +69,11 @@ export default {
           focused: "#073B4C",
           neutral: "#8A898C",
         },
+        love: {
+          light: "#ffebee",
+          DEFAULT: "#ff4081",
+          dark: "#c2185b",
+        },
       },
       keyframes: {
         "accordion-down": {

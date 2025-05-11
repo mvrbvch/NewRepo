@@ -5,16 +5,18 @@ import {
   addYears,
   setHours,
   setMinutes,
+  parseISO,
+  format,
+  addMinutes,
 } from "date-fns";
 
-import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
-import { addMinutes } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 // To convert from a timezone to UTC
 function zonedTimeToUtc(date: Date, timeZone: string): Date {
   const tzOffset = -date.getTimezoneOffset();
   const localDate = new Date(date);
-  const targetDate = utcToZonedTime(date, timeZone);
+  const targetDate = toZonedTime(date, timeZone);
   const targetOffset =
     (targetDate.getTime() - localDate.getTime()) / (60 * 1000);
   return addMinutes(date, tzOffset - targetOffset);
@@ -52,7 +54,8 @@ export class RecurrenceService {
 
     // Apply user's timezone if provided
     const timezone = recurrenceOptions.timezone || "UTC";
-    const zonedDate = utcToZonedTime(startDate, timezone);
+
+    const zonedDate = toZonedTime(startDate, timezone);
 
     let nextDate: Date;
 
@@ -137,7 +140,8 @@ export class RecurrenceService {
   convertFromUtc(date: Date | string, timeZone: string): Date {
     // If date is a string, parse it first
     const dateObj = typeof date === "string" ? parseISO(date) : date;
-    return utcToZonedTime(dateObj, timeZone);
+
+    return toZonedTime(dateObj, timeZone);
   }
 
   /**
@@ -153,7 +157,7 @@ export class RecurrenceService {
   ): string {
     // If date is a string, parse it first
     const dateObj = typeof date === "string" ? parseISO(date) : date;
-    const zonedDate = utcToZonedTime(dateObj, timeZone);
+    const zonedDate = toZonedTime(dateObj, timeZone);
     return format(zonedDate, formatString);
   }
 }

@@ -46,7 +46,7 @@ function ScrollToTop() {
 // Componente de rotas da aplicação
 function Router() {
   const [pathname] = useLocation();
-  const [showHeader, setShowHeader] = React.useState(true);
+  const [showHeader, setShowHeader] = React.useState(false);
   console.log(pathname);
   useEffect(() => {
     setTimeout(() => {
@@ -55,12 +55,13 @@ function Router() {
         pathname === "/" ||
         pathname === "/welcome" ||
         pathname === "/onboarding" ||
-        pathname === "/partner-invite" ||
-        pathname === "/welcome"
+        pathname === "/partner-invite"
       ) {
         setShowHeader(false);
+      } else {
+        setShowHeader(true);
       }
-    }, 0);
+    }, 100);
 
     if (pathname !== "/" && pathname !== "/auth") {
       setTimeout(() => {
@@ -113,7 +114,6 @@ function Router() {
     </>
   );
 }
-
 // Componente de conteúdo principal que usa o splash screen
 const AppContent = () => {
   // Gerenciamos o estado do splash screen diretamente aqui

@@ -28,6 +28,7 @@ import {
   HeartPulse,
   Heart,
   SendIcon,
+  CheckCheck,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useRelationshipInsights } from "@/hooks/use-relationship-insights";
@@ -43,6 +44,8 @@ import { AlertCircle, Timer, Star } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { IconButton } from "@mui/material";
 import { UpcomingEventBanner } from "@/components/new-ui/UpcomingEventBanner";
+import Greeting from "@/components/shared/Greeting";
+import RelationshipTip from "@/components/shared/RelationshipTip";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -166,170 +169,123 @@ export default function DashboardPage() {
         className="flex-1 max-w-lg mx-auto w-full px-4 pt-2"
         style={{ marginTop: 120 }}
       >
-        {/* Greeting & User Info */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">
-              Olá, {user?.name?.split(" ")[0] || ""}
-            </h1>
-            <p className="text-gray-500 text-md pt-2">
-              {format(new Date(), "'Hoje é' EEEE, d 'de' MMMM", {
-                locale: ptBR,
-              })}{" "}
-              <br />
-              <b>
-                {partnerName?.split(" ")[0] || (
-                  <Link href="/invite-partner">
-                    <a>
-                      <span className="material-icons mr-2 text-primary/80 text-sm">
-                        people
-                      </span>
-                      <span>Convidar parceirx 💕</span>
-                    </a>
-                  </Link>
-                )}
-              </b>{" "}
-              e você já se escolheram hoje? 💕
-            </p>
-          </div>
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <IconButton>
-              <SendIcon />
-            </IconButton>
-          </div>
-        </div>
+        <Greeting
+          user={user?.name?.split(" ")[0] || ""}
+          partnerName={partnerName?.split(" ")[0] || ""}
+        />
+
+        <RelationshipTip
+          title="Construindo juntos"
+          description="Pequenos ajustes diários fortalecem nossa parceria. Da rotina à comunicação, cultivamos amor com atenção aos detalhes."
+        />
       </main>
-      <Card className="flex-1 max-w-lg mx-auto w-full px-4 pb-3 pt-2">
-        <div className="flex items-center space-x-4">
-          <div className="flex-shrink-0">
-            <Heart className="h-10 w-10 text-pink-500" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-medium text-gray-800">
-              Construindo juntos
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Pequenos ajustes diários fortalecem nossa parceria. Da rotina à
-              comunicação.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/tips")}
-            className="px-4 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 
-                     rounded-md transition-colors duration-200 md-w-full flex-shrink-0 font-medium"
-          >
-            Explorar dicas
-          </button>
-        </div>
-      </Card>
       <UpcomingEventBanner events={events} />
       <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-20 pt-2">
         {/* Weekly Calendar */}
-        <Card className="p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700">
-              Agenda{" "}
-              <small>
-                <span className="material-icons text-xs text-primary mr-1">
-                  favorite
-                </span>
-                nossa agenda
-              </small>
-            </h2>
-            <Badge
-              variant="outline"
-              className="hover:bg-primary/5 cursor-pointer"
-              onClick={() => navigate("/calendar")}
-            >
-              Ver tudo
-            </Badge>
-          </div>
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-love" />
+                <CardTitle className="text-lg">Nossa Agenda</CardTitle>
+              </div>
 
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {weekDays.map((day, index) => {
-              const isToday = isSameDay(day, new Date());
-              const isSelected = isSameDay(day, selectedDate);
+              <Button
+                onClick={() => navigate("/calendar")}
+                variant="secondary"
+                size="sm"
+              >
+                Ver tudo
+              </Button>
+            </div>
+          </CardHeader>
 
-              // Count events for this day
-              const dayEvents = events.filter((event) => {
-                const eventDate = new Date(event.date);
-                const formattedEventDate =
-                  formatDateSafely(eventDate)?.split("T")[0];
-                const formattedSelectedDate =
-                  formatDateSafely(day)?.split("T")[0];
+          <CardContent className="p-4">
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {weekDays.map((day, index) => {
+                const isToday = isSameDay(day, new Date());
+                const isSelected = isSameDay(day, selectedDate);
 
-                if (!formattedEventDate || !formattedSelectedDate) {
-                  return false;
-                }
+                // Count events for this day
+                const dayEvents = events.filter((event) => {
+                  const eventDate = new Date(event.date);
+                  const formattedEventDate =
+                    formatDateSafely(eventDate)?.split("T")[0];
+                  const formattedSelectedDate =
+                    formatDateSafely(day)?.split("T")[0];
 
-                return isSameDay(formattedEventDate, formattedSelectedDate);
-              });
+                  if (!formattedEventDate || !formattedSelectedDate) {
+                    return false;
+                  }
 
-              return (
-                <div
-                  key={index}
-                  onClick={() => setSelectedDate(day)}
-                  className={`flex flex-col items-center py-2 cursor-pointer rounded-lg transition-colors
+                  return isSameDay(formattedEventDate, formattedSelectedDate);
+                });
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => setSelectedDate(day)}
+                    className={`flex flex-col items-center py-2 cursor-pointer rounded-lg transition-colors border border-primary/20 
                     ${isSelected ? "bg-primary text-white" : isToday ? "bg-primary/10" : "hover:bg-gray-100"}
                   `}
-                >
-                  <span className="text-xs font-medium mb-1">
-                    {format(new Date(day), "eee", { locale: ptBR })
-                      .trim()
-                      .substring(0, 3)}
-                  </span>
-                  <span
-                    className={`text-lg font-bold ${isSelected ? "text-white" : ""}`}
                   >
-                    {format(day, "d")}
-                  </span>
-                  {dayEvents.length > 0 && (
-                    <div
-                      className={`w-1 h-1 rounded-full mt-1 ${isSelected ? "bg-white" : "bg-primary"}`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="px-1">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-500">
-                {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-              </h3>
-              <div className="flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handlePrevDay}
-                >
-                  <ArrowRight className="h-4 w-4 rotate-180" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handleNextDay}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
+                    <span className="text-xs font-medium mb-1">
+                      {format(new Date(day), "eee", { locale: ptBR })
+                        .trim()
+                        .substring(0, 3)}
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${isSelected ? "text-white" : ""}`}
+                    >
+                      {format(day, "d")}
+                    </span>
+                    {dayEvents.length > 0 && (
+                      <div
+                        className={`w-1 h-1 rounded-full mt-1 ${isSelected ? "bg-white" : "bg-primary"}`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {todayEvents.length === 0 ? (
-              <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
-                Nenhum evento para este dia
+            <div className="px-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-500">
+                  {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                </h3>
+                <div className="flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handlePrevDay}
+                  >
+                    <ArrowRight className="h-4 w-4 rotate-180" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleNextDay}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {todayEvents.map((event) => (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-3 rounded-lg cursor-pointer 
+
+              {todayEvents.length === 0 ? (
+                <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
+                  Nenhum evento para este dia
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {todayEvents.map((event) => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-3 rounded-lg cursor-pointer 
                       ${
                         event.period === "morning"
                           ? "bg-orange-50 border-l-2 border-orange-400"
@@ -337,45 +293,49 @@ export default function DashboardPage() {
                             ? "bg-blue-50 border-l-2 border-blue-400"
                             : "bg-purple-50 border-l-2 border-purple-400"
                       }`}
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-1">
-                          <span className="mr-2 text-xl">
-                            {event.emoji || "📅"}
-                          </span>
-                          <h4 className="font-medium">{event.title}</h4>
+                      onClick={() => handleEventClick(event)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-1">
+                            <span className="mr-2 text-xl">
+                              {event.emoji || "📅"}
+                            </span>
+                            <h4 className="font-medium">{event.title}</h4>
+                          </div>
+                          {event.location && (
+                            <p className="text-xs text-gray-500 mb-1">
+                              Onde? {event.location}
+                            </p>
+                          )}
                         </div>
-                        {event.location && (
-                          <p className="text-xs text-gray-500 mb-1">
-                            Onde? {event.location}
-                          </p>
-                        )}
+                        <div className="text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
+                          {formatTime(event.startTime)} -{" "}
+                          {formatTime(event.endTime)}
+                        </div>
                       </div>
-                      <div className="text-xs font-medium text-gray-600 bg-white/80 px-2 py-1 rounded">
-                        {formatTime(event.startTime)} -{" "}
-                        {formatTime(event.endTime)}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
         </Card>
 
         {/* Upcoming Tasks */}
-        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/30 to-primary/20">
+        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/10 to-primary/10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700">Tarefas pendentes</h2>
-            <Badge
-              variant="outline"
+            <CardTitle className="font-bold text-lg flex">
+              <CheckCheck className="mr-2" />
+              Tarefas pendentes
+            </CardTitle>
+            <Button
+              variant="secondary"
               className="bg-white hover:bg-white cursor-pointer"
               onClick={() => handleTaskClick()}
             >
               Ver tudo
-            </Badge>
+            </Button>
           </div>
 
           {upcomingTasks.length === 0 ? (
@@ -412,13 +372,13 @@ export default function DashboardPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-700">Amanhã</h2>
-            <Badge
-              variant="outline"
-              className="hover:bg-primary/5 cursor-pointer"
+            <Button
+              variant="secondary"
+              className="bg-white hover:bg-white cursor-pointer"
               onClick={() => navigate("/calendar")}
             >
-              Ver agenda
-            </Badge>
+              Ver tudo
+            </Button>
           </div>
 
           {tomorrowEvents.length === 0 ? (
@@ -459,7 +419,6 @@ export default function DashboardPage() {
           )}
         </Card>
       </main>
-
       <BottomNavigation />
     </div>
   );

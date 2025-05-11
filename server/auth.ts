@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { parseDateSafely } from "./utils";
 
 declare global {
   namespace Express {
@@ -80,14 +81,9 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, name, email, phoneNumber, birthday } =
-        req.body;
+      const { password, name, email, phoneNumber, birthday } = req.body;
 
       // Check if username or email already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
 
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
@@ -96,12 +92,11 @@ export function setupAuth(app: Express) {
 
       // Create new user
       const user = await storage.createUser({
-        username,
         password: await hashPassword(password),
         name,
         email,
         phoneNumber,
-        birthday: new Date(birthday),
+        birthday: parseDateSafely(birthday),
       });
 
       // Remove password from response

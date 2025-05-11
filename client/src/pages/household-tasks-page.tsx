@@ -1402,7 +1402,7 @@ export default function HouseholdTasksPage() {
           <div className="mt-4 pb-16 px-4">{renderTaskList()}</div>
         </PullToRefresh>
       </Tabs>
-      <BottomNavigation onCreateEvent={handleOpenCreateModal} />
+      <BottomNavigation />
       {/* Modals */}
       <CreateTaskModal
         isOpen={createModalOpen}

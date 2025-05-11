@@ -32,7 +32,7 @@ export default function Header() {
   }, []);
 
   const headerClass = "translate-y-0 opacity-100";
-  const backgroundClass = "bg-white/70 backdrop-blur-md shadow-md";
+  const backgroundClass = "bg-white/70 backdrop-blur-lg shadow-sm";
 
   const {
     isPushSupported,
@@ -69,7 +69,7 @@ export default function Header() {
   return (
     <header
       className={`px-4 w-full fixed py-3 flex items-center justify-between transition-transform duration-300 ease-in-out ${headerClass} ${backgroundClass}`}
-      style={{ zIndex: 50, paddingTop: 45 }}
+      style={{ zIndex: 50, paddingTop: 49 }}
     >
       <div className="flex items-center">
         <Link href="/dashboard">

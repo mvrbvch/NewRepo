@@ -1,98 +1,55 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import {
-  Plus,
-  Home,
-  Calendar,
-  User,
-  MessageSquare,
-  Sparkles,
-  LayoutDashboard,
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { NotificationIndicator } from "./notification-indicator";
-import { Badge } from "@/components/ui/badge";
-import FloatingActionButtons from "../ui/fab-button";
+import React, { useState } from "react";
+import { Calendar, CheckCheck, Home, LineChart } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useLocation } from "wouter";
 
-interface BottomNavigationProps {
-  onCreateEvent?: () => void;
-}
-
-export default function BottomNavigation({
-  onCreateEvent,
-}: BottomNavigationProps) {
+const BottomNavigation = () => {
   const [location] = useLocation();
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-  const [pathname] = useLocation();
+  const [, navigate] = useLocation();
   const isActive = (path: string) => {
     return location === path;
   };
-  const handleCreateClick = () => {
-    if (onCreateEvent) {
-      onCreateEvent();
-    } else {
-      setIsCreateMenuOpen(!isCreateMenuOpen);
-    }
-  };
+  const navigationItems = [
+    { icon: Home, label: "Resumo", url: "/dashboard" },
+    { icon: Calendar, label: "Agenda", url: "/calendar" },
+    { icon: LineChart, label: "Insights", url: "/insights" },
+    { icon: CheckCheck, label: "Tarefas", url: "/tasks" },
+  ];
 
   return (
-    <>
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 pb-5">
-        {(pathname.includes("calendar") || pathname.includes("tasks")) && (
-          <FloatingActionButtons onCreateEvent={handleCreateClick} />
-        )}
-        <div className="flex items-center justify-around h-16 px-4 relative z-50">
-          <Link
-            to="/dashboard"
-            className={`flex flex-col items-center justify-center w-12 h-12 ${
-              isActive("/dashboard") ? "text-primary" : "text-gray-600"
-            }`}
-          >
-            <LayoutDashboard className="h-6 w-6" />
-            <span className="text-xs mt-1">Resumão</span>
-          </Link>
-          <Link
-            to="/calendar"
-            className={`flex flex-col items-center justify-center w-12 h-12 ${
-              isActive("/calendar") ? "text-primary" : "text-gray-600"
-            }`}
-          >
-            <Calendar className="h-6 w-6" />
-            <span className="text-xs mt-1">Agenda</span>
-          </Link>
-
-          <Link
-            to="/insights"
-            className={`flex flex-col items-center justify-center w-12 h-12 ${
-              isActive("/insights") ? "text-primary" : "text-gray-600"
-            }`}
-          >
-            <Sparkles className="h-6 w-6" />
-            <span className="text-xs mt-1">Insights</span>
-          </Link>
-
-          <Link
-            to="/tasks"
-            className={`flex flex-col items-center justify-center w-12 h-12 ${
-              isActive("/tasks") ? "text-primary" : "text-gray-600"
-            }`}
-          >
-            <span className="material-icons text-[25px]">task_alt</span>
-            <span className="text-xs mt-1">Tarefas</span>
-          </Link>
-
-          {/* <e
-          to="#"
-          className={`flex flex-col items-center justify-center w-25 h-12 disabled pointer-events-none text-gray-300`}
-        >
-          <span className="material-icons text-[22px]">Dicas</span>
-          <Badge variant="secondary" className={"text-xs font-normal"}>
-            Notas
-          </Badge>
-        </Link> */}
+    <div className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t border-gray-100 shadow-md pb-6">
+      <div className="container max-w-md mx-auto">
+        <div className="flex justify-around py-1">
+          {navigationItems.map((item, index) => (
+            <button
+              key={index}
+              className={cn(
+                "flex flex-col items-center py-2 px-3 w-full relative",
+                isActive(item.url) &&
+                  "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-8 after:h-1 after:bg-love after:rounded-t-full"
+              )}
+              onClick={() => navigate(item.url)}
+            >
+              <item.icon
+                className={cn(
+                  "h-5 w-5 mb-1",
+                  isActive(item.url) ? "text-love" : "text-gray-500"
+                )}
+              />
+              <span
+                className={cn(
+                  "text-xs",
+                  isActive(item.url) ? "text-love font-medium" : "text-gray-500"
+                )}
+              >
+                {item.label}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
-    </>
+    </div>
   );
-}
+};
+
+export default BottomNavigation;
