@@ -1,8 +1,14 @@
-
-import React from 'react';
-import { Heart } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Heart } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 interface RelationshipTipProps {
   title: string;
@@ -10,6 +16,7 @@ interface RelationshipTipProps {
 }
 
 const RelationshipTip = ({ title, description }: RelationshipTipProps) => {
+  const [, navigate] = useLocation();
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
@@ -18,8 +25,8 @@ const RelationshipTip = ({ title, description }: RelationshipTipProps) => {
             <Heart className="h-5 w-5 text-love fill-love" />
             <CardTitle className="text-lg">{title}</CardTitle>
           </div>
-          
-          <Button variant="ghost" size="sm">
+
+          <Button onClick={() => navigate("/tips")} variant="ghost" size="sm">
             Explorar dicas
           </Button>
         </div>
