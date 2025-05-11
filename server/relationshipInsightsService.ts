@@ -11,8 +11,7 @@ import { PerplexityService } from "./perplexityService";
 // Inicializar o cliente OpenAI
 // O modelo mais recente da OpenAI é "gpt-4o" que foi lançado em 13 de maio de 2024. Não altere isso a menos que explicitamente solicitado pelo usuário
 const openai = new OpenAI({
-  apiKey:
-    "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",
+  apiKey: process.env.OPENAI_API_KEYL,
 });
 
 // Inicializar o serviço Perplexity (alternativa gratuita)
