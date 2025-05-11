@@ -63,12 +63,13 @@ export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   const [biometricDialogOpen, setBiometricDialogOpen] = useState(false);
   const [deviceName, setDeviceName] = useState("");
-
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { pushStatus } = usePushNotifications();
   const { user } = useAuth();
   const { isSupported, registerBiometric, isPending } = useBiometricAuth();
   const eventId = useSearchParam("eventId");
+  const newEvent = useSearchParam("newEvent");
 
   // Fetch events
   const { data: events = [], isLoading } = useQuery<EventType[]>({
@@ -104,6 +105,12 @@ export default function HomePage() {
       setSelectedEvent(event.event as EventType);
     }
   }, [eventId, event]); // Mutação para enviar notificação de teste
+
+  useEffect(() => {
+    if (newEvent) {
+      handleOpenCreateModal();
+    }
+  }, [newEvent]); // Mutação para enviar notificação de teste
 
   const testNotificationMutation = useMutation({
     mutationFn: async () => {
@@ -207,6 +214,7 @@ export default function HomePage() {
 
   const handleCloseCreateModal = () => {
     setCreateModalOpen(false);
+    navigate("/calendar", { replace: true });
   };
 
   const handleOpenEventDetails = (event: EventType) => {

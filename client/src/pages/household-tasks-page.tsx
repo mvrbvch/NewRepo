@@ -79,6 +79,7 @@ import EditTaskModal from "@/components/household/edit-task-modal";
 import { formatDateSafely } from "@/lib/utils";
 // Using a simple implementation of sortable list for now
 import { SimpleSortableList } from "@/components/household/simple-sortable-list";
+import { navigate } from "wouter/use-browser-location";
 // Alias SimpleSortableList as SortableTaskList to fix errors
 const SortableTaskList = SimpleSortableList;
 
@@ -96,8 +97,8 @@ function PullToRefresh({
   const currentY = useRef(0);
   const controls = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const MAX_PULL_DISTANCE = 200;
-  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.5;
+  const MAX_PULL_DISTANCE = 250;
+  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.75;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (containerRef.current && containerRef.current.scrollTop <= 0) {
@@ -182,6 +183,7 @@ export default function HouseholdTasksPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const taskId = useSearchParam("taskId");
+  const newTask = useSearchParam("newTask");
 
   // State
   const [activeTab, setActiveTab] = useState("pending");
@@ -247,6 +249,12 @@ export default function HouseholdTasksPage() {
       setSelectedTask(task ?? null);
     }
   }, [taskId, task]);
+
+  useEffect(() => {
+    if (newTask) {
+      handleOpenCreateModal();
+    }
+  }, [newTask]);
 
   const { data: partnerTasks = [], refetch: refetchPartnerTasks } = useQuery<
     HouseholdTaskType[]
@@ -614,7 +622,10 @@ export default function HouseholdTasksPage() {
   };
 
   const handleOpenCreateModal = () => setCreateModalOpen(true);
-  const handleCloseCreateModal = () => setCreateModalOpen(false);
+  const handleCloseCreateModal = () => {
+    setCreateModalOpen(false);
+    navigate("/tasks", { replace: true });
+  };
   const handleOpenTaskDetails = (task: HouseholdTaskType) =>
     setSelectedTask(task);
   const handleCloseTaskDetails = () => setSelectedTask(null);
