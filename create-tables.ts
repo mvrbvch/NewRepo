@@ -94,7 +94,9 @@ async function main() {
         created_by INTEGER NOT NULL REFERENCES users(id),
         assigned_to INTEGER REFERENCES users(id),
         due_date DATE,
+        due_time TEXT,
         next_due_date DATE,
+        next_due_time TEXT,
         completed BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );

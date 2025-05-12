@@ -95,6 +95,20 @@ export default function DashboardPage() {
       return a.startTime.localeCompare(b.startTime);
     });
 
+  const todayTasks = householdTasks.filter((task) => {
+    if (task.frequency !== "daily" && !task.dueDate && !task.completed)
+      return false;
+    const eventDate = new Date(task.dueDate);
+    const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
+    const formattedSelectedDate = formatDateSafely(selectedDate)?.split("T")[0];
+
+    if (!formattedEventDate || !formattedSelectedDate) {
+      return false;
+    } else if (task.frequency === "daily" && !task.dueDate) {
+      return task;
+    }
+    return isSameDay(formattedEventDate, formattedSelectedDate);
+  });
   // Filter events for tomorrow
   const tomorrow = addDays(new Date(), 1);
   const tomorrowEvents = events
@@ -274,9 +288,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {todayEvents.length === 0 ? (
+              {todayEvents.length === 0 && todayTasks.length === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
-                  Nenhum evento para este dia
+                  Nenhum evento ou tarefa para este dia
                 </div>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -296,6 +310,9 @@ export default function DashboardPage() {
                       onClick={() => handleEventClick(event)}
                     >
                       <div className="flex justify-between items-start">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center mb-1">
                             <span className="mr-2 text-xl">
@@ -316,13 +333,38 @@ export default function DashboardPage() {
                       </div>
                     </motion.div>
                   ))}
+
+                  {todayTasks.map((task) => (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={"p-3 rounded-lg cursor-pointer"}
+                      onClick={() => handleTaskClick(task.id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">{task.title}</h4>
+                          {task.dueDate && (
+                            <p className="text-xs text-gray-500">
+                              Prazo:{" "}
+                              {format(new Date(task.dueDate), "dd/MM/yyyy")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Upcoming Tasks */}
+        {/* Upcoming Tasks
         <Card className="p-4 mb-6 bg-gradient-to-r from-primary/10 to-primary/10">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="font-bold text-lg flex">
@@ -366,7 +408,7 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
-        </Card>
+        </Card> */}
 
         {/* Tomorrow's Lessons */}
         <Card className="p-4">

@@ -63,6 +63,7 @@ const taskFormSchema = z.object({
   frequency: z.enum(["once", "daily", "weekly", "biweekly", "monthly"]),
   assignedTo: z.union([z.number(), z.literal("both"), z.null()]).optional(),
   dueDate: z.date().nullable().optional(),
+  dueTime: z.string().optional().nullable(),
   priority: z.number().default(0), // 0: baixa, 1: média, 2: alta
   recurrenceOptions: z
     .object({
@@ -94,6 +95,7 @@ export default function CreateTaskModal({
       frequency: "once",
       assignedTo: user?.id || null,
       dueDate: null,
+      dueTime: null,
       priority: 0, // prioridade baixa por padrão
       category: "generate",
     },
@@ -102,7 +104,10 @@ export default function CreateTaskModal({
   // Mutação para criar tarefa
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: TaskFormValues) => {
-      const response = await apiRequest("POST", "/api/tasks", taskData);
+      const response = await apiRequest("POST", "/api/tasks", {
+        ...taskData,
+        dueTime: taskData.dueTime || null,
+      });
       return response.json() as Promise<HouseholdTaskType>;
     },
     onSuccess: (data) => {
@@ -129,9 +134,17 @@ export default function CreateTaskModal({
       const response = await apiRequest(
         "POST",
         "/api/tasks/smart-category",
-        taskData
+        {
+          title: taskData.title,
+          description: taskData.description,
+          frequency: taskData.frequency || "once",
+          priority: taskData.priority || 0,
+          dueDate: taskData.dueDate,
+          dueTime: taskData.dueTime,
+          assignedTo: taskData.assignedTo,
+          recurrenceOptions: taskData.recurrenceOptions,
+        }
       );
-      console.log(response);
       return response.json();
     },
     onSuccess: (data) => {
@@ -156,11 +169,17 @@ export default function CreateTaskModal({
     // Determinar categoria automaticamente, se necessário
     if (values.category === "generate") {
       const response = await getCategoryByContext.mutateAsync({
-        title: values.title || "", // Garantir que o título seja uma string
-        description: values.description || "", // Garantir que a descrição seja uma string
+        title: values.title || "",
+        description: values.description || "",
+        frequency: values.frequency,
+        priority: values.priority,
+        dueDate: values.dueDate,
+        dueTime: values.dueTime,
+        assignedTo: values.assignedTo,
+        recurrenceOptions: values.recurrenceOptions,
       });
 
-      taskData.category = response || "personal"; // Default to "personal" if no match
+      taskData.category = response || "personal";
     }
 
     // Adiciona as opções de recorrência, se disponíveis
@@ -363,61 +382,67 @@ export default function CreateTaskModal({
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="dueDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-subtitle">
-                    Data de Vencimento (opcional)
-                  </FormLabel>
-                  <Popover
-                    open={isDatePickerOpen}
-                    onOpenChange={setIsDatePickerOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={`w-full pl-3 text-left font-normal shadow-input ${
-                            !field.value && "text-muted-foreground"
-                          }`}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto p-0 modal-card"
-                      align="start"
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={field.value || undefined}
-                        onSelect={(date) => {
-                          field.onChange(date);
-                          setIsDatePickerOpen(false);
-                        }}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        locale={ptBR}
-                        initialFocus
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={`w-full pl-3 text-left font-normal ${
+                              !field.value && "text-muted-foreground"
+                            }`}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: ptBR })
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dueTime"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Horário</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription className="text-small text-medium">
-                    Até quando esta tarefa deve ser concluída?
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

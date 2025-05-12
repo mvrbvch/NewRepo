@@ -254,14 +254,13 @@ export default function TaskDetailsModal({
                 {task.dueDate && (
                   <div className="flex items-center gap-3 p-3 rounded-md bg-gray-50">
                     <div className="bg-primary-light/30 p-2 rounded-full flex-shrink-0">
-                      <CalendarIcon className="h-4 w-4 text-primary-dark" />
+                      <Calendar className="h-4 w-4 text-primary-dark" />
                     </div>
                     <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Data de vencimento</p>
                       <p className="font-medium text-dark truncate">
-                        {format(new Date(task.dueDate), "PPP", {
-                          locale: ptBR,
-                        })}
+                        {format(new Date(task.dueDate), "PPP", { locale: ptBR })}
+                        {task.dueTime && ` às ${task.dueTime}`}
                       </p>
                     </div>
                   </div>

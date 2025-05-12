@@ -147,6 +147,7 @@ export function SortableTaskCard({
                         <AlertCircle size={12} className="flex-shrink-0" />
                         <span className="truncate">
                           {getFormattedDueDate(task.dueDate)}
+                          {task.dueTime && ` às ${task.dueTime}`}
                         </span>
                       </Badge>
                     ) : (
@@ -158,6 +159,7 @@ export function SortableTaskCard({
                         } px-2 py-0.5 rounded-full truncate`}
                       >
                         {getFormattedDueDate(task.dueDate)}
+                        {task.dueTime && ` às ${task.dueTime}`}
                       </span>
                     )}
                   </div>

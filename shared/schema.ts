@@ -116,9 +116,11 @@ export const householdTasks = pgTable("household_tasks", {
     .notNull()
     .references(() => users.id),
   dueDate: timestamp("due_date"),
+  dueTime: text("due_time"),
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"), // Data em que a tarefa foi concluída
   nextDueDate: timestamp("next_due_date"),
+  nextDueTime: text("next_due_time"),
   recurrenceRule: text("recurrence_rule"),
   // Campos adicionais para configuração de recorrência
   weekdays: text("weekdays"), // Para recorrência semanal, dias da semana (ex: "0,2,4" para domingo, terça, quinta)
@@ -186,7 +188,6 @@ export const webAuthnChallenges = pgTable("webauthn_challenges", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Tabela para armazenar credenciais biométricas WebAuthn
 // Lembretes personalizados para eventos
 export const eventReminders = pgTable("event_reminders", {
   id: serial("id").primaryKey(),

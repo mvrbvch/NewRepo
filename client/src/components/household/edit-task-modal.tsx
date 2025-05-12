@@ -64,6 +64,7 @@ const taskFormSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),
   description: z.string().optional(),
   dueDate: z.date().optional(),
+  dueTime: z.string().optional().nullable(),
   frequency: z.enum(["once", "daily", "weekly", "monthly", "biweekly"]),
   assignedTo: z.union([z.number(), z.literal("both"), z.null()]).optional(),
   priority: z.enum(["0", "1", "2"]),
@@ -102,6 +103,7 @@ export default function EditTaskModal({
       title: task.title,
       description: task.description || "",
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+      dueTime: task.dueTime || null,
       frequency: task.frequency || "once",
       priority: (task.priority?.toString() as "0" | "1" | "2") || "0",
       assignedTo:
@@ -145,6 +147,7 @@ export default function EditTaskModal({
         title: task.title,
         description: task.description || "",
         dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+        dueTime: task.dueTime || null,
         frequency: task.frequency || "once",
         priority: (task.priority?.toString() as "0" | "1" | "2") || "0",
         assignedTo:
@@ -183,6 +186,7 @@ export default function EditTaskModal({
         title: data.title,
         description: data.description,
         dueDate: data.dueDate,
+        dueTime: data.dueTime,
         frequency: data.frequency,
         priority: parseInt(data.priority),
         assignedTo: data.assignedTo === "both" ? null : data.assignedTo,
@@ -237,6 +241,7 @@ export default function EditTaskModal({
       title: data.title,
       description: data.description || null,
       dueDate: data.dueDate || null,
+      dueTime: data.dueTime || null,
       frequency: data.frequency,
       priority: parseInt(data.priority),
       assignedTo: data.assignedTo === "both" ? null : data.assignedTo,
@@ -303,52 +308,67 @@ export default function EditTaskModal({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="dueDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de vencimento (opcional)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={`w-full pl-3 text-left font-normal shadow-input ${
-                            !field.value && "text-muted-foreground"
-                          }`}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                          ) : (
-                            <span>Selecione uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto p-0 modal-card"
-                      align="start"
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={field.value || undefined}
-                        onSelect={(date) => {
-                          field.onChange(date);
-                        }}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        locale={ptBR}
-                        initialFocus
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={`w-full pl-3 text-left font-normal ${
+                              !field.value && "text-muted-foreground"
+                            }`}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: ptBR })
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dueTime"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Horário</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
