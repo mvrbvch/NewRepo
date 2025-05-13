@@ -19,7 +19,7 @@ const BottomNavigation = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t border-gray-100 shadow-md pb-6">
+    <div className="fixed bottom-0 left-0 right-0 z-10 bg-white/30 border-t border-gray-100 shadow-md pb-6 backdrop-blur-md">
       <Fab
         icon={<PlusIcon />}
         alwaysShowTitle={true}

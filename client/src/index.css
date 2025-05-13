@@ -25,21 +25,19 @@ html {
 }
 
 .bg-cta {
-  background-image: linear-gradient(
-    to right top,
-    #ee5d60,
-    #f0686b,
-    #f17375,
-    #f27e80,
-    #f3888a,
-    #f28687,
-    #f08385,
-    #ef8182,
-    #eb7172,
-    #e66162,
-    #e05051,
-    #da3e41
-  );
+  background-image: linear-gradient(to right top,
+      #ee5d60,
+      #f0686b,
+      #f17375,
+      #f27e80,
+      #f3888a,
+      #f28687,
+      #f08385,
+      #ef8182,
+      #eb7172,
+      #e66162,
+      #e05051,
+      #da3e41);
 }
 
 :root {
@@ -122,11 +120,9 @@ html {
 }
 
 .text-primary-gradient {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.9) 0%,
-    hsl(var(--primary)) 100%
-  );
+  background: linear-gradient(90deg,
+      hsl(var(--primary) / 0.9) 0%,
+      hsl(var(--primary)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -157,11 +153,9 @@ html {
 }
 
 .bg-gradient-primary {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--primary) / 0.9) 0%,
-    hsl(var(--primary)) 100%
-  );
+  background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.9) 0%,
+      hsl(var(--primary)) 100%);
   color: hsl(var(--primary-foreground));
 }
 
@@ -190,11 +184,9 @@ html {
 /* Títulos com gradiente */
 .title-gradient {
   @apply font-bold tracking-tight;
-  background: linear-gradient(
-    90deg,
-    hsl(var(--primary) / 0.9) 0%,
-    hsl(var(--primary)) 100%
-  );
+  background: linear-gradient(90deg,
+      hsl(var(--primary) / 0.9) 0%,
+      hsl(var(--primary)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -376,4 +368,10 @@ html {
 
 .animate-logo-pulse {
   animation: logo-pulse 2s infinite ease-in-out;
+}
+
+
+.rtf {
+  list-style: none !important;
+
 }

@@ -288,7 +288,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {todayEvents.length === 0 && todayTasks.length === 0 ? (
+              {todayEvents.length === 0 || todayTasks.length === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
                   Nenhum evento ou tarefa para este dia
                 </div>

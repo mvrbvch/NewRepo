@@ -486,7 +486,7 @@ DADOS DO CASAL:
 DISTRIBUIÇÃO POR CATEGORIA:
 ${categoriesData}
 
-Com base nesses dados, crie um insight útil e construtivo sobre a dinâmica de distribuição de tarefas do casal. Seu insight deve ser:
+Com base nesses dados, crie um insight útil e construtivo sobre a dinâmica de distribuição de tarefas do casal. Seu insight deve ser?
 1. Personalizado e específico para este casal
 2. Respeitoso e construtivo, sem culpar nenhum dos parceiros
 3. Focado em identificar padrões e sugerir melhorias para o equilíbrio das tarefas

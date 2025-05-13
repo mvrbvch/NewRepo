@@ -118,7 +118,14 @@ export default function CreateEventModal({
 
   const createEventMutation = useMutation({
     mutationFn: async (eventData: EventFormValues) => {
-      const res = await apiRequest("POST", "/api/events", eventData);
+      const newEventData = {
+        ...eventData,
+        isShared: shareWithPartner,
+        partnerPermission,
+        shareWithPartner,
+      };
+
+      const res = await apiRequest("POST", "/api/events", newEventData);
       return res.json();
     },
     onSuccess: () => {

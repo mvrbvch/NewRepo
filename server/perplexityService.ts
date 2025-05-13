@@ -84,7 +84,7 @@ export class PerplexityService {
 
       // Construir o prompt
       const systemMessage =
-        "Você é um assistente especializado em insights de relacionamento com base em dados.";
+        "Você é um assistente especializado em insights de relacionamento com base em dados com o portugues brasileiro gramaticalmente correto.";
       const userMessage = `
 Você é um consultor de relacionamentos especializado em analisar dinâmicas entre casais.
 Analise os seguintes dados sobre a distribuição e conclusão de tarefas domésticas entre um casal:

@@ -25,6 +25,7 @@ export default function BottomNavigation({
   const [location] = useLocation();
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const [pathname] = useLocation();
+  const [, navigate] = useLocation();
   const isActive = (path: string) => {
     return location === path;
   };

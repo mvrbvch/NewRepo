@@ -224,7 +224,7 @@ export class RelationshipTipsService {
     const userMessage =
       customPrompt ||
       `
-Crie uma dica personalizada SUPER INFORMAL na categoria "${categoryInfo.title}".
+Crie uma dica personalizada INFORMAL na categoria "${categoryInfo.title}".
 
 Casal:
 - ${user.name} é ${userNickname} e ${partner.name} é ${partnerNickname}
@@ -241,9 +241,10 @@ ${contextData ? `Contexto adicional:\n${JSON.stringify(contextData)}\n` : ""}
 A dica deve ser:
 1. Bem informal e descontraída, como uma conversa entre amigos íntimos
 2. Específica para eles
-3. Com linguagem casual, divertida e até gírias (como você falaria com amigos próximos)
+3. Com linguagem casual, divertida e até gírias (como você falaria com amigos próximos) 
 4. Positiva e motivadora, mas com tom de amigo e não de especialista
 5. Prática e direta, com sugestões simples que eles podem implementar facilmente
+6. Não errar no portugues, plurais e gramatica
 
 Retorne apenas um objeto JSON válido com os seguintes campos:
 {
@@ -271,10 +272,10 @@ Retorne apenas um objeto JSON válido com os seguintes campos:
               content: userMessage,
             },
           ],
-          max_tokens: 1024,
+          max_tokens: 512,
           temperature: 0.7,
           top_p: 0.9,
-          frequency_penalty: 0.5,
+          frequency_penalty: 1,
           stream: false,
         }),
       });
