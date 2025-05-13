@@ -16,7 +16,7 @@ export function setupRelationshipInsightsRoutes(
   const insightsService = new RelationshipInsightsService(storage);
 
   // Iniciar o serviço de insights
-  // insightsService.start();
+  insightsService.start();
 
   /**
    * Obter todos os insights do usuário

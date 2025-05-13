@@ -57,13 +57,13 @@ app.use((req, res, next) => {
 
 (async () => {
   // Inicializar o serviço de lembretes
-  // try {
-  //   const reminderService = new ReminderService(storage);
-  //   reminderService.start();
-  //   console.log("Serviço de lembretes inicializado com sucesso");
-  // } catch (error) {
-  //   console.error("Erro ao inicializar serviço de lembretes:", error);
-  // }
+  try {
+    const reminderService = new ReminderService(storage);
+    reminderService.start();
+    console.log("Serviço de lembretes inicializado com sucesso");
+  } catch (error) {
+    console.error("Erro ao inicializar serviço de lembretes:", error);
+  }
 
   // Inicializar o serviço de insights de relacionamento
   try {
