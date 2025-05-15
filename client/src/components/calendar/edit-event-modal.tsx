@@ -76,7 +76,7 @@ export default function EditEventModal({
 
       const eventDate = new Date(dateStr);
       setDate(format(eventDate, "yyyy-MM-dd"));
-
+      setCategory(event.category || "");
       setPeriod(event.period);
       setStartTime(event.startTime);
       setEndTime(event.endTime);
@@ -168,6 +168,8 @@ export default function EditEventModal({
       emoji: emoji || null,
       isShared: shareWithPartner,
       category,
+      shareWithPartner,
+      sharePermission: partnerPermission,
     };
 
     // Send update request

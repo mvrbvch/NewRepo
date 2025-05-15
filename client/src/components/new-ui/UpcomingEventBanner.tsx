@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
 import { EventType } from "@/lib/types";
+import { formatDate, formatDateSafely } from "@/lib/utils";
 import { addDays, differenceInDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -16,11 +17,19 @@ export const UpcomingEventBanner = ({
 
   // Find the next special event
   const today = new Date();
+
   console.log("events", events);
   const upcomingSpecialEvents = events
     .filter((event) => event.isSpecial)
-    .filter((event) => new Date(event.date) > today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter((event) => {
+      const formattedEventDate = formatDateSafely(event.date)?.split("T")[0];
+      const todayFormatted = formatDateSafely(today)?.split("T")[0];
+      return (
+        formattedEventDate &&
+        todayFormatted &&
+        formattedEventDate >= todayFormatted
+      );
+    });
 
   const nextSpecialEvent = upcomingSpecialEvents[0];
 

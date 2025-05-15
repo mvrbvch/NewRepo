@@ -2160,7 +2160,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEvent(id: number): Promise<boolean> {
+    await this.removeEventShare(id);
     await db.delete(events).where(eq(events.id, id));
+
     // Since we donan't have a reliable way to get the count, assume it succeeded
     return true;
   }
@@ -2242,7 +2244,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeEventShare(id: number): Promise<boolean> {
-    await db.delete(eventShares).where(eq(eventShares.id, id));
+    await db.delete(eventShares).where(eq(eventShares.eventId, id));
     // Since we don't have a reliable way to get the count, assume it succeeded
     return true;
   }
@@ -2361,7 +2363,23 @@ export class DatabaseStorage implements IStorage {
   }
   // Household tasks methods
   async createHouseholdTask(task: InsertHouseholdTask): Promise<HouseholdTask> {
-    // Get the highest current position
+    // Sanitize date fields
+    const safeTask = {
+      ...task,
+      dueDate:
+        typeof task.dueDate === "string" || task.dueDate instanceof Date
+          ? task.dueDate
+          : null,
+      completedAt:
+        typeof task.completedAt === "string" || task.completedAt instanceof Date
+          ? task.completedAt
+          : null,
+      nextDueDate:
+        typeof task.nextDueDate === "string" || task.nextDueDate instanceof Date
+          ? task.nextDueDate
+          : null,
+    };
+
     const [maxPositionResult] = await db
       .select({
         maxPosition: sql`COALESCE(MAX(${householdTasks.position}), -1)`,
@@ -2374,7 +2392,7 @@ export class DatabaseStorage implements IStorage {
     const [newTask] = await db
       .insert(householdTasks)
       .values({
-        ...task,
+        ...safeTask,
         position: nextPosition,
         createdAt: new Date(),
       })
@@ -2605,6 +2623,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteHouseholdTask(id: number): Promise<boolean> {
     try {
+      // First, delete all related task completion history records
+      await db
+        .delete(taskCompletionHistory)
+        .where(eq(taskCompletionHistory.taskId, id));
+
+      // Then delete the task itself
       const result = await db
         .delete(householdTasks)
         .where(eq(householdTasks.id, id))

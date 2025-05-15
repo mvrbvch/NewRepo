@@ -7,13 +7,13 @@
         }
       },
       "previewLimit": 50,
-      "server": "ep-orange-heart-a5zsrpws.us-east-2.aws.neon.tech",
+      "server": "dbnosjuntos.cfg6egwy0jdn.us-east-2.rds.amazonaws.com",
       "port": 5432,
       "driver": "PostgreSQL",
-      "name": "PorNos",
-      "username": "neondb_owner",
-      "password": "npg_hU6cXSkBuD0m",
-      "database": "neondb"
+      "name": "nosjuntos_pre",
+      "username": "postgres",
+      "password": "e845ab222",
+      "database": "nosjuntos_pre"
     }
   ]
 }

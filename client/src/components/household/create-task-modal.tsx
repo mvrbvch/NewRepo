@@ -131,20 +131,16 @@ export default function CreateTaskModal({
 
   const getCategoryByContext = useMutation({
     mutationFn: async (taskData: TaskFormValues) => {
-      const response = await apiRequest(
-        "POST",
-        "/api/tasks/smart-category",
-        {
-          title: taskData.title,
-          description: taskData.description,
-          frequency: taskData.frequency || "once",
-          priority: taskData.priority || 0,
-          dueDate: taskData.dueDate,
-          dueTime: taskData.dueTime,
-          assignedTo: taskData.assignedTo,
-          recurrenceOptions: taskData.recurrenceOptions,
-        }
-      );
+      const response = await apiRequest("POST", "/api/tasks/smart-category", {
+        title: taskData.title,
+        description: taskData.description,
+        frequency: taskData.frequency || "once",
+        priority: taskData.priority || 0,
+        dueDate: taskData.dueDate,
+        dueTime: taskData.dueTime,
+        assignedTo: taskData.assignedTo,
+        recurrenceOptions: taskData.recurrenceOptions,
+      });
       return response.json();
     },
     onSuccess: (data) => {

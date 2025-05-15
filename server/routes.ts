@@ -1657,7 +1657,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verificar se o usuário tem acesso à tarefa
-      if (task.createdBy !== userId && task.assignedTo !== userId) {
+      if (
+        (task.createdBy !== userId && task.assignedTo !== userId) ||
+        task.assignedTo !== null
+      ) {
         return res.status(403).json({
           message: "You don't have permission to send reminders for this task",
         });
@@ -1704,6 +1707,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject: `💡 Amor, lembrete da tarefa: ${task.title}`,
         html,
         text,
+      });
+
+      const pushPayload: PushNotificationPayload = {
+        title: `💡 Amor, lembrete da tarefa: ${task.title}`,
+        body: ``,
+        data: {
+          type: "task_reminder",
+          referenceType: "task",
+          referenceId: task.id,
+        },
+        referenceType: "task",
+        referenceId: task.id,
+        tag: `task_${task.id}`,
+      };
+
+      // Send push notification to the task creator
+      const sentCount = await sendPushToUser(task.createdBy, pushPayload);
+      console.log(
+        `Enviadas ${sentCount} notificações push para o criador da tarefa concluída`
+      );
+
+      // Create notification in database
+      await storage.createNotification({
+        userId: task.createdBy,
+        title: pushPayload.title,
+        message: pushPayload.body,
+        type: "task",
+        referenceType: "task",
+        referenceId: task.id,
+        isRead: false,
+        metadata: JSON.stringify({
+          taskId: task.id,
+          completedBy: userId,
+          completed: true,
+        }),
       });
 
       if (emailSent) {

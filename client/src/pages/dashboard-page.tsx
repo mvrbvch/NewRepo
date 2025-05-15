@@ -288,7 +288,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {todayEvents.length === 0 || todayTasks.length === 0 ? (
+              {todayEvents.length === 0 && todayTasks.length === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
                   Nenhum evento ou tarefa para este dia
                 </div>
@@ -339,7 +339,7 @@ export default function DashboardPage() {
                       key={task.id}
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={"p-3 rounded-lg cursor-pointer"}
+                      className={"p-3 rounded-lg cursor-pointer bg-primary/5"}
                       onClick={() => handleTaskClick(task.id)}
                     >
                       <div className="flex justify-between items-start">

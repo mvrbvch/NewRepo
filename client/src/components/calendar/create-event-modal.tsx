@@ -23,7 +23,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { commonEmojis, formatDate, getCategories } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "emoji-picker-react";
@@ -90,6 +90,7 @@ export default function CreateEventModal({
   const { toast } = useToast();
   const { user } = useAuth();
   const [changeEmoji, setChangeEmoji] = useState(false);
+  const [isSpecial, setIsSpecial] = useState(false); // Example: Replace with actual logic
 
   const [isEditable, setIsEditable] = useState(true); // Example: Replace with actual logic
   const [shareWithPartner, setShareWithPartner] = useState(false);
@@ -106,7 +107,7 @@ export default function CreateEventModal({
       startTime: "08:00",
       endTime: "09:00",
       location: "",
-      emoji: "",
+      emoji: "📅",
       period: "morning",
       recurrence: "never",
       shareWithPartner: false,
@@ -123,6 +124,7 @@ export default function CreateEventModal({
         isShared: shareWithPartner,
         partnerPermission,
         shareWithPartner,
+        isSpecial,
       };
 
       const res = await apiRequest("POST", "/api/events", newEventData);
@@ -493,6 +495,19 @@ export default function CreateEventModal({
                 )}
               </div>
             )}
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isSpecial" className="cursor-pointer">
+                  Evento especial:
+                </Label>
+                <Switch
+                  id="isSpecial"
+                  checked={isSpecial}
+                  onCheckedChange={setIsSpecial}
+                />
+              </div>
+            </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
               <Button
