@@ -52,6 +52,7 @@ function Router() {
     setTimeout(() => {
       if (
         pathname === "/auth" ||
+        pathname === "/register" ||
         pathname === "/" ||
         pathname === "/welcome" ||
         pathname === "/onboarding" ||
@@ -65,7 +66,7 @@ function Router() {
 
     if (pathname !== "/" && pathname !== "/auth") {
       setTimeout(() => {
-        window.document.getElementsByClassName("scroll-id").length > 0 &&
+        if (window.document.getElementsByClassName("scroll-id").length > 0)
           window.document
             .getElementsByClassName("scroll-id")[0]
             .scrollIntoView({ behavior: "smooth" });
@@ -85,6 +86,7 @@ function Router() {
         {/* New route added */}
         {/* Rotas de autenticação */}
         <Route path="/auth" component={AuthPage} />
+        <Route path="/register" component={AuthPage} />
         <Route path="/accept-invite/:token" component={PartnerInvitePage} />
         <Route path="/partner-invite" component={PartnerInvitePage} />
         {/* Experiência unificada de onboarding e boas-vindas */}

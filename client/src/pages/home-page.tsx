@@ -40,7 +40,7 @@ import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { TransitionComponent } from "@/components/ui/transition-component";
 import { useAuth } from "@/hooks/use-auth";
-import { useBiometricAuth } from "@/hooks/use-biometric-auth";
+import { useBiometricAuth } from "@/hooks/use-biometric-auth__";
 import {
   Dialog,
   DialogContent,

@@ -259,7 +259,9 @@ export default function TaskDetailsModal({
                     <div className="min-w-0 overflow-hidden">
                       <p className="text-xs text-medium">Data de vencimento</p>
                       <p className="font-medium text-dark truncate">
-                        {format(new Date(task.dueDate), "PPP", { locale: ptBR })}
+                        {format(new Date(task.dueDate), "PPP", {
+                          locale: ptBR,
+                        })}
                         {task.dueTime && ` às ${task.dueTime}`}
                       </p>
                     </div>
@@ -586,7 +588,7 @@ export default function TaskDetailsModal({
         open={reminderDialogOpen}
         onOpenChange={(open) => !open && setReminderDialogOpen(false)}
       >
-        <DialogContent className="sm:max-w-[500px] modal-card max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] modal-card max-h-[90vh] overflow-y-auto p-6">
           <DialogHeader>
             <DialogTitle className="text-title title-gradient">
               Enviar lembrete para seu parceiro

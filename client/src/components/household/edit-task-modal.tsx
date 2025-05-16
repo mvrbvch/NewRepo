@@ -58,6 +58,7 @@ import RecurrenceOptionsSelector, {
   RecurrenceOptionsProps,
 } from "./recurrence-options-selector";
 import { getCategories } from "@/lib/utils";
+import { ReminderForm } from "../shared/ReminderForm";
 
 // Form schema
 const taskFormSchema = z.object({

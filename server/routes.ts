@@ -949,8 +949,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         partnerStatus: "connected",
       });
 
+      // Obter informações dos parceiros
+      const inviter = await storage.getUser(inviterId);
+      const acceptor = await storage.getUser(acceptorId);
+
+      // --- CRIAR EVENTOS DE ANIVERSÁRIO ---
+      if (inviter && inviter.birthday) {
+        const birthdayEvent = await storage.createEvent({
+          title: `Aniversário de ${inviter.name}`,
+          date: inviter.birthday,
+          startTime: "00:00",
+          endTime: "23:59",
+          period: "day",
+          createdBy: inviterId,
+          recurrence: "yearly",
+          description: `Celebre o aniversário de ${inviter.name}!`,
+          isSpecial: true,
+        });
+        // Compartilhar com o parceiro
+        await storage.shareEvent({
+          eventId: birthdayEvent.id,
+          userId: acceptorId,
+          permission: "view",
+        });
+      }
+      if (acceptor && acceptor.birthday) {
+        const birthdayEvent = await storage.createEvent({
+          title: `Aniversário de ${acceptor.name}`,
+          date: acceptor.birthday,
+          startTime: "00:00",
+          endTime: "23:59",
+          period: "day",
+          createdBy: acceptorId,
+          recurrence: "yearly",
+          description: `Celebre o aniversário de ${acceptor.name}!`,
+          isSpecial: true,
+        });
+        // Compartilhar com o parceiro
+        await storage.shareEvent({
+          eventId: birthdayEvent.id,
+          userId: inviterId,
+          permission: "view",
+        });
+      }
+      // --- FIM EVENTOS DE ANIVERSÁRIO ---
+
       // Obter informações do parceiro para retornar
-      const partner = await storage.getUser(inviterId);
+      const partner = inviter;
 
       res.json({
         message: "Conexão com parceiro estabelecida com sucesso",
@@ -965,57 +1010,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Falha ao aceitar convite" });
     }
   });
-
-  app.post("/api/partner/accept", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    try {
-      const { token } = req.body;
-
-      const invite = await storage.getPartnerInviteByToken(token);
-
-      if (!invite) {
-        return res.status(404).json({ message: "Invite not found or expired" });
-      }
-
-      if (invite.status !== "pending") {
-        return res
-          .status(400)
-          .json({ message: `Invite has already been ${invite.status}` });
-      }
-
-      const inviterId = invite.inviterId;
-      const acceptorId = req.user?.id as number;
-
-      // Don't allow self-connection
-      if (inviterId === acceptorId) {
-        return res
-          .status(400)
-          .json({ message: "You cannot connect with yourself" });
-      }
-
-      // Update the invite status
-      await storage.updatePartnerInvite(invite.id, { status: "accepted" });
-
-      // Update both users to be partners
-      await storage.updateUser(inviterId, {
-        partnerId: acceptorId,
-        partnerStatus: "connected",
-      });
-
-      await storage.updateUser(acceptorId, {
-        partnerId: inviterId,
-        partnerStatus: "connected",
-      });
-
-      res.json({ message: "Partner connection established successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to accept invite" });
-    }
-  });
-
   app.post("/api/onboarding/complete", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -2295,9 +2289,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Registrar novo dispositivo com dados validados
-      const device = await storage.registerUserDevice(validationResult.data);
 
-      res.status(201).json(device);
+      const newDevice = await storage.registerUserDevice(deviceData);
+
+      res.status(201).json(newDevice);
     } catch (error) {
       console.error("Erro ao registrar dispositivo:", error);
       res.status(500).json({

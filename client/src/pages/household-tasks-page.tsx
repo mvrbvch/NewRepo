@@ -83,7 +83,7 @@ import { navigate } from "wouter/use-browser-location";
 // Alias SimpleSortableList as SortableTaskList to fix errors
 const SortableTaskList = SimpleSortableList;
 
-// Pull to Refresh Component
+// Pull to Refresh Component with improved UX and fixed tap issue
 function PullToRefresh({
   onRefresh,
   children,
@@ -93,46 +93,87 @@ function PullToRefresh({
 }) {
   const [isPulling, setIsPulling] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0);
   const startY = useRef(0);
   const currentY = useRef(0);
+  const pullDistance = useRef(0);
+  const hasMoved = useRef(false);
   const controls = useAnimation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const MAX_PULL_DISTANCE = 250;
-  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.75;
+  const MAX_PULL_DISTANCE = 120;
+  const ACTIVATION_THRESHOLD = MAX_PULL_DISTANCE * 0.6;
+  const MOVEMENT_THRESHOLD = 10; // Mínimo de pixels para considerar como um movimento de puxar
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (containerRef.current && containerRef.current.scrollTop <= 0) {
       startY.current = e.touches[0].clientY;
+      currentY.current = startY.current;
+      pullDistance.current = 0;
+      hasMoved.current = false;
       setIsPulling(true);
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isPulling) return;
+    if (!isPulling || refreshing) return;
 
+    const previousY = currentY.current;
     currentY.current = e.touches[0].clientY;
-    const pullDistance = Math.max(
-      0,
-      Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
-    );
 
-    if (pullDistance > 0) {
-      e.preventDefault();
-      controls.set({
-        y: pullDistance,
-        opacity: pullDistance / MAX_PULL_DISTANCE,
-      });
+    // Calcular a distância do movimento atual
+    const moveDistance = currentY.current - previousY;
+
+    // Verificar se o usuário realmente está puxando para baixo
+    if (currentY.current - startY.current > MOVEMENT_THRESHOLD) {
+      hasMoved.current = true;
+
+      pullDistance.current = Math.max(
+        0,
+        Math.min(currentY.current - startY.current, MAX_PULL_DISTANCE)
+      );
+
+      // Calcular progresso percentual
+      const progress = (pullDistance.current / ACTIVATION_THRESHOLD) * 100;
+      setPullProgress(Math.min(progress, 100));
+
+      if (pullDistance.current > 0) {
+        // Prevenir o comportamento padrão apenas quando estamos realmente puxando
+        if (moveDistance > 0 && containerRef.current?.scrollTop === 0) {
+          e.preventDefault();
+        }
+
+        // Aplicar fator de resistência para uma sensação mais natural
+        const resistanceFactor =
+          0.5 + 0.5 * Math.exp(-pullDistance.current / 50);
+        const adjustedDistance = pullDistance.current * resistanceFactor;
+
+        controls.set({
+          y: adjustedDistance,
+          opacity: Math.min(
+            pullDistance.current / (MAX_PULL_DISTANCE * 0.5),
+            1
+          ),
+          rotate: pullDistance.current > ACTIVATION_THRESHOLD ? [0, 180] : 0,
+        });
+      }
     }
   };
 
   const handleTouchEnd = async () => {
-    if (!isPulling) return;
+    if (!isPulling || refreshing) return;
 
-    const pullDistance = currentY.current - startY.current;
-
-    if (pullDistance >= ACTIVATION_THRESHOLD) {
+    // Verificar se o usuário realmente puxou (não apenas tocou)
+    if (hasMoved.current && pullDistance.current >= ACTIVATION_THRESHOLD) {
       setRefreshing(true);
-      await controls.start({ y: MAX_PULL_DISTANCE / 2, opacity: 1 });
+      setPullProgress(100);
+
+      // Animar para o estado de carregamento
+      await controls.start({
+        y: 50,
+        opacity: 1,
+        rotate: 0,
+        transition: { type: "spring", stiffness: 400, damping: 30 },
+      });
 
       try {
         await onRefresh();
@@ -140,15 +181,20 @@ function PullToRefresh({
         console.error("Erro ao atualizar:", error);
       } finally {
         setRefreshing(false);
+        setPullProgress(0);
       }
     }
 
+    // Retornar ao estado inicial com animação spring
     await controls.start({
       y: 0,
       opacity: 0,
-      transition: { type: "spring", stiffness: 300, damping: 30 },
+      transition: { type: "spring", stiffness: 400, damping: 30 },
     });
+
     setIsPulling(false);
+    hasMoved.current = false;
+    pullDistance.current = 0;
   };
 
   return (
@@ -160,18 +206,47 @@ function PullToRefresh({
       onTouchEnd={handleTouchEnd}
     >
       <motion.div
-        className="absolute top-0 left-0 right-0 flex justify-center z-10 pointer-events-none"
+        className="absolute top-0 left-0 right-0 flex flex-col items-center z-10 pointer-events-none"
         animate={controls}
         initial={{ y: 0, opacity: 0 }}
       >
-        <div className="bg-primary-light/30 rounded-full p-3 mt-2">
+        <div className="bg-primary-light/20 backdrop-blur-sm rounded-full p-3 mt-2 shadow-sm">
           {refreshing ? (
             <Loader2 className="h-6 w-6 text-primary animate-spin" />
           ) : (
-            <ChevronDown className="h-6 w-6 text-primary" />
+            <motion.div
+              animate={{ rotate: pullProgress >= 100 ? 180 : 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <ChevronDown className="h-6 w-6 text-primary" />
+            </motion.div>
           )}
         </div>
+
+        {/* Progress indicator */}
+        {isPulling && hasMoved.current && !refreshing && pullProgress > 10 && (
+          <div className="mt-2 text-xs font-medium text-primary bg-primary-light/30 px-3 py-1 rounded-full">
+            {pullProgress >= 100
+              ? "Solte para atualizar"
+              : "Puxe para atualizar"}
+          </div>
+        )}
+
+        {refreshing && (
+          <div className="mt-2 text-xs font-medium text-primary bg-primary-light/30 px-3 py-1 rounded-full">
+            Atualizando...
+          </div>
+        )}
       </motion.div>
+
+      {/* Overlay for visual feedback during pull */}
+      {isPulling && hasMoved.current && pullProgress > 5 && (
+        <motion.div
+          className="absolute inset-0 bg-primary-light/5 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: pullProgress / 200 }}
+        />
+      )}
 
       {children}
     </div>

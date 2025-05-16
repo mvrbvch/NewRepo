@@ -271,7 +271,10 @@ function TipCard({ tip, onFavorite, onUnfavorite, onDelete }: TipCardProps) {
         </div>
       </CardHeader>
       <CardContent className="py-4 px-4">
-        <p className="text-sm text-gray-700 mb-4">{tip.content}</p>
+        <p
+          className="text-sm text-gray-700 mb-4"
+          dangerouslySetInnerHTML={{ __html: markdownToHtml(tip.content) }}
+        />
         {tip.actionItems && tip.actionItems.length > 0 && (
           <div className="mt-2">
             <h4 className="text-xs font-semibold text-gray-700 mb-2">
@@ -323,6 +326,15 @@ function TipCard({ tip, onFavorite, onUnfavorite, onDelete }: TipCardProps) {
       </CardFooter>
     </Card>
   );
+}
+
+// Função utilitária para converter Markdown básico em HTML
+function markdownToHtml(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Negrito
+    .replace(/\*(.*?)\*/g, "<em>$1</em>") // Itálico
+    .replace(/__(.*?)__/g, "<u>$1</u>") // Sublinhado
+    .replace(/`(.*?)`/g, "<code>$1</code>"); // Código inline
 }
 
 // Badge de categoria com cores diferentes

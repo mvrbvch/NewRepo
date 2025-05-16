@@ -14,8 +14,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { customZodSchema } from "zod-password-validation-schema";
+
 import { Separator } from "@/components/ui/separator";
-import { useLocation } from "wouter";
+import { Label } from "@/components/ui/label";
+import { useLocation, useParams, useSearch } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -35,28 +38,39 @@ import {
   Calendar,
 } from "lucide-react";
 import { useHookFormMask, withMask } from "use-mask-input";
+import { useBiometricAuth } from "@/hooks/use-biometric-auth__";
+import { Switch } from "@/components/ui/switch";
 
 // Mensagens de erro personalizadas e descontraídas
 const loginSchema = z.object({
   username: z
     .string()
-    .min(1, "Ops! Esqueceu de nos dizer quem você é?")
+    .email("Hmm, esse email parece meio estranho... Confere pra gente?")
     .toLowerCase(),
   password: z.string().min(1, "Sem senha não tem como entrar, viu?"),
 });
 
 const registerSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Seu nome de usuário precisa de pelo menos 3 letrinhas, tá?"),
   password: z
     .string()
-    .min(6, "Uma senha com 6+ caracteres deixa tudo mais seguro! 🔒"),
+    .min(
+      8,
+      "Uma senha com 8+ caracteres, uma letra maiúscula, um número e um caractere especial deixa tudo mais seguro! 🔒"
+    )
+    .refine(
+      (val) =>
+        /[A-Z]/.test(val) && // pelo menos uma letra maiúscula
+        /\d/.test(val) && // pelo menos um número
+        /[^A-Za-z0-9]/.test(val), // pelo menos um caractere especial
+      {
+        message:
+          "Sua senha deve conter pelo menos uma letra maiúscula, um número e um caractere especial",
+      }
+    ),
   name: z.string().min(2, "Como vamos te chamar com menos de 2 letras? 😊"),
   birthday: z
     .string()
-    .min(1, "Juro que é só pra nao deixar ninguem esquecer do seu dia "),
-
+    .min(2, "Juro que é só pra nao deixar ninguem esquecer do seu dia "),
   email: z
     .string()
     .email("Hmm, esse email parece meio estranho... Confere pra gente?"),
@@ -70,8 +84,13 @@ export default function AuthPage() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>();
   const { loginMutation, registerMutation, user } = useAuth();
   const [, navigate] = useLocation();
+  const [pathname] = useLocation();
+  const isSignUp = pathname === "/register";
   const [inviterName, setInviterName] = useState<string | null>(null);
   const [isLoadingInviteData, setIsLoadingInviteData] = useState(false);
+  const { loginWithBiometric, registerBiometric } = useBiometricAuth();
+  const [username, setUsername] = useState("");
+  const [biometry, setBiometry] = useState(false);
 
   // Extrair parâmetros da URL para redirecionamento após autenticação
   const urlParams = new URLSearchParams(window.location.search);
@@ -111,22 +130,22 @@ export default function AuthPage() {
 
   const { register } = useForm();
 
-  const registerWithMask = useHookFormMask(register);
-
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
       password: "",
       name: "",
       email: "",
       phoneNumber: "",
-      birthday: "DD/MM/AAAA",
+      birthday: "",
     },
   });
 
   // Redirect if already logged in - moved after all hooks are called
   if (user) {
+    // if (biometry) {
+    //   registerBiometric(user.username);
+    // }
     // Se existe um parâmetro de redirecionamento na URL, usá-lo de acordo com o tipo
     if (redirectTo === "welcome") {
       navigate("/welcome");
@@ -191,7 +210,14 @@ export default function AuthPage() {
           </div>
 
           <Tabs
-            defaultValue={inviteToken ? "register" : "login"}
+            onValueChange={(value) => {
+              if (value === "register") {
+                navigate("/register", { replace: true });
+              } else {
+                navigate("/auth", { replace: true });
+              }
+            }}
+            defaultValue={inviteToken || isSignUp ? "register" : "login"}
             className="space-y-6"
           >
             <TabsList className="grid grid-cols-2 w-full">
@@ -212,13 +238,13 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email ou Nome de Usuário</FormLabel>
+                            <FormLabel>E-mail</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  type="text"
-                                  placeholder="Digite seu email ou nome de usuário"
+                                  type="email"
+                                  placeholder="Digite seu e-mail"
                                   className="pl-10"
                                   {...field}
                                 />
@@ -250,6 +276,18 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
+
+                      {/* <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="isSpecial" className="cursor-pointer">
+                            Habilitar biometria?
+                          </Label>
+                          <Switch
+                            checked={biometry}
+                            onCheckedChange={setBiometry}
+                          />
+                        </div>
+                      </div> */}
 
                       <Button
                         type="submit"
@@ -312,27 +350,6 @@ export default function AuthPage() {
                                 <Input
                                   type="email"
                                   placeholder="seu@email.com"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome de Usuário</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  placeholder="Escolha um nome de usuário"
                                   className="pl-10"
                                   {...field}
                                 />

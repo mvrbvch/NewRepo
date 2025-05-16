@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { parseDateSafely } from "./utils";
+import { registerWebAuthnRoutes } from "./webauthn-routes";
 
 declare global {
   namespace Express {
@@ -145,4 +146,7 @@ export function setupAuth(app: Express) {
     const { password: _, ...userWithoutPassword } = req.user as Express.User;
     res.json(userWithoutPassword);
   });
+
+  // --- Integração biometria ---
+  registerWebAuthnRoutes(app);
 }

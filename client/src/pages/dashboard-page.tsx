@@ -46,6 +46,7 @@ import { IconButton } from "@mui/material";
 import { UpcomingEventBanner } from "@/components/new-ui/UpcomingEventBanner";
 import Greeting from "@/components/shared/Greeting";
 import RelationshipTip from "@/components/shared/RelationshipTip";
+import { useBiometricAuth } from "@/hooks/use-biometric-auth__";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -55,6 +56,8 @@ export default function DashboardPage() {
   const { useAllInsights } = useRelationshipInsights();
   const insightsQuery = useAllInsights();
   const today = new Date();
+  const { loginWithBiometric, registerBiometric } = useBiometricAuth();
+  const [username, setUsername] = useState("");
   const [partnerName, setPartnerName] = useState<string | null>("");
   // Fetch events data
   const { data: events = [], isLoading: isLoadingEvents } = useQuery<
