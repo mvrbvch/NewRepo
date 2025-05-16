@@ -163,33 +163,165 @@ Não inclua explicações, apenas o objeto JSON.
         throw new Error("Resposta vazia da API Perplexity");
       }
 
-        // Limpar a resposta - remover blocos de código markdown se presentes
-        let cleanedText = contentText;
-        // Remover blocos de código markdown (```json ... ```)
-        if (cleanedText.includes("```")) {
-          // Obter texto entre os delimitadores de código
-          const match = cleanedText.match(/```(?:json)?\s*([\s\S]*?)```/);
-          if (match && match[1]) {
-            cleanedText = match[1]; // NÃO usar .trim() para manter quebras de linha
-            console.log("Texto limpo do markdown:", cleanedText);
-          } else {
-            console.warn(
-          "Não foi possível extrair o conteúdo JSON dos delimitadores de código markdown"
-            );
-          }
+      // Limpar a resposta - remover blocos de código markdown se presentes
+      let cleanedText = contentText;
+      // Remover blocos de código markdown (```json ... ```)
+      if (cleanedText.includes("```")) {
+        // Obter texto entre os delimitadores de código
+        const match = cleanedText.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (match && match[1]) {
+          cleanedText = match[1];
+          console.log("Texto limpo do markdown:", cleanedText);
+        } else {
+          console.warn(
+            "Não foi possível extrair o conteúdo JSON dos delimitadores de código markdown"
+          );
         }
+      }
 
-        console.log("Texto limpo:", cleanedText);
+      console.log("Texto limpo:", cleanedText);
 
-        // Analisar o resultado da API
-        const result = JSON.parse(cleanedText);
+      // Analisar o resultado da API
+      const result = JSON.parse(cleanedText);
 
-        return {
-          type: InsightType.TASK_BALANCE,
-          title: result.title,
-          content: result.content,
-          sentiment: result.sentiment,
-          score: result.score,
-          actions: result.actions,
-          rawData: data,
-        };
+      return {
+        type: InsightType.TASK_BALANCE,
+        title: result.title,
+        content: result.content,
+        sentiment: result.sentiment,
+        score: result.score,
+        actions: result.actions,
+        rawData: data,
+      };
+    } catch (error) {
+      console.error("Erro ao gerar insight com a API Perplexity:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Gera uma categoria automaticamente com base nos dados da tarefa usando a API Perplexity
+   */
+  public async generateCategoryBasedOnTask({
+    title,
+    description,
+  }: {
+    title: string;
+    description?: string;
+  }): Promise<string | null> {
+    if (!this.isConfigured()) {
+      console.warn(
+        "API Perplexity não configurada (PERPLEXITY_API_KEY não definida)"
+      );
+      return null;
+    }
+
+    if (!title) {
+      console.error("Erro: O título da tarefa é obrigatório.");
+      return null;
+    }
+
+    try {
+      const systemMessage =
+        "Você é um assistente especializado em categorização de tarefas.";
+      const userMessage = `
+    Baseado no título e descrição da tarefa abaixo, determine a categoria mais apropriada. 
+    Escolha entre as seguintes categorias: 
+    - cleaning
+    - shopping
+    - maintenance
+    - work
+    - personal
+    - important
+    - exercise
+    - meal_prep
+    - finance
+    - hobbies
+    - study
+    - relaxation
+    - health
+    - pets
+    - planning
+    - gardening
+    - cleaning_car
+    - chill
+    - meditation
+
+
+    TAREFA:
+    Título: ${title}
+    Descrição: ${description || "Sem descrição"}
+
+    Retorne apenas o nome da categoria como uma string. Não inclua explicações ou outros dados.
+    `;
+
+      const response = await fetch(this.baseUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: this.defaultModel,
+          messages: [
+            {
+              role: "system",
+              content: systemMessage,
+            },
+            {
+              role: "user",
+              content: userMessage,
+            },
+          ],
+          max_tokens: 100,
+          temperature: 0.2,
+          top_p: 0.9,
+          frequency_penalty: 1,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Erro na API Perplexity: ${response.status} ${errorData}`
+        );
+      }
+
+      const responseData = await response.json();
+      const contentText = responseData.choices[0]?.message?.content?.trim();
+
+      if (!contentText) {
+        throw new Error("Resposta vazia da API Perplexity");
+      }
+
+      console.log("Categoria gerada pela API Perplexity:", contentText);
+      return contentText;
+    } catch (error) {
+      console.error("Erro ao gerar categoria com a API Perplexity:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Gera um apelido baseado no nome usando a API Perplexity
+   */
+  public async generateNicknameBasedOnName(name: string): Promise<string> {
+    return this.generateLocalNickname(name);
+  }
+
+  private generateLocalNickname(name: string): string {
+    if (!name) return "Amor";
+
+    const firstName = name.split(" ")[0];
+    const isMale = ["o", "r", "l", "s", "z"].includes(
+      firstName.slice(-1).toLowerCase()
+    );
+
+    const options = [
+      isMale ? `${firstName}zão` : `${firstName}zinha`,
+      firstName,
+    ];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+}
