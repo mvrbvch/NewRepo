@@ -51,6 +51,7 @@ import RecurrenceOptionsSelector, {
   RecurrenceOptionsProps,
 } from "./recurrence-options-selector";
 import { getCategories } from "@/lib/utils";
+import { ReminderForm } from "../shared/ReminderForm";
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -85,6 +86,7 @@ export default function CreateTaskModal({
   const { toast } = useToast();
   const { user } = useAuth();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [pendingReminders, setPendingReminders] = useState<any[]>([]);
 
   // Form com validação Zod
   const form = useForm({
@@ -185,7 +187,30 @@ export default function CreateTaskModal({
       taskData.recurrenceEnd = values.recurrenceOptions.endDate || null;
     }
 
-    createTaskMutation.mutate(taskData);
+    createTaskMutation.mutate(taskData, {
+      onSuccess: async (createdTask) => {
+        // Após criar a tarefa, crie os lembretes
+        if (pendingReminders.length > 0) {
+          await Promise.all(
+            pendingReminders.map((reminder) =>
+              apiRequest("POST", `/api/tasks/${createdTask.id}/reminders`, {
+                reminderType: reminder.reminderType,
+                reminderTime: reminder.reminderTime,
+                message: reminder.customMessage,
+              })
+            )
+          );
+        }
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+        toast({
+          title: "Tarefa criada",
+          description: "A tarefa foi criada com sucesso!",
+        });
+        form.reset();
+        setPendingReminders([]);
+        onClose();
+      },
+    });
   };
 
   return (
@@ -503,6 +528,30 @@ export default function CreateTaskModal({
                 </FormItem>
               )}
             />
+
+            <Collapsible
+              defaultOpen
+              className="space-y-2 border rounded-lg p-4"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Lembretes</h4>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-9 p-0">
+                    <ChevronDown className="h-4 w-4" />
+                    <span className="sr-only">Toggle</span>
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent className="space-y-4">
+                <ReminderForm
+                  type="task"
+                  id={0} // id=0 pois a tarefa ainda não existe
+                  onCreated={setPendingReminders}
+                  pendingReminders={pendingReminders}
+                  mode="pending"
+                />
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
               <Button

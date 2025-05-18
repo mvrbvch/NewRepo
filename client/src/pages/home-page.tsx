@@ -40,7 +40,7 @@ import { TactileFeedback } from "@/components/ui/tactile-feedback";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { TransitionComponent } from "@/components/ui/transition-component";
 import { useAuth } from "@/hooks/use-auth";
-import { useBiometricAuth } from "@/hooks/use-biometric-auth__";
+import { useBiometricAuth } from "@/hooks/use-biometric-auth";
 import {
   Dialog,
   DialogContent,
@@ -167,7 +167,7 @@ export default function HomePage() {
 
       return events.filter((event) => {
         const eventDate = new Date(event.date);
-        return eventDate >= start && eventDate <= end;
+        return addDays(eventDate, 1) >= start && addDays(eventDate, 1) <= end;
       });
     } else if (view === "month") {
       // Para visualização mensal, eventos do mês selecionado
@@ -308,6 +308,7 @@ export default function HomePage() {
   const sharedEventsCount = filteredEvents.filter(
     (event) => event.isShared
   ).length;
+  const eventsCount = filteredEvents.filter((event) => event).length;
 
   return (
     <motion.div
@@ -324,7 +325,7 @@ export default function HomePage() {
       >
         <DateNavigation
           date={selectedDate}
-          eventCount={filteredEvents.length}
+          eventCount={eventsCount}
           sharedCount={sharedEventsCount}
           onPrev={handlePrev}
           onNext={handleNext}

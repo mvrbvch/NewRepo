@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const { loginWithBiometric, registerBiometric } = useBiometricAuth();
   const [username, setUsername] = useState("");
   const [partnerName, setPartnerName] = useState<string | null>("");
+
   // Fetch events data
   const { data: events = [], isLoading: isLoadingEvents } = useQuery<
     EventType[]
@@ -80,69 +81,49 @@ export default function DashboardPage() {
     setWeekDays(days);
   }, [selectedDate]);
 
-  // Filter events for the selected date
-  const todayEvents = events
-    .filter((event) => {
-      const eventDate = new Date(event.date);
-      const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
-      const formattedSelectedDate =
-        formatDateSafely(selectedDate)?.split("T")[0];
-
-      if (!formattedEventDate || !formattedSelectedDate) {
-        return false;
-      }
-
-      return isSameDay(formattedEventDate, formattedSelectedDate);
-    })
-    .sort((a, b) => {
-      return a.startTime.localeCompare(b.startTime);
-    });
-
-  const todayTasks = householdTasks.filter((task) => {
-    if (task.frequency !== "daily" && !task.dueDate && !task.completed)
-      return false;
-    const eventDate = new Date(task.dueDate);
+  // Filter events for selected date
+  const selectedDayEvents = events.filter((event) => {
+    const eventDate = new Date(event.date);
     const formattedEventDate = formatDateSafely(eventDate)?.split("T")[0];
     const formattedSelectedDate = formatDateSafely(selectedDate)?.split("T")[0];
 
-    if (!formattedEventDate || !formattedSelectedDate) {
-      return false;
-    } else if (task.frequency === "daily" && !task.dueDate) {
-      return task;
-    }
     return isSameDay(formattedEventDate, formattedSelectedDate);
   });
-  // Filter events for tomorrow
-  const tomorrow = addDays(new Date(), 1);
-  const tomorrowEvents = events
-    .filter((event) => {
-      const eventDate = new Date(event.date);
-      return isSameDay(eventDate, tomorrow);
+
+  // Filter tasks for selected date
+  const selectedDayTasks = householdTasks
+    .filter((task) => {
+      if (task.frequency !== "daily" && !task.dueDate && !task.completed)
+        return false;
+      if (task.frequency === "daily" && !task.dueDate) return true;
+      if (!task.dueDate) return false;
+      return isSameDay(new Date(task.dueDate), selectedDate);
     })
     .sort((a, b) => {
-      return a.startTime.localeCompare(b.startTime);
+      return a.assignedTo !== null && b.assignedTo === null
+        ? -1
+        : a.assignedTo === null && b.assignedTo !== null
+          ? 1
+          : 0;
     });
 
-  // Filter upcoming tasks
-  const upcomingTasks = householdTasks
-    .filter((task) => !task.completed)
-    .sort((a, b) => {
-      const dateA = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
-      const dateB = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
-      return dateA.getTime() - dateB.getTime();
-    })
-    .slice(0, 3);
+  // Filter events for tomorrow
+  const tomorrow = addDays(today, 1);
+  const tomorrowEvents = events
+    .filter((event) => isSameDay(new Date(event.date), tomorrow))
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  // Handle previous and next day
+  // Filter upcoming tasks
+
+  // Handle previous and next week
   const handlePrevDay = () => {
     setSelectedDate(subDays(selectedDate, 7));
   };
-
   const handleNextDay = () => {
     setSelectedDate(addDays(selectedDate, 7));
   };
 
-  // Navigate to event details
+  // Navigation
   const handleEventClick = (event: EventType) => {
     if (event.id) {
       navigate(`/calendar?eventId=${event.id}`);
@@ -150,8 +131,6 @@ export default function DashboardPage() {
       navigate(`/calendar`);
     }
   };
-
-  // Navigate to task details
   const handleTaskClick = (taskId?: number) => {
     if (taskId) {
       navigate(`/tasks?taskId=${taskId}`);
@@ -160,11 +139,10 @@ export default function DashboardPage() {
     }
   };
 
+  // Get partner name
   const getUserById = async (id: number) => {
     const response = await apiRequest("GET", `/api/user/byId/${id}`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch user data");
-    }
+    if (!response.ok) throw new Error("Failed to fetch user data");
     return response.json();
   };
 
@@ -176,11 +154,16 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  //Loading
+  useEffect(() => {
+    setTimeout(() => {
+      if (user) setSelectedDate(new Date());
+    }, 1000);
+  }, [user]);
+
   const isLoading =
     isLoadingEvents || isLoadingTasks || insightsQuery.isLoading;
 
-  return (
+  return !isLoading ? (
     <div className="flex flex-col min-h-screen bg-gray-50 mb-10 scroll-id">
       <main
         className="flex-1 max-w-lg mx-auto w-full px-4 pt-2"
@@ -190,7 +173,6 @@ export default function DashboardPage() {
           user={user?.name?.split(" ")[0] || ""}
           partnerName={partnerName?.split(" ")[0] || ""}
         />
-
         <RelationshipTip
           title="Construindo juntos"
           description="Pequenos ajustes diários fortalecem nossa parceria. Da rotina à comunicação, cultivamos amor com atenção aos detalhes."
@@ -206,7 +188,6 @@ export default function DashboardPage() {
                 <Calendar className="h-5 w-5 text-love" />
                 <CardTitle className="text-lg">Nossa Agenda</CardTitle>
               </div>
-
               <Button
                 onClick={() => navigate("/calendar")}
                 variant="secondary"
@@ -216,14 +197,13 @@ export default function DashboardPage() {
               </Button>
             </div>
           </CardHeader>
-
           <CardContent className="p-4">
             <div className="grid grid-cols-7 gap-2 mb-4">
               {weekDays.map((day, index) => {
-                const isToday = isSameDay(day, new Date());
+                const isToday = isSameDay(day, today);
                 const isSelected = isSameDay(day, selectedDate);
 
-                // Count events for this day
+                // Eventos do dia
                 const dayEvents = events.filter((event) => {
                   const eventDate = new Date(event.date);
                   const formattedEventDate =
@@ -231,20 +211,33 @@ export default function DashboardPage() {
                   const formattedSelectedDate =
                     formatDateSafely(day)?.split("T")[0];
 
-                  if (!formattedEventDate || !formattedSelectedDate) {
-                    return false;
-                  }
-
                   return isSameDay(formattedEventDate, formattedSelectedDate);
+                });
+                // Tarefas do dia
+                const dayTasks = householdTasks.filter((task) => {
+                  if (
+                    task.frequency !== "daily" &&
+                    !task.dueDate &&
+                    !task.completed
+                  )
+                    return false;
+                  if (task.frequency === "daily" && !task.dueDate) return true;
+                  if (!task.dueDate) return false;
+                  return isSameDay(new Date(task.dueDate), day);
                 });
 
                 return (
                   <div
                     key={index}
-                    onClick={() => setSelectedDate(day)}
+                    onClick={() => {
+                      setSelectedDate(day);
+                      window.document
+                        .getElementsByClassName("scroll-top")[0]
+                        .scroll({ top: 0, behavior: "smooth" });
+                    }}
                     className={`flex flex-col items-center py-2 cursor-pointer rounded-lg transition-colors border border-primary/20 
-                    ${isSelected ? "bg-primary text-white" : isToday ? "bg-primary/10" : "hover:bg-gray-100"}
-                  `}
+                  ${isSelected ? "bg-primary text-white" : isToday ? "bg-primary/10" : "hover:bg-gray-100"}
+                `}
                   >
                     <span className="text-xs font-medium mb-1">
                       {format(new Date(day), "eee", { locale: ptBR })
@@ -261,11 +254,15 @@ export default function DashboardPage() {
                         className={`w-1 h-1 rounded-full mt-1 ${isSelected ? "bg-white" : "bg-primary"}`}
                       />
                     )}
+                    {dayTasks.length > 0 && (
+                      <div
+                        className={`w-1 h-1 rounded-full mt-1 ${isSelected ? "bg-white" : "bg-purple-400"}`}
+                      />
+                    )}
                   </div>
                 );
               })}
             </div>
-
             <div className="px-1">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-500">
@@ -290,14 +287,14 @@ export default function DashboardPage() {
                   </Button>
                 </div>
               </div>
-
-              {todayEvents.length === 0 && todayTasks.length === 0 ? (
+              {selectedDayEvents.length === 0 &&
+              selectedDayTasks.length === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
                   Nenhum evento ou tarefa para este dia
                 </div>
               ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {todayEvents.map((event) => (
+                <div className="space-y-2 max-h-64 overflow-y-auto scroll-top">
+                  {selectedDayEvents.map((event) => (
                     <motion.div
                       key={event.id}
                       initial={{ opacity: 0, y: 5 }}
@@ -309,7 +306,8 @@ export default function DashboardPage() {
                           : event.period === "afternoon"
                             ? "bg-blue-50 border-l-2 border-blue-400"
                             : "bg-purple-50 border-l-2 border-purple-400"
-                      }`}
+                      }
+                    `}
                       onClick={() => handleEventClick(event)}
                     >
                       <div className="flex justify-between items-start">
@@ -336,8 +334,7 @@ export default function DashboardPage() {
                       </div>
                     </motion.div>
                   ))}
-
-                  {todayTasks.map((task) => (
+                  {selectedDayTasks.map((task) => (
                     <motion.div
                       key={task.id}
                       initial={{ opacity: 0, y: 5 }}
@@ -357,6 +354,24 @@ export default function DashboardPage() {
                               {format(new Date(task.dueDate), "dd/MM/yyyy")}
                             </p>
                           )}
+                          {task.frequency === "daily" && (
+                            <p className="text-xs/3 text-gray-500">
+                              Tarefa diária
+                            </p>
+                          )}
+                          {task.assignedTo === null ? (
+                            <span className="text-xs text-gray-600">
+                              Em conjunto{" "}
+                              {partnerName?.split(" ")[0] || "parceiro"} e{" "}
+                              {user?.name?.split(" ")[0] || "você"}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-600">
+                              {task.assignedTo === user?.id
+                                ? `Atribuida para você`
+                                : `Atribuida para ${partnerName?.split(" ")[0] || "parceiro"}`}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -366,105 +381,15 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Upcoming Tasks
-        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/10 to-primary/10">
-          <div className="flex items-center justify-between mb-4">
-            <CardTitle className="font-bold text-lg flex">
-              <CheckCheck className="mr-2" />
-              Tarefas pendentes
-            </CardTitle>
-            <Button
-              variant="secondary"
-              className="bg-white hover:bg-white cursor-pointer"
-              onClick={() => handleTaskClick()}
-            >
-              Ver tudo
-            </Button>
-          </div>
-
-          {upcomingTasks.length === 0 ? (
-            <div className="bg-white/80 rounded-lg p-4 text-center text-gray-500 text-sm">
-              Nenhuma tarefa pendente
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {upcomingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="bg-white/80 p-3 rounded-lg flex items-center cursor-pointer"
-                  onClick={() => handleTaskClick(task.id)}
-                >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                    <CheckCircle className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">{task.title}</h4>
-                    {task.dueDate && (
-                      <p className="text-xs text-gray-500">
-                        Prazo: {format(new Date(task.dueDate), "dd/MM/yyyy")}
-                      </p>
-                    )}
-                  </div>
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                </div>
-              ))}
-            </div>
-          )}
-        </Card> */}
-
-        {/* Tomorrow's Lessons */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-700">Amanhã</h2>
-            <Button
-              variant="secondary"
-              className="bg-white hover:bg-white cursor-pointer"
-              onClick={() => navigate("/calendar")}
-            >
-              Ver tudo
-            </Button>
-          </div>
-
-          {tomorrowEvents.length === 0 ? (
-            <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500 text-sm">
-              Nenhum evento programado para amanhã
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {tomorrowEvents.slice(0, 2).map((event) => (
-                <div
-                  key={event.id}
-                  className="bg-gray-50 p-3 rounded-lg flex cursor-pointer"
-                  onClick={() => handleEventClick(event)}
-                >
-                  <div className="w-10 text-center mr-3">
-                    <span className="text-xs font-medium block">
-                      {formatTime(event.startTime)}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium flex items-center">
-                      <span className="mr-2">{event.emoji || "📅"}</span>
-                      {event.title}
-                    </h4>
-                    {event.location && (
-                      <p className="text-xs text-gray-500">{event.location}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {tomorrowEvents.length > 2 && (
-                <div className="text-center text-sm text-primary font-medium">
-                  +{tomorrowEvents.length - 2} eventos amanhã
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
       </main>
       <BottomNavigation />
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center h-screen">
+      <CoupleLoadingAnimation />
+      <h2 className="text-lg font-semibold text-gray-700 mt-4">
+        Carregando informações...
+      </h2>
     </div>
   );
 }

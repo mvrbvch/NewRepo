@@ -62,6 +62,7 @@ export default function EditEventModal({
     (event.sharePermission as "view" | "edit") || "view"
   );
   const [category, setCategory] = useState(event.category || "");
+  const [isSpecial, setIsSpecial] = useState(event.isSpecial || false);
 
   // Set initial form values when modal opens or event changes
   useEffect(() => {
@@ -168,6 +169,7 @@ export default function EditEventModal({
       emoji: emoji || null,
       isShared: shareWithPartner,
       category,
+      isSpecial,
       shareWithPartner,
       sharePermission: partnerPermission,
     };
@@ -184,7 +186,6 @@ export default function EditEventModal({
             Editar evento
           </DialogTitle>
         </DialogHeader>
-
         <div className="space-y-4 py-2">
           <div>
             <Label htmlFor="title">Nome do evento</Label>
@@ -333,8 +334,19 @@ export default function EditEventModal({
               </Select>
             </div>
           )}
+        </div>{" "}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="isSpecial" className="cursor-pointer">
+              Evento especial:
+            </Label>
+            <Switch
+              id="isSpecial"
+              checked={isSpecial}
+              onCheckedChange={setIsSpecial}
+            />
+          </div>
         </div>
-
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
           <Button
             variant="outline"

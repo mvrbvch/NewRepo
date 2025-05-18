@@ -531,7 +531,7 @@ export default function EditTaskModal({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-subtitle">Categoria</FormLabel>
+                  <FormLabel>Categoria</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(value)}
                     defaultValue={field.value}
@@ -560,6 +560,21 @@ export default function EditTaskModal({
                 </FormItem>
               )}
             />
+
+            <Collapsible className="space-y-2 border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">Lembretes</h4>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-9 p-0">
+                    <ChevronDown className="h-4 w-4" />
+                    <span className="sr-only">Toggle</span>
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent className="space-y-4">
+                <ReminderForm type="task" id={task?.id} onCreated={(e) => {}} />
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter>
               <Button

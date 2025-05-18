@@ -2,11 +2,20 @@ import { EventType } from "@/lib/types";
 import { formatDate, formatTime, getPeriodFromTime } from "@/lib/utils";
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, addDays, startOfWeek, subDays, subWeeks, addWeeks } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfWeek,
+  subDays,
+  subWeeks,
+  addWeeks,
+  isSameDay,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useMobile } from "../../hooks/use-mobile";
 import { CoupleLoadingAnimation } from "@/components/shared/couple-loading-animation";
+import { formatDateSafely } from "@/lib/utils";
 
 interface WeekViewProps {
   date: Date;
@@ -26,51 +35,34 @@ export default function WeekView({
   onWeekChange,
 }: WeekViewProps) {
   const { isMobile } = useMobile();
-  
-  // Generate week days from selected date
+
+  // Dias da semana
   const weekDays = useMemo(() => {
     const start = startOfWeek(date, { locale: ptBR });
     return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
   }, [date]);
 
-  // Filter events by week
+  // Agrupa eventos por dia, sem utcToZonedTime
   const eventsInWeek = useMemo(() => {
-    const filteredEvents = events.filter(event => {
-      const eventDate = new Date(event.date);
-      return weekDays.some(day => day.toDateString() === eventDate.toDateString());
-    });
+    return weekDays.map((day) => {
+      const dayEvents = events.filter((event) => {
+        const eventDate = new Date(event.date); // UTC string, mas já fica no local do navegador
+        const eventDateFormated = formatDateSafely(eventDate)?.split("T")[0];
+        const dayFormated = formatDateSafely(day)?.split("T")[0];
 
-    // Group by day
-    const groupedEvents = weekDays.map(day => {
-      return {
-        date: day,
-        events: filteredEvents.filter(event => {
-          // Remover o 'Z' do final para preservar o fuso horário local
-          let dateStr = typeof event.date === 'string' 
-            ? event.date 
-            : event.date.toISOString();
-          
-          // Se terminar com Z, remove para preservar o fuso horário
-          if (dateStr.endsWith('Z')) {
-            dateStr = dateStr.substring(0, dateStr.length - 1);
-          }
-          
-          const eventDate = new Date(dateStr);
-          return day.toDateString() === eventDate.toDateString();
-        })
-      };
+        return isSameDay(eventDateFormated, dayFormated);
+      });
+      return { date: day, events: dayEvents };
     });
-
-    return groupedEvents;
   }, [events, weekDays]);
 
   if (isLoading) {
     return (
       <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar flex items-center justify-center">
-        <CoupleLoadingAnimation 
-          type="calendar" 
-          text="Carregando agenda da semana..." 
-          size="lg" 
+        <CoupleLoadingAnimation
+          type="calendar"
+          text="Carregando agenda da semana..."
+          size="lg"
         />
       </div>
     );
@@ -79,22 +71,23 @@ export default function WeekView({
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 hide-scrollbar">
       <div className="flex items-center bg-white border-b px-2">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="icon"
           className="h-8 w-8 text-gray-500"
           onClick={() => onWeekChange && onWeekChange(subWeeks(date, 1))}
         >
           <span className="material-icons text-xl">chevron_left</span>
         </Button>
-        
+
         <div className="text-xs text-center text-gray-500 font-medium mx-2">
           <span className="hidden sm:inline">Semana de </span>
-          {format(weekDays[0], "d/MM", { locale: ptBR })} - {format(weekDays[6], "d/MM", { locale: ptBR })}
+          {format(weekDays[0], "d/MM", { locale: ptBR })} -{" "}
+          {format(weekDays[6], "d/MM", { locale: ptBR })}
         </div>
-        
-        <Button 
-          variant="ghost" 
+
+        <Button
+          variant="ghost"
           size="icon"
           className="h-8 w-8 text-gray-500"
           onClick={() => onWeekChange && onWeekChange(addWeeks(date, 1))}
@@ -102,34 +95,38 @@ export default function WeekView({
           <span className="material-icons text-xl">chevron_right</span>
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-7 bg-white border-b">
         {weekDays.map((day, index) => {
           const isToday = day.toDateString() === new Date().toDateString();
           const isSelected = day.toDateString() === date.toDateString();
-          
+
           return (
-            <div 
+            <div
               key={index}
               className={`flex flex-col items-center justify-center p-1 pt-2 cursor-pointer ${
-                isToday ? 'bg-primary/10' : ''
-              } ${
-                isSelected ? 'border-b-2 border-primary' : ''
-              }`}
+                isToday ? "bg-primary/10" : ""
+              } ${isSelected ? "border-b-2 border-primary" : ""}`}
               onClick={() => onDayChange(day)}
             >
               <div className="text-xs font-medium">
-                {format(day, isMobile ? 'EEEEE' : 'EEE', { locale: ptBR })}
+                {format(day, isMobile ? "EEEEE" : "EEE", { locale: ptBR })}
               </div>
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                isSelected ? 'bg-primary text-white' : isToday ? 'border border-primary' : ''
-              }`}>
-                {format(day, 'd')}
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                  isSelected
+                    ? "bg-primary text-white"
+                    : isToday
+                      ? "border border-primary"
+                      : ""
+                }`}
+              >
+                {format(day, "d")}
               </div>
               <div className="text-[10px] text-gray-500">
-                {eventsInWeek[index].events.length > 0 
-                  ? `${eventsInWeek[index].events.length}${isMobile ? '' : ` evento${eventsInWeek[index].events.length > 1 ? 's' : ''}`}` 
-                  : ''}
+                {eventsInWeek[index].events.length > 0
+                  ? `${eventsInWeek[index].events.length}${isMobile ? "" : ` evento${eventsInWeek[index].events.length > 1 ? "s" : ""}`}`
+                  : ""}
               </div>
             </div>
           );
@@ -138,56 +135,67 @@ export default function WeekView({
 
       <div className="p-4">
         {eventsInWeek.map((dayEvents, index) => (
-          <div 
-            key={index} 
-            className={`mb-4 ${dayEvents.date.toDateString() === date.toDateString() ? 'block' : 'hidden'}`}
+          <div
+            key={index}
+            className={`mb-4 ${dayEvents.date.toDateString() === date.toDateString() ? "block" : "hidden"}`}
           >
-            <h3 className="text-lg font-semibold mb-2">{format(dayEvents.date, "EEEE, d 'de' MMMM", { locale: ptBR })}</h3>
-            
+            <h3 className="text-lg font-semibold mb-2">
+              {format(dayEvents.date, "EEEE, d 'de' MMMM", { locale: ptBR })}
+            </h3>
+
             {dayEvents.events.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
                 Nenhum evento neste dia
               </div>
             ) : (
               <div className="space-y-2">
-                {dayEvents.events.map(event => {
+                {dayEvents.events.map((event) => {
                   const period = event.period;
-                  const borderColorClass = 
-                    period === 'morning' ? 'border-orange-500' : 
-                    period === 'afternoon' ? 'border-blue-500' : 
-                    'border-purple-700';
-                  
+                  const borderColorClass =
+                    period === "morning"
+                      ? "border-orange-500"
+                      : period === "afternoon"
+                        ? "border-blue-500"
+                        : "border-purple-700";
+
                   return (
-                    <div 
+                    <div
                       key={event.id}
                       className={`bg-white rounded-lg shadow-sm p-3 border-l-4 ${borderColorClass} ${
-                        event.isShared ? 'bg-pink-50' : ''
+                        event.isShared ? "bg-pink-50" : ""
                       }`}
                       onClick={() => onEventClick(event)}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center">
-                          <span className="mr-2">{event.emoji || '📅'}</span>
+                          <span className="mr-2">{event.emoji || "📅"}</span>
                           <h4 className="font-medium">{event.title}</h4>
                         </div>
                         <div className="text-sm text-gray-600">
-                          {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                          {formatTime(event.startTime)} -{" "}
+                          {formatTime(event.endTime)}
                         </div>
                       </div>
-                      
+
                       {event.location && (
-                        <div className="text-sm text-gray-600 mb-1">{event.location}</div>
+                        <div className="text-sm text-gray-600 mb-1">
+                          {event.location}
+                        </div>
                       )}
-                      
+
                       <div className="flex items-center text-xs text-gray-500">
                         {event.isShared ? (
                           <>
-                            <span className="material-icons text-xs text-secondary mr-1">favorite</span>
+                            <span className="material-icons text-xs text-secondary mr-1">
+                              favorite
+                            </span>
                             <span>Compartilhado</span>
                           </>
                         ) : (
                           <>
-                            <span className="material-icons text-xs mr-1">person</span>
+                            <span className="material-icons text-xs mr-1">
+                              person
+                            </span>
                             <span>Somente você</span>
                           </>
                         )}
@@ -201,8 +209,9 @@ export default function WeekView({
         ))}
       </div>
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -210,7 +219,9 @@ export default function WeekView({
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 }

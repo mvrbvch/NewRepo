@@ -179,6 +179,10 @@ export interface IStorage {
 
   // Task Reminders
   createTaskReminder(reminder: InsertTaskReminder): Promise<TaskReminder>;
+  updateTaskReminder(
+    id: number,
+    updated: Partial<TaskReminder>
+  ): Promise<TaskReminder>;
   getTaskReminders(taskId: number): Promise<TaskReminder[]>;
   getUserTaskReminders(userId: number): Promise<TaskReminder[]>;
   getPendingTaskReminders(): Promise<TaskReminder[]>;
@@ -916,6 +920,7 @@ export class MemStorage implements IStorage {
         createdBy: insertReminder.createdBy,
         reminderDate: insertReminder.reminderDate,
         reminderType: insertReminder.reminderType,
+        reminderTime: insertReminder.reminderTime,
         message: insertReminder.message || null,
         sent: false,
       })
@@ -926,6 +931,32 @@ export class MemStorage implements IStorage {
       reminderDate: newReminder.reminderDate.toISOString(),
       createdAt: newReminder.createdAt
         ? newReminder.createdAt.toISOString()
+        : null,
+    };
+  }
+
+  async updateTaskReminder(
+    id: number,
+    updated: InsertTaskReminder
+  ): Promise<TaskReminder> {
+    const [updatedReminder] = await db
+      .update(taskReminders)
+      .set({
+        taskId: updated.taskId,
+        reminderDate: updated.reminderDate,
+        reminderType: updated.reminderType,
+        reminderTime: updated.reminderTime,
+        message: updated.message || null,
+        sent: false,
+      })
+      .where(eq(taskReminders.id, id))
+      .returning();
+
+    return {
+      ...updatedReminder,
+      reminderDate: updatedReminder.reminderDate.toISOString(),
+      createdAt: updatedReminder.createdAt
+        ? updatedReminder.createdAt.toISOString()
         : null,
     };
   }
@@ -1759,6 +1790,25 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async updateTaskReminder(
+    id: number,
+    updated: InsertTaskReminder
+  ): Promise<TaskReminder | undefined> {
+    const [reminder] = await db
+      .update(taskReminders)
+      .set({ ...updated })
+      .where(eq(taskReminders.id, id))
+      .returning();
+
+    if (!reminder) return undefined;
+
+    return {
+      ...reminder,
+      reminderDate: reminder.reminderDate.toISOString(),
+      createdAt: reminder.createdAt ? reminder.createdAt.toISOString() : null,
+    };
+  }
+
   async deleteTaskReminder(id: number): Promise<boolean> {
     await db.delete(taskReminders).where(eq(taskReminders.id, id));
     return true;
@@ -2541,7 +2591,12 @@ export class DatabaseStorage implements IStorage {
       const tasks = await db
         .select()
         .from(householdTasks)
-        .where(or(eq(householdTasks.assignedTo, user.partnerId)));
+        .where(
+          or(
+            eq(householdTasks.assignedTo, user.partnerId),
+            isNull(householdTasks.assignedTo)
+          )
+        );
 
       // Mapear cada tarefa e formatar suas datas de forma segura usando a função utilitária
       return tasks.map((task) => {

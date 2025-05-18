@@ -1457,6 +1457,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Only the task creator can delete this task" });
       }
 
+      const taskReminder = await storage.getTaskReminders(task.id);
+
+      if (taskReminder.length > 0) {
+        for (const reminder of taskReminder) {
+          await storage.deleteTaskReminder(reminder.id);
+        }
+      }
       const deleted = await storage.deleteHouseholdTask(taskId);
 
       if (deleted) {

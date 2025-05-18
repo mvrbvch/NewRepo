@@ -218,6 +218,7 @@ export const taskReminders = pgTable("task_reminders", {
     .references(() => users.id),
   reminderDate: timestamp("reminder_date").notNull(),
   reminderType: text("reminder_type").notNull(), // push, email, sms, etc.
+  reminderTime: text("reminder_time").notNull(), // push, email, sms, etc.
   message: text("message"), // Mensagem personalizada opcional
   sent: boolean("sent").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -517,6 +518,7 @@ export const insertTaskReminderSchema = createInsertSchema(taskReminders).pick({
   createdBy: true,
   reminderDate: true,
   reminderType: true,
+  reminderTime: true,
   message: true,
   sent: true,
 });

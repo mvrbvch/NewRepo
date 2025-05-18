@@ -310,6 +310,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
             createdBy: userId,
             reminderDate,
             reminderType: "email",
+            reminderTime, // Adiciona reminderTime
             message: customMessage ?? null,
             sent: reminderTime === "now", // Se for "now", marcar como enviado
           });
@@ -345,7 +346,6 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
             }
           }
         }
-
         if (reminderType === "push" || reminderType === "both") {
           const pushReminder = await storage.createTaskReminder({
             taskId,
@@ -353,8 +353,9 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
             createdBy: userId,
             reminderDate,
             reminderType: "push",
+            reminderTime, // Adiciona reminderTime
             message: customMessage ?? null,
-            sent: reminderTime === "now", // Se for "now", marcar como enviado
+            sent: reminderTime === "now" || false, // Se for "now", marcar como enviado
           });
           reminders.push(pushReminder);
 
@@ -376,7 +377,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
                 data: {
                   type: "task_reminder",
                   taskId: task.id.toString(),
-                  url: `/household-tasks?task=${task.id}`,
+                  url: `/tasks?taskId=${task.id}`,
                 },
                 referenceType: "task",
                 referenceId: task.id,
@@ -470,17 +471,6 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
         const userId = req.user?.id as number;
 
         // Verificar se o lembrete existe e pertence ao usuário
-        const reminders = await storage.getTaskReminders(reminderId);
-        const reminder = reminders[0];
-        if (!reminder) {
-          return res.status(404).json({ message: "Lembrete não encontrado" });
-        }
-
-        if (reminder.createdBy !== userId) {
-          return res.status(403).json({
-            message: "Você não tem permissão para excluir este lembrete",
-          });
-        }
 
         // Excluir o lembrete
         await storage.deleteTaskReminder(reminderId);
@@ -524,6 +514,195 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
       console.error("Erro ao buscar lembretes do usuário:", error);
       return res.status(500).json({
         message: "Erro ao buscar lembretes do usuário",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * Editar um lembrete de tarefa
+   */
+  app.put("/api/tasks/reminders/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const reminderId = parseInt(req.params.id);
+      const taskId = parseInt(req.body.taskId);
+      const userId = req.user?.id as number;
+
+      // Validar os dados do lembrete
+      const reminderSchema = z.object({
+        reminderType: z.enum(["email", "push", "both"]),
+        reminderTime: z.string(),
+        customMessage: z.string().optional().nullable(),
+      });
+
+      const validation = reminderSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          message: "Dados de lembrete inválidos",
+          errors: validation.error.format(),
+        });
+      }
+
+      // Verificar se o lembrete existe e pertence ao usuário
+      const reminders = await storage.getTaskReminders(taskId);
+      const reminder = reminders[0];
+      if (!reminder) {
+        return res.status(404).json({ message: "Lembrete não encontrado" });
+      }
+
+      if (reminder.createdBy !== userId) {
+        return res.status(403).json({
+          message: "Você não tem permissão para editar este lembrete",
+        });
+      }
+
+      // Buscar a tarefa para recalcular a data do lembrete
+      const task = await storage.getHouseholdTask(reminder.taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Tarefa não encontrada" });
+      }
+
+      let reminderDate = new Date();
+      if (task.dueDate) {
+        reminderDate =
+          task.dueDate instanceof Date
+            ? new Date(task.dueDate)
+            : new Date(task.dueDate);
+      }
+
+      const { reminderType, reminderTime, customMessage } = validation.data;
+
+      if (reminderTime === "10min") {
+        reminderDate.setMinutes(reminderDate.getMinutes() - 10);
+      } else if (reminderTime === "30min") {
+        reminderDate.setMinutes(reminderDate.getMinutes() - 30);
+      } else if (reminderTime === "1hour") {
+        reminderDate.setHours(reminderDate.getHours() - 1);
+      } else if (reminderTime === "2hours") {
+        reminderDate.setHours(reminderDate.getHours() - 2);
+      } else if (reminderTime === "1day") {
+        reminderDate.setDate(reminderDate.getDate() - 1);
+      } else if (reminderTime === "2days") {
+        reminderDate.setDate(reminderDate.getDate() - 2);
+      } else if (reminderTime === "1week") {
+        reminderDate.setDate(reminderDate.getDate() - 7);
+      } // "now" mantém a data atual
+
+      // Atualizar o lembrete
+      await storage.updateTaskReminder(reminderId, {
+        reminderType,
+        reminderDate,
+        reminderTime,
+        message: customMessage ?? null,
+      });
+
+      // Buscar lembretes atualizados
+      const updatedReminders = await storage.getUserTaskReminders(userId);
+
+      return res.json({
+        message: "Lembrete atualizado com sucesso",
+        reminders: updatedReminders,
+      });
+    } catch (error) {
+      console.error("Erro ao editar lembrete de tarefa:", error);
+      return res.status(500).json({
+        message: "Erro ao editar lembrete de tarefa",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * Editar um lembrete de evento
+   */
+  app.put("/api/events/reminders/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const reminderId = parseInt(req.params.id);
+      const userId = req.user?.id as number;
+
+      // Validar os dados do lembrete
+      const reminderSchema = z.object({
+        reminderType: z.enum(["email", "push", "both"]),
+        reminderTime: z.string(),
+        customMessage: z.string().optional().nullable(),
+      });
+
+      const validation = reminderSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          message: "Dados de lembrete inválidos",
+          errors: validation.error.format(),
+        });
+      }
+
+      // Verificar se o lembrete existe e pertence ao usuário
+      const reminders = await storage.getEventReminders(reminderId);
+      const reminder = reminders[0];
+      if (!reminder) {
+        return res.status(404).json({ message: "Lembrete não encontrado" });
+      }
+
+      if (reminder.userId !== userId) {
+        return res.status(403).json({
+          message: "Você não tem permissão para editar este lembrete",
+        });
+      }
+
+      // Buscar o evento para recalcular a data do lembrete
+      const event = await storage.getEvent(reminder.eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Evento não encontrado" });
+      }
+
+      let reminderDate =
+        event.date instanceof Date
+          ? new Date(event.date)
+          : new Date(event.date);
+
+      const { reminderType, reminderTime, customMessage } = validation.data;
+
+      if (reminderTime === "10min") {
+        reminderDate.setMinutes(reminderDate.getMinutes() - 10);
+      } else if (reminderTime === "30min") {
+        reminderDate.setMinutes(reminderDate.getMinutes() - 30);
+      } else if (reminderTime === "1hour") {
+        reminderDate.setHours(reminderDate.getHours() - 1);
+      } else if (reminderTime === "2hours") {
+        reminderDate.setHours(reminderDate.getHours() - 2);
+      } else if (reminderTime === "1day") {
+        reminderDate.setDate(reminderDate.getDate() - 1);
+      } else if (reminderTime === "2days") {
+        reminderDate.setDate(reminderDate.getDate() - 2);
+      } else if (reminderTime === "1week") {
+        reminderDate.setDate(reminderDate.getDate() - 7);
+      } // "now" mantém a data atual
+
+      // Atualizar o lembrete
+      await storage.updateEventReminder(reminderId, {
+        reminderType,
+        reminderTime: reminderDate,
+        message: customMessage ?? null,
+      });
+
+      // Buscar lembretes atualizados
+      const updatedReminders = await storage.getUserEventReminders(userId);
+
+      return res.json({
+        message: "Lembrete atualizado com sucesso",
+        reminders: updatedReminders,
+      });
+    } catch (error) {
+      console.error("Erro ao editar lembrete de evento:", error);
+      return res.status(500).json({
+        message: "Erro ao editar lembrete de evento",
         error: error instanceof Error ? error.message : String(error),
       });
     }
