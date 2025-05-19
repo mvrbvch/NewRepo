@@ -53,7 +53,7 @@ export interface EventCommentType {
 
 export interface UserType {
   id: number;
-  username: string;
+  username?: string;
   name: string;
   email: string;
   phoneNumber?: string;
