@@ -320,6 +320,9 @@ export default function HouseholdTasksPage() {
   });
 
   useEffect(() => {
+    if (user && !user.partnerId) {
+      navigate("/invite-partner");
+    }
     if (!taskIsLoading && task && task?.id && taskId) {
       setSelectedTask(task ?? null);
     }

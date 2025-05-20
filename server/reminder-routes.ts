@@ -151,7 +151,7 @@ export function setupReminderRoutes(app: express.Express, storage: IStorage) {
         }
 
         // Obter lembretes do usuário para este evento
-        const reminders = await storage.getUserEventReminders(userId);
+        const reminders = await storage.getEventReminders(eventId);
 
         return res.json({
           eventId,

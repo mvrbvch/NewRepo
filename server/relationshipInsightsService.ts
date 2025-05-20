@@ -213,18 +213,17 @@ export class RelationshipInsightsService {
 
       // Primeiro verificar por títulos idênticos para o mesmo tipo
       const sameTitleInsights = existingInsights.filter(
-        (insight) =>
-          insight.insightType === type && insight.title.trim() === title.trim()
+        (insight) => insight.insightType === type && insight.title === title
       );
 
       if (sameTitleInsights.length > 0) return true;
 
       // Se não encontrou pelo título, verificar similaridade no conteúdo
       // Implementação simplificada - considerar similares se as primeiras 100 caracteres forem iguais
-      const contentStart = content.trim().substring(0, 100);
+      const contentStart = content.substring(0, 100);
       return existingInsights.some((insight) => {
         if (insight.insightType !== type) return false;
-        const existingContentStart = insight.content.trim().substring(0, 100);
+        const existingContentStart = insight.content.substring(0, 100);
         return existingContentStart === contentStart;
       });
     } catch (error) {
@@ -241,22 +240,22 @@ export class RelationshipInsightsService {
     partnerId: number
   ): Promise<void> {
     try {
-      // 1. Coletar dados sobre o casal
+      // 1. Collect task distribution data
       const taskDistribution = await this.analyzeTaskDistribution(
         userId,
         partnerId
       );
 
-      // 2. Gerar insights baseados nos dados
+      // 2. Generate insights based on data
       const insights: InsightGenerationResult[] = [];
 
-      // Insight sobre equilíbrio de tarefas
+      // Task balance insight
       if (taskDistribution) {
         const taskInsight =
           await this.generateTaskDistributionInsight(taskDistribution);
 
-        if (taskInsight) {
-          // Verificar se já existe um insight similar
+        if (taskInsight && taskInsight.title && taskInsight.content) {
+          // Verify if similar insight exists
           const hasSimilar = await this.hasSimilarInsight(
             userId,
             partnerId,
@@ -269,37 +268,56 @@ export class RelationshipInsightsService {
             insights.push(taskInsight);
           } else {
             console.log(
-              `Insight similar sobre ${taskInsight.type} já existe para o casal (${userId}, ${partnerId}). Ignorando.`
+              `Similar insight about ${taskInsight.type} already exists for couple (${userId}, ${partnerId}). Skipping.`
             );
           }
+        } else {
+          console.warn(
+            `Invalid insight generated for couple (${userId}, ${partnerId}): missing title or content`
+          );
         }
       }
 
-      // 3. Salvar os insights gerados no banco de dados (apenas os não similares)
+      // 3. Save valid insights to database
       for (const insight of insights) {
+        // Validate required fields
+        if (!insight.title || !insight.content) {
+          console.error(
+            `Skipping invalid insight for couple (${userId}, ${partnerId}): missing required fields`
+          );
+          continue;
+        }
+
         const insertData: InsertRelationshipInsight = {
           userId,
           partnerId,
           insightType: insight.type,
           title: insight.title,
           content: insight.content,
-          sentiment: insight.sentiment,
-          score: insight.score,
+          sentiment: insight.sentiment || "neutral",
+          score: insight.score || 5,
           rawData: insight.rawData,
           metadata: insight.metadata,
-          actions: insight.actions,
+          actions: insight.actions || [],
           expiresAt: this.calculateExpirationDate(),
         };
 
-        await this.storage.createRelationshipInsight(insertData);
+        try {
+          await this.storage.createRelationshipInsight(insertData);
+        } catch (error) {
+          console.error(
+            `Error saving insight for couple (${userId}, ${partnerId}):`,
+            error
+          );
+        }
       }
 
       console.log(
-        `Gerados ${insights.length} insights para o casal (${userId}, ${partnerId})`
+        `Generated ${insights.length} insights for couple (${userId}, ${partnerId})`
       );
     } catch (error) {
       console.error(
-        `Erro ao gerar insights para o casal (${userId}, ${partnerId}):`,
+        `Error generating insights for couple (${userId}, ${partnerId}):`,
         error
       );
     }

@@ -182,7 +182,7 @@ Não inclua explicações, apenas o objeto JSON.
       console.log("Texto limpo:", cleanedText);
 
       // Analisar o resultado da API
-      const result = JSON.parse(cleanedText);
+      const result = cleanedText;
 
       return {
         type: InsightType.TASK_BALANCE,
@@ -289,7 +289,7 @@ Não inclua explicações, apenas o objeto JSON.
       }
 
       const responseData = await response.json();
-      const contentText = responseData.choices[0]?.message?.content?.trim();
+      const contentText = responseData.choices[0]?.message?.content;
 
       if (!contentText) {
         throw new Error("Resposta vazia da API Perplexity");

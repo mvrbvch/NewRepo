@@ -77,7 +77,7 @@ export default function PartnerInvitePage() {
 
   const acceptInviteMutation = useMutation({
     mutationFn: async (token: string) => {
-      const res = await apiRequest("POST", "/api/partner/accept", { token });
+      const res = await apiRequest("POST", "/api/invites/accept", { token });
       return res.json();
     },
     onSuccess: () => {

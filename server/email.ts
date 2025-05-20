@@ -99,28 +99,29 @@ export function generatePartnerInviteEmail(
 
   const html = `
     <div style="font-family: 'Inter', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-      <div style="background: linear-gradient(to right, #ec4899, #8b5cf6); padding: 24px; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Convite Especial do Nós Juntos ❤️</h1>
+      <div style="background: linear-gradient(to right, #ee5d60, #f0686b, #f17375, #f27e80, #f3888a, #f28687, #f08385, #ef8182, #eb7172, #e66162, #e05051, #da3e41); padding: 24px; text-align: center;">
+      <div align="center"><img src="https://nosjuntos.online/logo-white.png" height="50" />
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Convite Especial do Nós Juntos ❤️</h1>  
       </div>
       
       <div style="padding: 32px 24px;">
-        <p style="margin-top: 0; font-size: 16px; line-height: 1.5; color: #4b5563;">Ei, olha só que momento lindo!</p>
-        <p style="font-size: 16px; line-height: 1.5; color: #4b5563;"><strong style="color: #8b5cf6;">${inviterName}</strong> quer te convidar para viver uma nova fase ao lado do amor da sua vida no aplicativo <strong style="color: #8b5cf6;">Nós Juntos</strong>! 🌟</p>
-        <p style="font-size: 16px; line-height: 1.5; color: #4b5563;">Com o Nós Juntos, vocês vão poder organizar a rotina juntos, dividir tarefas, criar hábitos saudáveis e fortalecer ainda mais a parceria no dia a dia.</p>
+        <p style="margin-top: 0; font-size: 16px; line-height: 1.5; color: #ffffff;">Ei, olha só que momento lindo!</p>
+        <p style="font-size: 16px; line-height: 1.5; color: #ffffff;"><strong style="color: #ffffff;">${inviterName}</strong> quer te convidar para viver uma nova fase ao lado do amor da sua vida no aplicativo <strong style="color: #ffffff;">Nós Juntos</strong>! 🌟</p>
+        <p style="font-size: 16px; line-height: 1.5; color: #ffffff;">Com o Nós Juntos, vocês vão poder organizar a rotina juntos, dividir tarefas, criar hábitos saudáveis e fortalecer ainda mais a parceria no dia a dia.</p>
 
-        <div style="background-color: #f9fafb; border-left: 4px solid #8b5cf6; border-radius: 4px; padding: 16px; margin: 24px 0;">
-          <p style="margin: 0; color: #4b5563;">Para aceitar o convite e começar essa jornada, clique no botão abaixo:</p>
+        <div style="background-color: #fff; border-left: 4px solid #matheus.murbach+123123123@gmail.com; border-radius: 4px; padding: 16px; margin: 24px 0;">
+          <p style="margin: 0; color: #ffffff;">Para aceitar o convite e começar essa jornada, clique no botão abaixo:</p>
         </div>
 
         <div style="text-align: center; margin: 32px 0;">
-          <a href="${inviteUrl}" style="background: linear-gradient(to right, #8b5cf6, #ec4899); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; transition: all 0.2s;">Aceitar Convite</a>
+          <a href="${inviteUrl}" style="background: linear-gradient(to right, #ee5d60, #f0686b, #f17375, #f27e80, #f3888a, #f28687, #f08385, #ef8182, #eb7172, #e66162, #e05051, #da3e41);  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; transition: all 0.2s;">Aceitar Convite</a>
         </div>
 
-        <p style="font-size: 14px; color: #6b7280; text-align: center;">Ou acesse este link: <a href="${inviteUrl}" style="color: #8b5cf6; text-decoration: underline;">${inviteUrl}</a></p>
+        <p style="font-size: 14px; color: #ffffff; text-align: center;">Ou acesse este link: <a href="${inviteUrl}" style="color: #ffffff; text-decoration: underline;">${inviteUrl}</a></p>
       </div>
       
-      <div style="background-color: #f9fafb; padding: 16px 24px; border-top: 1px solid #e5e7eb;">
-        <p style="margin: 0; font-size: 14px; color: #6b7280; text-align: center;">
+      <div style="background-color: #fff; padding: 16px 24px; border-top: 1px solid #ffffff;">
+        <p style="margin: 0; font-size: 14px; color: #1A535C; text-align: center;">
           Se você não conhece ${inviterName} ou acredita que este convite foi enviado por engano, pode simplesmente ignorá-lo.
         </p>
       </div>
@@ -130,21 +131,21 @@ export function generatePartnerInviteEmail(
   const text = `
 Convite Especial do Nós Juntos ❤️
 
-Ei! ${inviterName} quer te convidar para viver uma nova fase ao lado do amor da sua vida no app Nós Juntos!
+Ei, olha só que momento lindo!
 
-Com o Nós Juntos, vocês organizam a rotina, dividem as tarefas e constroem juntos uma vida mais leve, conectada e cheia de amor.
+${inviterName} quer te convidar para viver uma nova fase ao lado do amor da sua vida no aplicativo Nós Juntos! 🌟
 
-Para aceitar o convite, acesse: ${inviteUrl}
+Com o Nós Juntos, vocês vão poder organizar a rotina juntos, dividir tarefas, criar hábitos saudáveis e fortalecer ainda mais a parceria no dia a dia.
 
-Se não reconhecer este convite, é só ignorar. 😉
+Para aceitar o convite e começar essa jornada, clique no link abaixo:
+${inviteUrl}
+
+Se você não conhece ${inviterName} ou acredita que este convite foi enviado por engano, pode simplesmente ignorá-lo.
   `;
 
   return { html, text };
 }
 
-/**
- * Gera um e-mail para lembrar o parceiro sobre uma tarefa doméstica
- */
 export function generateTaskReminderEmail(
   partnerName: string,
   senderName: string,
@@ -162,7 +163,7 @@ export function generateTaskReminderEmail(
 
   const html = `
     <div style="font-family: 'Inter', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-      <div style="background: linear-gradient(to right, #ec4899, #8b5cf6); padding: 24px; text-align: center;">
+      <div style="background: linear-gradient(to right, #ee5d60, #f0686b, #f17375, #f27e80, #f3888a, #f28687, #f08385, #ef8182, #eb7172, #e66162, #e05051, #da3e41); padding: 24px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Ping! Você tem uma missão no Nós Juntos 💌</h1>
       </div>
       
@@ -176,7 +177,7 @@ export function generateTaskReminderEmail(
         </div>
 
         <div style="text-align: center; margin: 32px 0;">
-          <a href="${taskUrl}" style="background: linear-gradient(to right, #8b5cf6, #ec4899); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; transition: all 0.2s;">Ver Tarefa</a>
+          <a href="${taskUrl}" style="background: linear-gradient(to right, #ee5d60, #f0686b, #f17375, #f27e80, #f3888a, #f28687, #f08385, #ef8182, #eb7172, #e66162, #e05051, #da3e41); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; transition: all 0.2s;">Ver Tarefa</a>
         </div>
       </div>
       

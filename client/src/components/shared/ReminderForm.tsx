@@ -105,7 +105,7 @@ export const ReminderForm: React.FC<ReminderFormProps> = ({
     const url =
       type === "event"
         ? `/api/events/${id}/reminders${editingId ? `/${editingId}` : ""}`
-        : `/api/tasks/reminders${editingId ? `/${editingId}` : ""}`;
+        : `/api/tasks/${editingId ? `/${editingId}` : `${id}/reminders`}`;
 
     const method = editingId ? "PUT" : "POST";
 

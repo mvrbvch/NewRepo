@@ -2538,8 +2538,11 @@ export class DatabaseStorage implements IStorage {
         .where(
           or(
             eq(householdTasks.assignedTo, userId),
-            isNull(householdTasks.assignedTo),
-            eq(householdTasks.createdBy, userId)
+            eq(householdTasks.createdBy, userId),
+            and(
+              isNull(householdTasks.assignedTo),
+              eq(householdTasks.createdBy, userId)
+            )
           )
         );
 

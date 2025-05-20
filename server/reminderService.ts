@@ -200,7 +200,12 @@ export class ReminderService {
       if (task.dueDate) {
         const dueDate =
           task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate);
-        dueDateMessage = ` (Vence em ${formatDateSafely(dueDate)})`;
+
+        const formattedDate = format(dueDate, "d 'de' MMMM yyyy", {
+          locale: ptBR,
+        });
+
+        dueDateMessage = ` (Vence em ${formattedDate})`;
       }
 
       // Configurar conteúdo do lembrete
